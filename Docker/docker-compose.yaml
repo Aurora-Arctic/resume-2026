@@ -9,13 +9,15 @@ services:
     working_dir: /workspace
     volumes:
       - ..:/workspace:cached
-    command: sleep infinity
     init: true
     tty: true
+    ports:
+      - "8000:8000"
     environment:
       NODE_ENV: development
+    command: ["npm", "run", "develop", "--", "--host", "0.0.0.0"]
 
-  dev:
+  devcontainer:
     build:
       context: ..
       dockerfile: Docker/Dockerfile.node
@@ -23,13 +25,8 @@ services:
     working_dir: /workspace
     volumes:
       - ..:/workspace:cached
-    command:
-      - bash
-      - -lc
-      - npm install && npm run develop -- --host 0.0.0.0
     init: true
     tty: true
     environment:
       NODE_ENV: development
-    ports:
-      - "8000:8000"
+    

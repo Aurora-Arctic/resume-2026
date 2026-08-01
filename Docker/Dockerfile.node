@@ -1,1 +1,8 @@
 FROM node:24.18.1
+
+COPY ./package.json /app/package.json
+COPY ./package-lock.json /app/package-lock.json
+
+WORKDIR /app
+
+RUN npm i
