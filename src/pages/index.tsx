@@ -1,6 +1,6 @@
-import React from "react";
+import React, { type ReactElement } from "react";
 
-const IndexPage = () => (
+const IndexPage = (): ReactElement => (
   <main
     style={{
       maxWidth: "960px",

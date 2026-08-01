@@ -1,6 +1,6 @@
-import React from "react";
+import React, { type ReactElement } from "react";
 
-const NotFoundPage = () => (
+const NotFoundPage = (): ReactElement => (
   <main
     style={{
       maxWidth: "960px",
