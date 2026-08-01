@@ -1,10 +1,9 @@
 {
   "name": "resume-2026",
   "dockerComposeFile": "../Docker/docker-compose.yaml",
-  "service": "development",
+  "service": "devcontainer",
   "workspaceFolder": "/app",
   "shutdownAction": "stopCompose",
-  "remoteUser": "node",
   "overrideCommand": false,
   "forwardPorts": [8000],
   "customizations": {
