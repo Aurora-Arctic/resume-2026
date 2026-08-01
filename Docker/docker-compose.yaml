@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  development:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile.node
+    image: resume-2026-development
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    init: true
+    tty: true
+    environment:
+      NODE_ENV: development
+
+  dev:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile.node
+    image: resume-2026-dev
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace:cached
+    command:
+      - bash
+      - -lc
+      - npm install && npm run develop -- --host 0.0.0.0
+    init: true
+    tty: true
+    environment:
+      NODE_ENV: development
+    ports:
+      - "8000:8000"
