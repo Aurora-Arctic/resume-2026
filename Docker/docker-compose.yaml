@@ -1,14 +1,18 @@
 version: "3.9"
 
+volumes:
+  node_modules:
+
 services:
   development:
     build:
       context: ..
       dockerfile: Docker/Dockerfile.node
     image: resume-2026-development
-    working_dir: /workspace
+    working_dir: /app
     volumes:
-      - ..:/workspace:cached
+      - ..:/app:cached
+      - node_modules:/app/node_modules
     init: true
     tty: true
     ports:
@@ -22,9 +26,10 @@ services:
       context: ..
       dockerfile: Docker/Dockerfile.node
     image: resume-2026-dev
-    working_dir: /workspace
+    working_dir: /app
     volumes:
-      - ..:/workspace:cached
+      - ..:/app:cached
+      - node_modules:/app/node_modules
     init: true
     tty: true
     environment:

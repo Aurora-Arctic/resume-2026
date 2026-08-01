@@ -2,7 +2,7 @@
   "name": "resume-2026",
   "dockerComposeFile": "../Docker/docker-compose.yaml",
   "service": "development",
-  "workspaceFolder": "/workspace",
+  "workspaceFolder": "/app",
   "shutdownAction": "stopCompose",
   "remoteUser": "node",
   "overrideCommand": false,
