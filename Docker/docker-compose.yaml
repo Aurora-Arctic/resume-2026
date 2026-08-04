@@ -34,3 +34,4 @@ services:
     tty: true
     environment:
       NODE_ENV: development
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN}
