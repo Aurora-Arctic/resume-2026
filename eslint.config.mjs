@@ -71,6 +71,7 @@ export default defineConfig([
       // TypeScript's sake — exempt that one identifier from no-unused-vars
       // rather than flagging every file that does this.
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^React$' }],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
 

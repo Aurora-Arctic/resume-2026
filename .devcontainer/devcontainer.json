@@ -16,9 +16,27 @@
           "zsh": {
             "path": "/bin/zsh"
           }
+        },
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
         }
       },
-      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "Anthropic.claude-code"]
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Anthropic.claude-code",
+        "vitest.explorer",
+        "ms-playwright.playwright",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "GraphQL.vscode-graphql-syntax",
+        "usernamehw.errorlens",
+        "christian-kohler.path-intellisense",
+        "streetsidesoftware.code-spell-checker",
+        "eamodio.gitlens"
+      ]
     }
   }
 }
