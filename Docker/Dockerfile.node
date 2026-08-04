@@ -38,6 +38,11 @@ RUN apt-get update && apt-get install -y \
 
 USER node
 
+# Browser binary matching the sole project configured in playwright.config.ts.
+# Baked in here (rather than left to a one-time `npx playwright install`) so the
+# testing image can run `npm run test:e2e` standalone with no setup step.
+RUN npx playwright install chromium
+
 FROM testing AS devcontainer
 
 USER root
