@@ -18,11 +18,7 @@
           }
         }
       },
-      "extensions": [
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "Anthropic.claude-code"
-      ]
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "Anthropic.claude-code"]
     }
   }
 }

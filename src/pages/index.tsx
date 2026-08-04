@@ -1,5 +1,5 @@
-import React, { type ReactElement } from "react";
-import "../scss/index.scss";
+import React, { type ReactElement } from 'react';
+import '../scss/index.scss';
 
 const IndexPage = (): ReactElement => (
   <main className="page-shell">

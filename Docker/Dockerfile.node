@@ -11,7 +11,34 @@ USER node
 
 RUN npm i
 
-FROM builder AS devcontainer
+FROM builder AS testing
+
+USER root
+
+# Shared libs headless Playwright browsers need to launch (Chromium etc.) —
+# see `npx playwright install-deps`. Kept as its own stage so it can be used
+# standalone (e.g. CI running `npm run test:e2e`) without the devcontainer's
+# interactive tooling below.
+RUN apt-get update && apt-get install -y \
+    libnspr4 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libdbus-1-3 \
+    libcups2 \
+    libxkbcommon0 \
+    libasound2 \
+    libgbm1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libatspi2.0-0 \
+    && apt-get clean
+
+USER node
+
+FROM testing AS devcontainer
 
 USER root
 

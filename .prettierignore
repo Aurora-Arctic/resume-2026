@@ -7,3 +7,8 @@ public
 
 # Machine-generated lockfile
 package-lock.json
+
+# Test output
+coverage
+playwright-report
+test-results

@@ -4,7 +4,7 @@
     "lib": ["dom", "es2020"],
     "jsx": "react-jsx",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -12,14 +12,17 @@
     "resolveJsonModule": true,
     "allowJs": false,
     "noEmit": true,
-    "isolatedModules": true,
-    "ignoreDeprecations": "6.0"
+    "isolatedModules": true
   },
   "include": [
     "./src/**/*",
     "./gatsby-config.ts",
     "./gatsby-node.ts",
     "./gatsby-ssr.ts",
-    "./gatsby-browser.ts"
+    "./gatsby-browser.ts",
+    "./vitest.config.ts",
+    "./vitest.setup.ts",
+    "./playwright.config.ts",
+    "./e2e/**/*"
   ]
 }

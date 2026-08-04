@@ -1,12 +1,12 @@
-import React, { type ReactElement } from "react";
+import React, { type ReactElement } from 'react';
 
 const NotFoundPage = (): ReactElement => (
   <main
     style={{
-      maxWidth: "960px",
-      margin: "0 auto",
-      padding: "3rem 1.5rem",
-      fontFamily: "sans-serif",
+      maxWidth: '960px',
+      margin: '0 auto',
+      padding: '3rem 1.5rem',
+      fontFamily: 'sans-serif',
     }}
   >
     <h1>Page not found</h1>

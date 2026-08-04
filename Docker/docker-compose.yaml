@@ -15,10 +15,10 @@ services:
     init: true
     tty: true
     ports:
-      - "8000:8000"
+      - '8000:8000'
     environment:
       NODE_ENV: development
-    command: ["npm", "run", "develop", "--", "--host", "0.0.0.0"]
+    command: ['npm', 'run', 'develop', '--', '--host', '0.0.0.0']
 
   devcontainer:
     build:
@@ -34,4 +34,3 @@ services:
     tty: true
     environment:
       NODE_ENV: development
-    
