@@ -1,0 +1,9 @@
+# Dependencies
+node_modules
+
+# Gatsby build output and cache
+public
+.cache
+
+# Machine-generated lockfile
+package-lock.json

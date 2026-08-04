@@ -1,13 +1,19 @@
 FROM node:24.18.1 AS builder
 
-COPY ./package.json /app/package.json
-COPY ./package-lock.json /app/package-lock.json
-
 WORKDIR /app
+
+RUN chown node:node /app
+
+COPY --chown=node:node ./package.json /app/package.json
+COPY --chown=node:node ./package-lock.json /app/package-lock.json
+
+USER node
 
 RUN npm i
 
 FROM builder AS devcontainer
+
+USER root
 
 RUN apt-get update && apt-get install -y \
     nano \
