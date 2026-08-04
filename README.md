@@ -26,6 +26,16 @@ docker compose -f Docker/docker-compose.yaml run --rm devcontainer npm run lint
 
 Both services bind-mount the repo into the container, so edits made on the host are picked up immediately.
 
+## Debugging
+
+`.vscode/launch.json` has a **"Chrome: attach to running dev server"** launch configuration for debugging client-side (React) code in VS Code:
+
+1. Start the dev server with `make docker-up` (or `npm run develop` inside the `devcontainer` service) so it's listening on `http://localhost:8000`.
+2. Open the Run and Debug panel in VS Code, select **Chrome: attach to running dev server**, and start it. This launches Chrome navigated to `http://localhost:8000` with its debugger attached.
+3. Set breakpoints directly in your `.tsx`/`.ts` source files under `src/` — `webRoot` and the `webpack://resume-2026/*` source-map path overrides let Chrome map compiled output back to those files.
+
+This attaches to an already-running dev server rather than launching one itself, so it works the same way whether the server was started via `make docker-up`, the `development` service directly, or `npm run develop` inside the `devcontainer` service.
+
 ## Available commands
 
 The `npm` column below lists the underlying script — run it inside the `devcontainer` service as shown above. The `make` targets are split into `npm-*` (app/lint/test scripts) and `docker-*` (Docker Compose itself), so `make build` doesn't have to mean either one.
