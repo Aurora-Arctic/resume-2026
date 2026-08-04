@@ -6,10 +6,17 @@
   "shutdownAction": "stopCompose",
   "overrideCommand": false,
   "forwardPorts": [8000],
+  "remoteUser": "node",
+  "containerUser": "node",
   "customizations": {
     "vscode": {
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash"
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        }
       },
       "extensions": [
         "dbaeumer.vscode-eslint",

@@ -1,5 +1,3 @@
-version: "3.9"
-
 volumes:
   node_modules:
 
@@ -8,6 +6,7 @@ services:
     build:
       context: ..
       dockerfile: Docker/Dockerfile.node
+      target: builder
     image: resume-2026-development
     working_dir: /app
     volumes:
@@ -25,6 +24,7 @@ services:
     build:
       context: ..
       dockerfile: Docker/Dockerfile.node
+      target: devcontainer
     image: resume-2026-dev
     working_dir: /app
     volumes:
