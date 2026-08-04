@@ -36,6 +36,14 @@ Both services bind-mount the repo into the container, so edits made on the host 
 
 This attaches to an already-running dev server rather than launching one itself, so it works the same way whether the server was started via `make docker-up`, the `development` service directly, or `npm run develop` inside the `devcontainer` service.
 
+## Linting & formatting
+
+- **ESLint** (`eslint.config.mjs`) checks code correctness — `typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, and `eslint-plugin-jsx-a11y`. Run it with `make npm-lint` (or `npm run lint`, inside the `devcontainer` service), and `make npm-lint-fix` to auto-fix what it can.
+- **Prettier** (`.prettierrc`) handles all formatting — ESLint doesn't check style itself; `eslint-config-prettier` disables the ESLint rules that would otherwise conflict with it. Run it with `make npm-format` to write changes, or `make npm-format-check` for a check-only pass (no writes) suitable for CI. `.prettierignore` excludes `node_modules`, build output (`public`, `.cache`), and generated files (`package-lock.json`).
+- Both tools cover the whole project in one pass — there's no separate config per directory — but `eslint.config.mjs` does split globals by execution context (Node globals for `gatsby-*.ts` build-time files, browser globals for `src/**`).
+- **Editor integration**: the `devcontainer` service's VS Code config ([.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)) installs the ESLint (`dbaeumer.vscode-eslint`) and Prettier (`esbenp.prettier-vscode`) extensions automatically. There's no committed `.vscode/settings.json` enabling format-on-save, so lint/format issues surface as editor squiggles rather than being silently auto-fixed — run `make npm-lint-fix` / `make npm-format` (or your editor's manual format command) before committing.
+- Run both `make npm-lint` and `make npm-format-check` before opening a PR — neither is currently wired up as a git hook or CI check, so nothing enforces it automatically.
+
 ## Available commands
 
 The `npm` column below lists the underlying script — run it inside the `devcontainer` service as shown above. The `make` targets are split into `npm-*` (app/lint/test scripts) and `docker-*` (Docker Compose itself), so `make build` doesn't have to mean either one.
