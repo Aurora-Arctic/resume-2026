@@ -299,10 +299,20 @@ Error: EACCES: permission denied, open '/__w/_temp/_runner_file_commands/save_st
 
 That fix immediately surfaced two more, each specific to running as root:
 
-- **Playwright's baked-in Chromium went missing.** Running as root changes `$HOME` from `/home/node` to `/root`, but Chromium was installed (`npx playwright install chromium` in `Dockerfile.node`) as the `node` user, under `/home/node/.cache/ms-playwright` — root's `$HOME` has no such directory. Fixed by pinning `HOME=/home/node` via `-e HOME=/home/node` in every job's `options:` (not just `playwright.yml` — applied everywhere for consistency, in case any other tool ever becomes `$HOME`-sensitive).
+- **Playwright's baked-in Chromium went missing.** Running as root changes `$HOME` from `/home/node` to `/root`, but Chromium was installed (`npx playwright install chromium` in `Dockerfile.node`) as the `node` user, under `/home/node/.cache/ms-playwright` — root's `$HOME` has no such directory. First fix attempt: pin `HOME=/home/node` via `-e HOME=/home/node` in every job's `options:`. **This didn't actually work** — see below.
 - **Chromium itself refuses to launch as root without `--no-sandbox`.** `playwright.config.ts` didn't pass that. Fixed by adding `launchOptions: { args: ['--no-sandbox'] }`, gated on `process.env.CI` so local/devcontainer runs (non-root, sandboxed) are unaffected — real CI already sets `CI: true` for `playwright.config.ts`'s `webServer.reuseExistingServer`, so this reuses that existing signal rather than adding a new one.
 
-All seven job files re-verified via `act` after these fixes (`--user root` doesn't change anything act itself needed to work around — the makefile/`.actrc` setup above is unaffected).
+All seven job files re-verified via `act` after these fixes — which passed, and yet the `-e HOME=/home/node` fix still failed on the real runner:
+
+```
+Error: browserType.launch: Executable doesn't exist at /github/home/.cache/ms-playwright/chromium_headless_shell-1234/...
+```
+
+**Root cause:** GitHub's runner sets `HOME=/github/home` on every job container **unconditionally, at container-create time** — appended after whatever `-e HOME=...` is supplied via `container.options`, so the later, GitHub-controlled value always wins. `-e HOME=/home/node` never actually took effect in real CI, for any of the seven jobs — it only appeared to work under `act`, which doesn't replicate this GitHub-specific override, so it passed every local check while being silently dead in the one place it needed to work.
+
+**Real fix:** stop depending on `$HOME` at all. `Dockerfile.node`'s `testing` stage now bakes `ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright` (a fixed, `$HOME`-independent path, `chown`-ed to `node` while still root, set before `RUN npx playwright install chromium`) — Playwright's own documented mechanism for exactly this, and since it's an image-level `ENV` rather than a per-container `-e` flag, it isn't subject to GitHub's `HOME` override (which only ever touches that one variable, not the container's other inherited environment). `-e HOME=/home/node` was removed from all seven job files' `options:` — it was dead configuration with no effect in real CI to begin with.
+
+This is a second instance of the same fidelity gap noted above: a fully green `act` run (even from a cleared cache) doesn't prove a real GitHub Actions run will succeed, specifically for anything that depends on runner-injected environment/mount behavior `act` doesn't reproduce.
 
 ### `playwright.yml`: two more local-only workarounds
 

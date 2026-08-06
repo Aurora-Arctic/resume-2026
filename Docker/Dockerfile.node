@@ -35,6 +35,19 @@ RUN apt-get update && apt-get install -y \
     libatspi2.0-0 \
     && apt-get clean
 
+# Fixed, $HOME-independent browser cache location. Playwright defaults to
+# $HOME/.cache/ms-playwright, but GitHub Actions container jobs force
+# HOME=/github/home on every step — at container-create time, unconditionally,
+# overriding any -e HOME set via container.options — which broke that default
+# in real CI even though it worked locally and under `act` (see playwright.yml
+# and CI-SETUP.md). Baking PLAYWRIGHT_BROWSERS_PATH into the image makes the
+# browser location independent of whatever $HOME resolves to in any execution
+# context. Must match at install time and run time (Playwright's own
+# requirement) — ENV here satisfies that for both the RUN below and every
+# later container invocation.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN mkdir -p /ms-playwright && chown node:node /ms-playwright
+
 USER node
 
 # Browser binary matching the sole project configured in playwright.config.ts.
