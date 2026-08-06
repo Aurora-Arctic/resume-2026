@@ -35,7 +35,8 @@
         "usernamehw.errorlens",
         "christian-kohler.path-intellisense",
         "streetsidesoftware.code-spell-checker",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "ms-playwright.playwright"
       ]
     }
   }
