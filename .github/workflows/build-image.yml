@@ -18,7 +18,7 @@ jobs:
       image: ${{ steps.tag.outputs.image }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Compute content-addressed image tag
         id: tag
