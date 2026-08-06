@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "react", "jsx-a11y"],
+  "settings": {
+    "react": {
+      "version": "19.2.8"
+    }
+  },
+  "ignorePatterns": ["public", ".cache"],
+  "overrides": [
+    {
+      "files": [
+        "gatsby-config.ts",
+        "gatsby-node.ts",
+        "gatsby-ssr.ts",
+        "vitest.config.ts",
+        "playwright.config.ts",
+        "e2e/**/*.ts"
+      ],
+      "env": {
+        "node": true
+      }
+    },
+    {
+      "files": ["src/**/*.{ts,tsx}", "gatsby-browser.ts"],
+      "env": {
+        "browser": true
+      }
+    }
+  ]
+}

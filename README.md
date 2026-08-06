@@ -38,10 +38,10 @@ This attaches to an already-running dev server rather than launching one itself,
 
 ## Linting & formatting
 
-- **ESLint** (`eslint.config.mjs`) checks code correctness — `typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, and `eslint-plugin-jsx-a11y`. Run it with `make npm-lint` (or `npm run lint`, inside the `devcontainer` service), and `make npm-lint-fix` to auto-fix what it can.
-- **Prettier** (`.prettierrc`) handles all formatting — ESLint doesn't check style itself; `eslint-config-prettier` disables the ESLint rules that would otherwise conflict with it. Run it with `make npm-format` to write changes, or `make npm-format-check` for a check-only pass (no writes) suitable for CI. `.prettierignore` excludes `node_modules`, build output (`public`, `.cache`), and generated files (`package-lock.json`).
-- Both tools cover the whole project in one pass — there's no separate config per directory — but `eslint.config.mjs` does split globals by execution context (Node globals for `gatsby-*.ts` build-time files, browser globals for `src/**`).
-- **Editor integration**: the `devcontainer` service's VS Code config ([.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)) installs the ESLint (`dbaeumer.vscode-eslint`) and Prettier (`esbenp.prettier-vscode`) extensions automatically, and sets `editor.formatOnSave` (Prettier) plus `source.fixAll.eslint` as a code action on save — so both run automatically in the editor, not just at commit time via the pre-commit hook.
+- **Oxlint** (`.oxlintrc.json`) checks code correctness — a Rust-based linter with built-in `typescript`, `unicorn`, `oxc`, `react` (including hooks rules), and `jsx-a11y` plugins, no separate npm packages needed. Run it with `make npm-lint` (or `npm run lint`, inside the `devcontainer` service), and `make npm-lint-fix` to auto-fix what it can.
+- **Prettier** (`.prettierrc`) handles all formatting — Oxlint doesn't ship the kind of low-level formatting rules that would conflict with it, so no bridging config is needed. Run it with `make npm-format` to write changes, or `make npm-format-check` for a check-only pass (no writes) suitable for CI. `.prettierignore` excludes `node_modules`, build output (`public`, `.cache`), and generated files (`package-lock.json`).
+- Both tools cover the whole project in one pass — there's no separate config per directory — but `.oxlintrc.json` does split globals by execution context (Node globals for `gatsby-*.ts` build-time files, browser globals for `src/**`).
+- **Editor integration**: the `devcontainer` service's VS Code config ([.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)) installs the Oxlint (`oxc.oxc-vscode`) and Prettier (`esbenp.prettier-vscode`) extensions automatically, and sets `editor.formatOnSave` (Prettier) plus `source.fixAll.oxc` as a code action on save — so both run automatically in the editor, not just at commit time via the pre-commit hook.
 - **Pre-commit hook**: the [`pre-commit`](https://www.npmjs.com/package/pre-commit) npm package is a devDependency, configured via the `"pre-commit"` field in `package.json` to run `npm run lint`, `npm run format:check`, and `npm run typecheck` before every commit. It registers a real `.git/hooks/pre-commit` hook as part of `npm install`'s install scripts, so it's set up automatically the first time you run `make npm-install` (or plain `npm install`) inside the `devcontainer` service — no separate setup step. A commit is blocked if any check fails; run `make npm-lint-fix` / `make npm-format` to fix what's auto-fixable and try again. Run the same three checks on demand, without committing, via `make npm-pre-commit`.
 
 ## Available commands
@@ -62,8 +62,8 @@ The `npm` column below lists the underlying script — run it inside the `devcon
 
 | npm                    | make                    | Description                                                                |
 | ---------------------- | ----------------------- | -------------------------------------------------------------------------- |
-| `npm run lint`         | `make npm-lint`         | ESLint over the whole project                                              |
-| `npm run lint:fix`     | `make npm-lint-fix`     | ESLint with auto-fix                                                       |
+| `npm run lint`         | `make npm-lint`         | Oxlint over the whole project                                              |
+| `npm run lint:fix`     | `make npm-lint-fix`     | Oxlint with auto-fix                                                       |
 | `npm run format`       | `make npm-format`       | Prettier write over the whole project                                      |
 | `npm run format:check` | `make npm-format-check` | Prettier check (no writes), for CI                                         |
 | `npm run pre-commit`   | `make npm-pre-commit`   | Run the pre-commit hook's checks (lint, format check, typecheck) on demand |
