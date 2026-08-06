@@ -2,7 +2,7 @@ import type { GatsbyConfig } from 'gatsby';
 
 const config: GatsbyConfig = {
   siteMetadata: {
-    title: 'Resume 2026',
+    title: "Marwynn's Resume",
     description: 'My resume for 2026 built with Gatsby.',
   },
   plugins: [
