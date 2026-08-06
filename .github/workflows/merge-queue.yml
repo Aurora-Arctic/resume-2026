@@ -1,0 +1,51 @@
+name: Merge queue
+
+# Requires "Require merge queue" to be enabled in branch protection for `main`
+# (Settings -> Branches) — that setting is what activates merge_group events;
+# this workflow file alone does not turn the merge queue itself on.
+on:
+  merge_group:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-image:
+    uses: ./.github/workflows/jobs/build-image.yml
+
+  lint:
+    needs: build-image
+    uses: ./.github/workflows/jobs/lint.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  format:
+    needs: build-image
+    uses: ./.github/workflows/jobs/format.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  typecheck:
+    needs: build-image
+    uses: ./.github/workflows/jobs/typecheck.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  vitest:
+    needs: build-image
+    uses: ./.github/workflows/jobs/vitest.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  build:
+    needs: build-image
+    uses: ./.github/workflows/jobs/build.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  playwright:
+    needs: build-image
+    uses: ./.github/workflows/jobs/playwright.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}

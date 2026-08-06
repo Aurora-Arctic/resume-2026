@@ -1,0 +1,53 @@
+name: PR gate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write
+
+jobs:
+  build-image:
+    uses: ./.github/workflows/jobs/build-image.yml
+
+  lint:
+    needs: build-image
+    uses: ./.github/workflows/jobs/lint.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  format:
+    needs: build-image
+    uses: ./.github/workflows/jobs/format.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  typecheck:
+    needs: build-image
+    uses: ./.github/workflows/jobs/typecheck.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  vitest:
+    needs: build-image
+    uses: ./.github/workflows/jobs/vitest.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  build:
+    needs: build-image
+    uses: ./.github/workflows/jobs/build.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+
+  # Non-blocking, PR-only — see .github/workflows/jobs/audit.yml.
+  audit:
+    needs: build-image
+    uses: ./.github/workflows/jobs/audit.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ github.event.pull_request.number }}

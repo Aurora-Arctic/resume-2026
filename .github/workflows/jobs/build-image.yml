@@ -1,0 +1,52 @@
+name: Build testing image
+
+on:
+  workflow_call:
+    outputs:
+      image:
+        description: Fully qualified, content-addressed testing image ref
+        value: ${{ jobs.build.outputs.image }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.tag.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute content-addressed image tag
+        id: tag
+        run: |
+          repo_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          hash="${{ hashFiles('Docker/Dockerfile.node', 'package-lock.json') }}"
+          echo "image=ghcr.io/${repo_lower}/testing:${hash}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Layers (apt-get, npm i, playwright install) are cached via GHA cache, so this
+      # is fast even on a rebuild, and near-instant if this exact image ref already
+      # exists in GHCR (unchanged Dockerfile.node + package-lock.json).
+      - name: Build and push testing image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Docker/Dockerfile.node
+          target: testing
+          push: true
+          tags: ${{ steps.tag.outputs.image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

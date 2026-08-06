@@ -13,6 +13,7 @@ A personal resume site (`resume-2026`) built with Gatsby 5, React 18, and TypeSc
 - `npm run build` — production build (outputs to `public/`)
 - `npm run serve` — serve the production build locally
 - `npm run clean` — clear Gatsby's `.cache` and `public` output directories
+- `npm run typecheck` — `tsc --noEmit`; `tsconfig.json` has `noEmit: true` so this is the only way to surface type errors (ESLint's `typescript-eslint` config is non-type-checked)
 - `npm run lint` — ESLint over the whole project (`npm run lint:fix` to auto-fix)
 - `npm run format` — Prettier write over the whole project (`npm run format:check` for CI-style check without writing)
 - `npm test` — run unit/component tests once (Vitest, `npm run test:watch` for watch mode)
@@ -41,6 +42,17 @@ A personal resume site (`resume-2026`) built with Gatsby 5, React 18, and TypeSc
 - `Dockerfile.node`'s `builder` stage runs `npm i` as the `node` user (via `USER node` before the install), not root — this was fixed after root-owned `npm i` output baked root-owned `node_modules` into the image/volume, breaking `npm install` for anyone working as `node` (the devcontainer's default user) afterward. If you ever see `EACCES` on `node_modules` in the devcontainer, the named volume itself is stale from before this fix — recreate it (`docker compose down -v`, then rebuild) rather than re-patching the Dockerfile.
 - The `devcontainer` service passes through `CLAUDE_CODE_OAUTH_TOKEN` so the Claude Code CLI is pre-authenticated on start, sourced from `Docker/.env` (git-ignored — see `Docker/.env.example`). This exists because normal `/login` credentials are stored differently per host OS (a plain file on Linux, but the encrypted Keychain on macOS), so a bind-mounted credentials file only works for Linux hosts; a long-lived token generated via `claude setup-token` on the host works everywhere. `docker compose`'s default project directory is wherever the compose file lives, so the `.env` file must be at `Docker/.env`, not the repo root.
 - `make docker-up` and `make docker-rebuild` depend on the `docker-update-token` target, which runs `Docker/update-token.sh` before Docker starts. That script runs `claude setup-token` (an interactive browser OAuth login) on the host every time, extracts the printed `sk-ant-oat...` token, and upserts `CLAUDE_CODE_OAUTH_TOKEN` in `Docker/.env` — so the token is always freshly regenerated before the containers come up. `make docker-build`/`docker-down`/`docker-logs` don't trigger it, since they don't start the `devcontainer` service.
+
+## Continuous Integration
+
+- GitHub Actions, `.github/workflows/`. Two phase workflows, each composed from small reusable workflows (`workflow_call`) under `.github/workflows/jobs/` — `lint.yml`, `format.yml`, `typecheck.yml`, `vitest.yml`, `build.yml`, `playwright.yml`, `audit.yml` — so each check is defined once and shared across phases rather than duplicated per-phase.
+  - **`pr-gate.yml`** (`pull_request` → `main`): lint, format check, typecheck, Vitest, build, plus a non-blocking `npm audit` that posts/updates a single PR comment (not a new comment per run).
+  - **`merge-queue.yml`** (`merge_group`): the same five blocking checks as `pr-gate`, plus Playwright e2e (deliberately left out of `pr-gate` since it's the slowest check — it only needs to run once more, right before merge). No `audit` here; that's PR-only.
+  - There's intentionally no push-to-`main` workflow — `merge-queue` already re-verifies everything (including e2e) immediately before a commit lands, so a post-merge run would just duplicate that coverage.
+  - **Enabling the merge queue is a manual, one-time repo setting** — a workflow listening for `merge_group` does nothing until "Require merge queue" is turned on for `main` in Settings → Branches → branch protection. Without it, `merge-queue.yml` never triggers.
+- **Execution environment**: every check runs inside the existing `testing` stage of `Docker/Dockerfile.node` (see Docker section above) via each job's `container:` key, not on the bare runner — this is the same image/stage used for local e2e testing, so CI and local Playwright runs behave identically. `.github/workflows/jobs/build-image.yml` builds/pushes that stage to GHCR under a tag derived from `hashFiles('Docker/Dockerfile.node', 'package-lock.json')` and is called first by both phase workflows; unless one of those two inputs changes, every job just pulls the existing tag rather than rebuilding.
+- Since `container:` jobs fix `GITHUB_WORKSPACE` at `/github/workspace` (not `/app`), every job workflow checks out normally and then copies that checkout into `/app` (`cp -a "$GITHUB_WORKSPACE"/. /app/`) before running its command — `/app` already has `node_modules` from the image's own `npm i` at build time, so nothing needs to reinstall.
+- **Dependabot**: `.github/dependabot.yml` — weekly PRs for `npm` dependencies, `github-actions` versions, and the `docker` base image pin in `Dockerfile.node`.
 
 ## Architecture
 

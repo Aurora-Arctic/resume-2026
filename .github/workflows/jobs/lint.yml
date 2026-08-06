@@ -1,0 +1,37 @@
+name: Lint
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: Testing image ref to run against (from build-image.yml)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ inputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    defaults:
+      run:
+        working-directory: /app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # actions/checkout always lands in $GITHUB_WORKSPACE, not /app. Copy the
+      # checked-out source into /app, where the image's own npm i already
+      # populated node_modules at build time, instead of reinstalling.
+      - name: Copy checkout into /app
+        run: cp -a "$GITHUB_WORKSPACE"/. /app/
+
+      - name: Run lint
+        run: npm run lint

@@ -1,0 +1,55 @@
+name: Playwright e2e
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: Testing image ref to run against (from build-image.yml)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ inputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      # Chromium needs more than the container default 64MB /dev/shm, or it crashes.
+      options: --ipc=host
+    defaults:
+      run:
+        working-directory: /app
+    env:
+      # playwright.config.ts's webServer.reuseExistingServer reads this to decide
+      # whether to always start a fresh server rather than reusing one on :8000.
+      CI: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # actions/checkout always lands in $GITHUB_WORKSPACE, not /app. Copy the
+      # checked-out source into /app, where the image's own npm i already
+      # populated node_modules at build time, instead of reinstalling.
+      - name: Copy checkout into /app
+        run: cp -a "$GITHUB_WORKSPACE"/. /app/
+
+      # playwright.config.ts's webServer runs `npm run build && npm run serve`
+      # itself, so no separate build step is needed here.
+      - name: Run Playwright e2e tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            /app/playwright-report/
+            /app/test-results/
+          retention-days: 7
