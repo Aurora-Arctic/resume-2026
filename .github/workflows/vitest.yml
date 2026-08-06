@@ -1,4 +1,4 @@
-name: Lint
+name: Vitest
 
 on:
   workflow_call:
@@ -12,7 +12,7 @@ on:
         required: false
         type: number
       merge-queue:
-        description: Set true when called from merge-queue.yml — uses a separate, merge-queue-labeled comment thread and posts only on failure (no minimize-on-success)
+        description: Set true when called from merge-queue.yml — uses a separate, merge-queue-labeled comment thread and posts only on failure, instead of always commenting pass/fail
         required: false
         type: boolean
         default: false
@@ -23,45 +23,53 @@ permissions:
   pull-requests: write
 
 jobs:
-  lint:
+  vitest:
     runs-on: ubuntu-latest
     container:
       image: ${{ inputs.image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+      # The image's default user (node, non-root) can't write to the runner's
+      # bind-mounted _temp/_runner_file_commands dir, which actions/checkout (and
+      # any JS action using core.saveState/setOutput) needs — EACCES otherwise.
+      options: --user root -e HOME=/home/node
     defaults:
       run:
         working-directory: /app
+        # container: jobs default to sh, not bash, unlike normal runs-on jobs —
+        # https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container
+        # sh (dash) doesn't support `set -o pipefail`, used below.
+        shell: bash
     steps:
       - name: Checkout into /app
-        uses: ./.github/actions/checkout-to-app
+        uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
-      - name: Run lint
+      - name: Run vitest
         id: run
         run: |
           set -o pipefail
-          npm run lint 2>&1 | tee /app/output.log
+          npm test 2>&1 | tee /app/output.log
 
       - name: Write job summary
         if: always()
         uses: ./.github/actions/job-summary
         with:
-          check-name: Lint
+          check-name: Vitest
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
 
-      # Fail-only from pr-gate (resolves a prior failure comment on success),
-      # fail-only on a separate merge-queue-labeled thread from merge-queue
-      # (no action at all on success) — see .github/actions/pr-comment.
+      # Always comments pass/fail from pr-gate; fail-only on a separate
+      # merge-queue-labeled thread from merge-queue (no action at all on
+      # success) — see .github/actions/pr-comment.
       - name: Comment on PR
         if: always() && inputs.pr-number
         uses: ./.github/actions/pr-comment
         with:
-          check-name: Lint
-          marker-slug: lint
+          check-name: Vitest
+          marker-slug: vitest
           pr-number: ${{ inputs.pr-number }}
           merge-queue: ${{ inputs.merge-queue }}
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
-          success-mode: minimize
+          success-mode: comment
