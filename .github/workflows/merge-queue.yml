@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build-image:
-    uses: ./.github/workflows/jobs/build-image.yml
+    uses: ./.github/workflows/build-image.yml
 
   # merge_group events don't carry a plain PR number the way pull_request events
   # do — it's embedded in the merge group's ref instead
@@ -33,7 +33,7 @@ jobs:
 
   lint:
     needs: [build-image, pr-number]
-    uses: ./.github/workflows/jobs/lint.yml
+    uses: ./.github/workflows/lint.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ needs.pr-number.outputs.number }}
@@ -41,7 +41,7 @@ jobs:
 
   format:
     needs: [build-image, pr-number]
-    uses: ./.github/workflows/jobs/format.yml
+    uses: ./.github/workflows/format.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ needs.pr-number.outputs.number }}
@@ -49,7 +49,7 @@ jobs:
 
   typecheck:
     needs: [build-image, pr-number]
-    uses: ./.github/workflows/jobs/typecheck.yml
+    uses: ./.github/workflows/typecheck.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ needs.pr-number.outputs.number }}
@@ -57,7 +57,7 @@ jobs:
 
   vitest:
     needs: [build-image, pr-number]
-    uses: ./.github/workflows/jobs/vitest.yml
+    uses: ./.github/workflows/vitest.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ needs.pr-number.outputs.number }}
@@ -65,13 +65,13 @@ jobs:
 
   build:
     needs: build-image
-    uses: ./.github/workflows/jobs/build.yml
+    uses: ./.github/workflows/build.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
 
   playwright:
     needs: [build-image, pr-number]
-    uses: ./.github/workflows/jobs/playwright.yml
+    uses: ./.github/workflows/playwright.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ needs.pr-number.outputs.number }}
