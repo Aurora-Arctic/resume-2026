@@ -18,7 +18,13 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // playwright.yml's CI container runs as root (see there for why) —
+        // Chromium refuses to launch as root without this. Not needed locally,
+        // where the devcontainer/testing image runs as the non-root node user.
+        launchOptions: process.env.CI ? { args: ['--no-sandbox'] } : {},
+      },
     },
   ],
 });
