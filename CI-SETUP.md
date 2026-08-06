@@ -61,6 +61,17 @@ Playwright previously only ran from `merge-queue`, on the reasoning that it was 
 - `merge-queue.yml`'s `playwright` job is unchanged — Playwright still re-runs there too, deliberately, since the merge queue can include commits from other PRs merged since `pr-gate` last ran on this one; that duplication is the same reasoning that already applied to `lint`/`format`/`typecheck`/`vitest`/`build` running in both phases.
 - The stale comment in `playwright.yml`'s "Comment on PR" step (which called the pr-gate code path "currently unused in practice") was updated to reflect that it's now the primary way Playwright results reach a PR before merge.
 
+## Follow-up: fix `pr-gate` concurrency corrupting the shared `build-image` cache
+
+`pr-gate.yml` gained a workflow-level `concurrency` block (`cancel-in-progress: true`, grouped by PR number) to stop stacked runs piling up when a PR got pushed to repeatedly. This cancelled the _entire_ run on a new push — including `build-image`, mid-`docker buildx build --push`. Since `build-image` writes to a shared, content-addressed GHCR tag and GHA layer cache (`cache-to: type=gha,mode=max`, keyed by `hashFiles('Docker/Dockerfile.node', 'package-lock.json')`), killing it mid-write could freeze a half-written layer into that cache/tag — observed in practice as oxlint's optional native binding going missing (`Cannot find native binding`) in the `lint` job, on a run that hadn't touched any lint-relevant code. Because the tag/cache key doesn't change until the two hashed files do, the corruption didn't self-heal on retry — every subsequent run with the same Dockerfile/lockfile kept reusing the same broken image.
+
+Fixed in two parts:
+
+- **`pr-gate.yml`**: removed the workflow-level `concurrency` block. `lint`, `format`, `typecheck`, `vitest`, `build`, `playwright`, and `audit` each got their own job-level `concurrency` group instead (`pr-gate-<job>-<pr-number>`, `cancel-in-progress: true`) — a new push cancels only that job's own stale run, not the whole graph. `build-image` got a job-level group too, but with `cancel-in-progress: false`: a superseded run's `build-image` queues behind whatever's currently pushing rather than killing it (avoiding the corruption above) or racing it in parallel (avoiding two builds writing the same tag/cache concurrently).
+- **`build-image.yml`**: to keep that queue from actually costing wait time in the common case, added a `docker buildx imagetools inspect` check before the build step, and made the build/push step conditional (`if: steps.check.outputs.exists != 'true'`) on that tag not already existing. Most pushes to a PR touch neither `Dockerfile.node` nor `package-lock.json`, so the tag from an earlier run (this PR or `main`) is already in GHCR — the job now just confirms that in a few seconds and exits, with nothing mutable in flight, so it's always safe to cancel/supersede. The `cancel-in-progress: false` queue only bites when a real rebuild is happening, i.e. the hash actually changed — the one case where serializing concurrent identical rebuilds is correct and cheap (it's rare).
+
+`CLAUDE.md`'s CI section was updated to document both the per-job concurrency groups and the existence-check skip.
+
 ## Files created / changed
 
 - `.github/actions/pr-comment/action.yml` — composite action for the shared "Comment on PR" logic; see "Follow-up: DRY out the repeated step logic" above.

@@ -11,11 +11,28 @@ permissions:
   pull-requests: write
 
 jobs:
+  # build-image pushes to a shared, content-addressed GHCR tag and GHA layer
+  # cache (cache-to: type=gha,mode=max) keyed off Dockerfile.node +
+  # package-lock.json. Cancelling it mid-push can freeze a half-written layer
+  # (e.g. an optional native binding download cut short) into that cache/tag,
+  # which every later run with the same Dockerfile/lockfile hash would then
+  # keep reusing — a corruption that doesn't self-heal on retry. So
+  # cancel-in-progress is false here: a superseded run's build-image queues
+  # behind the one in flight instead of being killed (avoiding corruption) or
+  # left to race it in parallel (avoiding wasted/racy duplicate pushes to the
+  # same tag). The jobs below are cheap to rerun and don't share mutable
+  # state, so they get their own cancellable concurrency groups instead.
   build-image:
+    concurrency:
+      group: pr-gate-build-image-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     uses: ./.github/workflows/build-image.yml
 
   lint:
     needs: build-image
+    concurrency:
+      group: pr-gate-lint-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     uses: ./.github/workflows/lint.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
@@ -23,6 +40,9 @@ jobs:
 
   format:
     needs: build-image
+    concurrency:
+      group: pr-gate-format-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     uses: ./.github/workflows/format.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
@@ -30,6 +50,9 @@ jobs:
 
   typecheck:
     needs: build-image
+    concurrency:
+      group: pr-gate-typecheck-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     uses: ./.github/workflows/typecheck.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
@@ -37,6 +60,9 @@ jobs:
 
   vitest:
     needs: build-image
+    concurrency:
+      group: pr-gate-vitest-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     uses: ./.github/workflows/vitest.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
@@ -44,12 +70,18 @@ jobs:
 
   build:
     needs: build-image
+    concurrency:
+      group: pr-gate-build-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     uses: ./.github/workflows/build.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
 
   playwright:
     needs: build-image
+    concurrency:
+      group: pr-gate-playwright-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     uses: ./.github/workflows/playwright.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
@@ -58,6 +90,9 @@ jobs:
   # Non-blocking, PR-only — see .github/workflows/audit.yml.
   audit:
     needs: build-image
+    concurrency:
+      group: pr-gate-audit-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     uses: ./.github/workflows/audit.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
