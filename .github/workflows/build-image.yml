@@ -18,7 +18,7 @@ jobs:
       image: ${{ steps.tag.outputs.image }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Compute content-addressed image tag
         id: tag
@@ -28,20 +28,20 @@ jobs:
           echo "image=ghcr.io/${repo_lower}/testing:${hash}" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Layers (apt-get, npm i, playwright install) are cached via GHA cache, so this
       # is fast even on a rebuild, and near-instant if this exact image ref already
       # exists in GHCR (unchanged Dockerfile.node + package-lock.json).
       - name: Build and push testing image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Docker/Dockerfile.node
