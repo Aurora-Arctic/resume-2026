@@ -10,7 +10,7 @@ on:
       pr-number:
         description: Pull request number to comment on
         required: true
-        type: number
+        type: string
 
 permissions:
   contents: read

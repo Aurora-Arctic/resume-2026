@@ -10,7 +10,7 @@ on:
       pr-number:
         description: Pull request number to comment on (omit to skip PR commenting)
         required: false
-        type: number
+        type: string
       merge-queue:
         description: Set true when called from merge-queue.yml — uses a separate, merge-queue-labeled comment thread and posts only on failure (no minimize-on-success)
         required: false
