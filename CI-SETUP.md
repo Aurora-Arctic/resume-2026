@@ -202,3 +202,118 @@ For reference, at ~100 builds/month (one `pr-gate` run + one `merge-queue` run p
 3. Push a branch and open a draft PR against `main` — confirms `pr-gate.yml` triggers, `build-image` populates GHCR, and all five jobs (plus audit's PR comment) succeed.
 4. Manually enable "Require merge queue" in branch protection for `main`, then merge the draft PR through the queue — confirms `merge-group.yml` triggers off `merge_group` and Playwright passes inside the container.
 5. Edit `package-lock.json` or `Dockerfile.node` in a follow-up PR and confirm `build-image` actually rebuilds (new hash → cache miss) rather than silently reusing a stale image.
+
+## Local CI testing with `act`
+
+A host-level (not devcontainer-integrated) setup for running the individual job workflows under [`nektos/act`](https://github.com/nektos/act) before pushing, so `lint`/`format`/`typecheck`/`vitest` failures surface locally instead of only in `pr-gate`. This is a separate, host-only workflow from the devcontainer-based `npm`/`make` commands documented in the README — it is not wired into `docker-compose.yaml` or `.devcontainer/`.
+
+Coverage of the seven job workflows under `.github/workflows/jobs/`:
+
+| Job                                              | Status                                                                                                                                                                                                    |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lint`, `format`, `typecheck`, `vitest`, `build` | Fully validated via act, repeatable command documented below                                                                                                                                              |
+| `playwright`                                     | Fully validated via act (real Playwright run, tests pass), repeatable command documented below                                                                                                            |
+| `audit`                                          | `npm audit` portion validated once manually (temporary `if: false` on the comment step, reverted afterward) — not repeatable as-is, since it requires editing the file each time; see "`audit.yml`" below |
+| `build-image`                                    | Deliberately out of scope — pushes to GHCR, which has no reason to happen from a laptop; see "Out of scope" below                                                                                         |
+
+### Why host-level, not inside the devcontainer
+
+Running `act` inside the devcontainer via a socket-mounted Docker-outside-of-Docker setup was evaluated and rejected: every job in this repo uses `container:`, and act's job containers become siblings on the host daemon rather than nested inside the devcontainer, so bind-mounted paths don't resolve correctly — a known, recurring class of bug in act specifically for `container:`-type jobs run through a mounted host socket. Running `act` directly on the host keeps host paths and Docker paths consistent and avoids that whole bug class.
+
+### Setup
+
+1. **Install `act`**: no Homebrew or Go toolchain was available on this host, so it was installed via the official install script targeting `~/.local/bin` (already on `PATH`), not `/usr/local/bin`, to avoid needing `sudo`:
+   ```
+   curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | sh -s -- -b "$HOME/.local/bin"
+   ```
+2. **Confirm host Docker is reachable**: `docker ps` — this is the host's Docker Desktop, unrelated to anything running inside the devcontainer's containers.
+3. **Build the `testing` image locally**, from the current working tree — not pulled from GHCR. GHCR's `testing` image is rebuilt fresh on every push and tagged by `hashFiles('Docker/Dockerfile.node', 'package-lock.json')`; pulling a GHCR tag would validate a stale, previously-pushed image rather than the code actually being tested locally:
+   ```
+   make act-image
+   # equivalent to: docker build -f Docker/Dockerfile.node --target testing -t resume-2026-testing:local .
+   ```
+   Every `make act-*` target below depends on `act-image`, so it's rebuilt (fast, from cache, unless `Dockerfile.node`/`package-lock.json` changed) before every run — no separate step needed day to day.
+4. **`.actrc`** (repo root) pins the runner image act needs for job orchestration (the job's _own_ `container:` image is what actually runs the check — the runner image below only hosts act's orchestration layer) and two flags explained below:
+   ```
+   -P ubuntu-latest=catthehacker/ubuntu:act-latest
+   --bind
+   --pull=false
+   ```
+
+### Running a job
+
+Wrapped as `make` targets (see the makefile's `act-*` section) so the full command doesn't need to be retyped:
+
+| make                  | Runs                                                                                                                                                              |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make act-image`      | Builds `resume-2026-testing:local` from the current working tree (a prerequisite of every target below, so it's always kept fresh)                                |
+| `make act-lint`       | `lint.yml -j lint`                                                                                                                                                |
+| `make act-format`     | `format.yml -j format`                                                                                                                                            |
+| `make act-typecheck`  | `typecheck.yml -j typecheck`                                                                                                                                      |
+| `make act-vitest`     | `vitest.yml -j vitest`                                                                                                                                            |
+| `make act-build`      | `build.yml -j build`                                                                                                                                              |
+| `make act-playwright` | `playwright.yml -j playwright` (auto-seeds the `actions/upload-artifact@v4` cache the first time — see below — then adds `--action-offline-mode --env PORT=8001`) |
+| `make act-test`       | All six of the above, in order, stopping at the first failure — the closest local equivalent to `pr-gate`/`merge-queue`'s blocking checks                         |
+
+The underlying command each target runs, spelled out (using `lint` as the example — the others swap the `-j` job id and `-W` path):
+
+```
+act -W .github/workflows/jobs/lint.yml -j lint --input image=resume-2026-testing:local -s GITHUB_TOKEN=dummy-token
+```
+
+`--input image=...` supplies the `image` input every job workflow requires (normally provided by `build-image.yml`, which is deliberately never run through act — see "Out of scope" below). `-s GITHUB_TOKEN=dummy-token` supplies a placeholder — required because `container.credentials.password` reads `secrets.GITHUB_TOKEN`, and act fails to even start the job if that secret is entirely unset (an empty string doesn't work either — it must be a non-empty value). A placeholder is fine for these five jobs since nothing in their steps actually calls the GitHub API with it — `playwright.yml` is the one exception, see below.
+
+`pr-number` is deliberately never supplied — per the job workflows' own `if: always() && inputs.pr-number` guard, omitting it skips the PR-comment step (GraphQL calls with nothing real to talk to locally) without needing any workflow changes.
+
+`audit` and `build-image` don't have `make` targets — see "`audit.yml`" and "Out of scope" below for why.
+
+### Two real act bugs found and worked around
+
+Getting the local composite actions (`.github/actions/checkout-to-app`, `job-summary`, `pr-comment`) to resolve at all took two rounds of debugging — both are genuine, documented `act` limitations, not misconfiguration in this repo's workflows:
+
+- **`--bind` (not the default copy mode)**: without it, every job failed at its very first step (`uses: ./.github/actions/checkout-to-app`) with `failed to read 'action.yml' from action ... with path '' of step: file does not exist` — reproducible even with no `container:` key at all, and even when the identical composite action was called through a `workflow_call` chain primed by an unrelated prior job. Root cause: act's default mode copies the checked-out repo into the job container only once an explicit checkout step actually runs, but every job workflow here uses the local composite action as its literal first step — so act tries to read that composite's own `action.yml` before anything has been copied into the container yet, a chicken-and-egg gap it can't resolve on its own (matches [nektos/act#1193](https://github.com/nektos/act/issues/1193), a known recurring regression). `--bind` mounts the host working directory into the container directly instead of copying it in on a delay, so the composite action's manifest is visible from the moment the container starts — no copy-timing gap. (`docker ps`/host-side ownership were checked before and after adopting `--bind`, confirming it doesn't mutate host file ownership despite the container running a `chown` against what looks like the host path.)
+- **`shell: bash` needed explicitly in `container:` jobs**: once `--bind` fixed action resolution, `lint`, `format`, `typecheck`, `vitest`, and `playwright` all failed identically on `set: Illegal option -o pipefail` — not an act bug. Per [GitHub's own docs](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container), `container:` jobs default to `sh` (dash), unlike normal `runs-on` jobs which default to `bash` — dash doesn't support `set -o pipefail`. Since this CI setup had never actually been exercised against a real PR yet (see "Verification" above), this was a live, undiscovered bug in the real workflow files, not just an artifact of running under act — fixed by adding `shell: bash` to `defaults.run` in all five affected job files.
+
+### `playwright.yml`: two more local-only workarounds
+
+`build.yml` runs cleanly the same way as the four checks above. `playwright.yml` needed two additional, machine-local workarounds on top of `--bind` and `shell: bash` before it passed end to end — neither changes any committed file beyond the port override below.
+
+**1. Seeding act's action cache for `actions/upload-artifact@v4`.** act evaluates every action a job references up front, during "Set up job" — including `Upload Playwright report` (`uses: actions/upload-artifact@v4`), even though that step only runs `if: failure()`. Unlike `actions/checkout`, which act resolves without a network call, `actions/upload-artifact` isn't special-cased: act does a real HTTPS `git clone`, authenticated with `secrets.GITHUB_TOKEN`. The placeholder token above gets sent as invalid Basic auth and GitHub returns `401` (`authentication required: Invalid username or token`) — confirmed this isn't host-level (`git clone https://github.com/actions/upload-artifact` works anonymously from this machine outside of act) and isn't fixable with an empty-string token (that fails act's own `container.credentials.password` interpolation instead, before the job even starts). Rather than supply a real token, the action was seeded directly into act's local cache — a real git checkout at the `v4` tag (`.git` included; act resolves the ref through it, a flat file copy isn't enough) placed exactly where act's own clone would have gone:
+
+```
+git clone --depth 1 --branch v4 https://github.com/actions/upload-artifact ~/.cache/act/actions-upload-artifact@v4
+```
+
+`make act-playwright` runs this automatically (only if the directory doesn't already exist — see the makefile) before invoking act with `--action-offline-mode`, so this doesn't need to be run by hand; included here for what the target is actually doing under the hood, and as a manual fallback if `~/.cache/act` is ever cleared outside of `make`.
+
+**2. Port conflict with a running dev server.** act runs job containers with host networking, so Playwright's `webServer` (`npm run build && npm run serve`, bound to `:8000`) collides with anything already holding that port on the host — e.g. `docker-development-1` (`make docker-up`'s `development` service). Rather than requiring the dev server to be stopped, the port was made overridable: `package.json`'s `serve` script reads `${PORT:-8000}`, and `playwright.config.ts` reads `process.env.PORT` (both default to `8000`, so real CI and a plain `npm run serve` are unaffected). `make act-playwright` passes `PORT=8001` via act's `--env` flag; spelled out:
+
+```
+act -W .github/workflows/jobs/playwright.yml -j playwright --input image=resume-2026-testing:local -s GITHUB_TOKEN=dummy-token --action-offline-mode --env PORT=8001
+```
+
+With both in place, `playwright.yml` runs its actual `playwright test` suite against a real built-and-served site and passes.
+
+### `audit.yml`: one-off validation, not a repeatable command
+
+Unlike the other six job files, `audit.yml` doesn't have an optional `pr-number` / `if: inputs.pr-number`-guarded comment step — `pr-number` is a _required_ input, and its "Comment audit results on PR" step (`actions/github-script@v7`) has no conditional guard at all, so there's no way to exercise just the `npm audit` part through act as-is: it would either fail outright with a fake token, or (with a real one) actually post to a live PR/issue on the public repo. Validated once, manually, rather than added as a standing local command:
+
+1. Temporarily added `if: false` to the "Comment audit results on PR" step in `audit.yml`.
+2. act still tried to resolve `actions/github-script@v7` during "Set up job" despite the step being skipped at runtime — the same up-front action-resolution behavior noted for `actions/upload-artifact@v4` above. Seeded it into act's cache the same way:
+   ```
+   git clone --depth 1 --branch v7 https://github.com/actions/github-script ~/.cache/act/actions-github-script@v7
+   ```
+3. Ran it:
+   ```
+   act -W .github/workflows/jobs/audit.yml -j audit --input image=resume-2026-testing:local --input pr-number=1 -s GITHUB_TOKEN=dummy-token --action-offline-mode
+   ```
+   `npm audit` ran and produced real output (this repo does have some existing vulnerabilities in transitive deps — expected, and exactly what this non-blocking check is for). No `shell: bash` fix was needed here; the step's `run:` doesn't use `set -o pipefail`.
+4. Reverted the `if: false` — `audit.yml` itself is unchanged from before this validation.
+
+Not added to `.actrc`/documented as a repeatable command because it requires editing the real workflow file each time to skip the comment step — a one-off gut check that the `npm audit` step still works, not something to run before every push the way the other six are.
+
+### Out of scope (deliberately not attempted)
+
+- **`build-image.yml`**: pushes to GHCR, which has no reason to happen from a laptop — the local `docker build --target testing` above replaces it for local testing.
+- **`pr-gate.yml` / `merge-queue.yml` as whole graphs**: both start with a `needs: build-image` job that every other job depends on for its `image` input, so running either wholesale would require either running `build-image` (out of scope, see above) or fully faking its output — the individual `-W .github/workflows/jobs/<file>.yml -j <job>` invocations above already give equivalent per-check signal without either problem. `merge-queue.yml` additionally triggers on `merge_group`, which has no real local equivalent.
+- **PR-comment steps**: never exercised for real (see `pr-number` note above) — nothing real to comment on. `audit.yml`'s non-comment logic was validated once manually — see above.
