@@ -1,0 +1,34 @@
+name: Job summary
+description: >-
+  Writes a pass/fail section to $GITHUB_STEP_SUMMARY for a check step,
+  with a trailing log excerpt on failure. Shared by lint, format, typecheck,
+  vitest, and playwright so this surfaces identically in the run's own
+  Summary page for both pr-gate and merge-queue runs.
+
+inputs:
+  check-name:
+    description: Human-readable check name for the summary heading, e.g. "Vitest"
+    required: true
+  outcome:
+    description: Outcome of the check step (e.g. steps.run.outcome) — anything other than 'success' is treated as a failure
+    required: true
+  log-file:
+    description: Path to the check's captured output log, tailed for the failure summary
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Write job summary
+      shell: bash
+      run: |
+        if [ "${{ inputs.outcome }}" = "success" ]; then
+          echo "### ${{ inputs.check-name }}: ✅ passed" >> "$GITHUB_STEP_SUMMARY"
+        else
+          {
+            echo "### ${{ inputs.check-name }}: ❌ failed"
+            echo '```'
+            tail -n 100 "${{ inputs.log-file }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi

@@ -87,6 +87,14 @@ The `npm` column below lists the underlying script — run it inside the `devcon
 
 `make docker-up` and `make docker-rebuild` also regenerate the Claude Code OAuth token used by the dev container — see `CLAUDE.md` for details.
 
+## Continuous integration
+
+Every pull request against `main` runs **PR gate**: lint, format check, typecheck, Vitest, and a production build, plus a non-blocking `npm audit` that posts/updates a single PR comment. Right before a PR actually merges, the **merge queue** re-runs those same blocking checks and additionally runs the Playwright e2e suite — the one check deliberately left out of PR gate since it's the slowest.
+
+If a check fails, the bot posts (or updates) a single PR comment for that check with the failure output, rather than spamming a new comment per run — a later passing run resolves or removes it. A merge-queue failure is labeled `(merge queue)` and posted as its own comment, separate from any PR-gate comment for the same check, so you can tell which phase actually failed.
+
+For the full breakdown — job/workflow structure, the Docker image checks run inside, and the composite actions the check workflows share — see the "Continuous Integration" section of [CLAUDE.md](CLAUDE.md#continuous-integration). For the history of how it was designed and why (including follow-up changes after the initial setup), see [CI-SETUP.md](CI-SETUP.md).
+
 ## Documentation for contributors
 
 See [CLAUDE.md](CLAUDE.md) for a deeper look at project architecture, linting/testing conventions, and the Docker/dev container setup.

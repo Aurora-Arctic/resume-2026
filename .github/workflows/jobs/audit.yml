@@ -29,14 +29,8 @@ jobs:
       run:
         working-directory: /app
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # actions/checkout always lands in $GITHUB_WORKSPACE, not /app. Copy the
-      # checked-out source into /app, where the image's own npm i already
-      # populated node_modules at build time, instead of reinstalling.
-      - name: Copy checkout into /app
-        run: cp -a "$GITHUB_WORKSPACE"/. /app/
+      - name: Checkout into /app
+        uses: ./.github/actions/checkout-to-app
 
       # Non-blocking: npm audit exits non-zero when it finds vulnerabilities, but
       # this check should only report, never fail the PR gate.

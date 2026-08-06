@@ -34,14 +34,8 @@ jobs:
       run:
         working-directory: /app
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # actions/checkout always lands in $GITHUB_WORKSPACE, not /app. Copy the
-      # checked-out source into /app, where the image's own npm i already
-      # populated node_modules at build time, instead of reinstalling.
-      - name: Copy checkout into /app
-        run: cp -a "$GITHUB_WORKSPACE"/. /app/
+      - name: Checkout into /app
+        uses: ./.github/actions/checkout-to-app
 
       - name: Run format check
         id: run
@@ -51,84 +45,23 @@ jobs:
 
       - name: Write job summary
         if: always()
-        run: |
-          if [ "${{ steps.run.outcome }}" = "success" ]; then
-            echo "### Format check: ✅ passed" >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "### Format check: ❌ failed"
-              echo '```'
-              tail -n 100 /app/output.log
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+        uses: ./.github/actions/job-summary
+        with:
+          check-name: Format check
+          outcome: ${{ steps.run.outcome }}
+          log-file: /app/output.log
 
-      # From pr-gate (merge-queue: false): only comments when the format check
-      # fails. On a later success, an open failure comment is minimized via
-      # GitHub's resolve mechanism instead of left stale on the PR. A fresh
-      # failure after that un-minimizes it again.
-      #
-      # From merge-queue (merge-queue: true): uses a separate marker/thread so
-      # a merge-queue failure is never confused with (or overwritten by) a
-      # pr-gate comment on the same PR, and is labeled accordingly. Success
-      # takes no action at all — a prior merge-queue failure comment is left
-      # open rather than auto-minimized.
+      # Fail-only from pr-gate (resolves a prior failure comment on success),
+      # fail-only on a separate merge-queue-labeled thread from merge-queue
+      # (no action at all on success) — see .github/actions/pr-comment.
       - name: Comment on PR
         if: always() && inputs.pr-number
-        uses: actions/github-script@v7
+        uses: ./.github/actions/pr-comment
         with:
-          script: |
-            const fs = require('fs');
-            const isMergeQueue = ${{ inputs.merge-queue }};
-            const marker = isMergeQueue ? '<!-- ci-format-mergequeue -->' : '<!-- ci-format -->';
-            const heading = isMergeQueue ? '### Format check (merge queue)' : '### Format check';
-            const outcome = '${{ steps.run.outcome }}';
-            const { owner, repo } = context.repo;
-            const prNumber = ${{ inputs.pr-number }};
-
-            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: prNumber });
-            const existing = comments.data.find((c) => c.body.includes(marker));
-
-            if (outcome === 'success') {
-              if (isMergeQueue) {
-                return;
-              }
-              if (existing) {
-                await github.rest.issues.updateComment({
-                  owner,
-                  repo,
-                  comment_id: existing.id,
-                  body: `${marker}\n${heading}\n✅ Passed (previously failed).`,
-                });
-                await github.graphql(
-                  `mutation($id: ID!) {
-                    minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
-                      minimizedComment { isMinimized }
-                    }
-                  }`,
-                  { id: existing.node_id },
-                );
-              }
-              return;
-            }
-
-            const log = fs.readFileSync('/app/output.log', 'utf8').split('\n').slice(-100).join('\n');
-            const body = `${marker}\n${heading}\n❌ Failed.\n\n<details><summary>Output</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>`;
-
-            if (existing) {
-              try {
-                await github.graphql(
-                  `mutation($id: ID!) {
-                    unminimizeComment(input: { subjectId: $id }) {
-                      unminimizedComment { isMinimized }
-                    }
-                  }`,
-                  { id: existing.node_id },
-                );
-              } catch {
-                // wasn't minimized — nothing to undo
-              }
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
-            }
+          check-name: Format check
+          marker-slug: format
+          pr-number: ${{ inputs.pr-number }}
+          merge-queue: ${{ inputs.merge-queue }}
+          outcome: ${{ steps.run.outcome }}
+          log-file: /app/output.log
+          success-mode: minimize

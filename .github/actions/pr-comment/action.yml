@@ -1,0 +1,116 @@
+name: PR check comment
+description: >-
+  Posts or updates a single marked PR comment reporting a CI check's pass/fail
+  result. Shared by lint, format, typecheck, vitest, and playwright so the
+  fail-only/minimize-on-success (pr-gate) vs fail-only/separate-thread
+  (merge-queue) logic lives in one place instead of five near-identical
+  github-script blocks.
+
+inputs:
+  check-name:
+    description: Human-readable check name for the comment heading, e.g. "Vitest"
+    required: true
+  marker-slug:
+    description: Lowercase slug for the comment's hidden marker, e.g. "vitest" -> <!-- ci-vitest -->
+    required: true
+  pr-number:
+    description: Pull request number to comment on
+    required: true
+  merge-queue:
+    description: >-
+      'true' when called from merge-queue.yml — uses a separate marker/thread
+      from the pr-gate comment for the same check, and comments only on
+      failure (a success takes no action at all, not even resolving a prior
+      open failure comment).
+    required: false
+    default: 'false'
+  outcome:
+    description: Outcome of the check step (e.g. steps.run.outcome) — anything other than 'success' is treated as a failure
+    required: true
+  log-file:
+    description: Path to the check's captured output log, read for the failure comment body
+    required: true
+  success-mode:
+    description: >-
+      pr-gate (merge-queue: false) behavior on success. 'minimize' resolves a
+      prior open failure comment via GitHub's resolve mechanism and otherwise
+      does nothing (lint/format/typecheck). 'comment' always posts/updates a
+      passing comment (vitest/playwright).
+    required: false
+    default: minimize
+
+runs:
+  using: composite
+  steps:
+    - name: Comment on PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const isMergeQueue = '${{ inputs.merge-queue }}' === 'true';
+          const checkName = `${{ inputs.check-name }}`;
+          const slug = `${{ inputs.marker-slug }}`;
+          const successMode = `${{ inputs.success-mode }}`;
+          const outcome = `${{ inputs.outcome }}`;
+          const logFile = `${{ inputs.log-file }}`;
+          const marker = isMergeQueue ? `<!-- ci-${slug}-mergequeue -->` : `<!-- ci-${slug} -->`;
+          const heading = isMergeQueue ? `### ${checkName} (merge queue)` : `### ${checkName}`;
+          const { owner, repo } = context.repo;
+          const prNumber = Number(`${{ inputs.pr-number }}`);
+
+          const comments = await github.rest.issues.listComments({ owner, repo, issue_number: prNumber });
+          const existing = comments.data.find((c) => c.body.includes(marker));
+
+          if (outcome === 'success' && isMergeQueue) {
+            return;
+          }
+
+          if (outcome === 'success' && successMode === 'minimize') {
+            if (!existing) {
+              return;
+            }
+            await github.rest.issues.updateComment({
+              owner,
+              repo,
+              comment_id: existing.id,
+              body: `${marker}\n${heading}\n✅ Passed (previously failed).`,
+            });
+            await github.graphql(
+              `mutation($id: ID!) {
+                minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
+                  minimizedComment { isMinimized }
+                }
+              }`,
+              { id: existing.node_id },
+            );
+            return;
+          }
+
+          // Remaining cases: success with successMode 'comment' (pr-gate vitest/playwright),
+          // or any failure — always upsert, defensively un-minimizing first so the latest
+          // result is never left hidden by an earlier minimize.
+          let body;
+          if (outcome === 'success') {
+            body = `${marker}\n${heading}\n✅ Passed.`;
+          } else {
+            const log = fs.readFileSync(logFile, 'utf8').split('\n').slice(-100).join('\n');
+            body = `${marker}\n${heading}\n❌ Failed.\n\n<details><summary>Output</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>`;
+          }
+
+          if (existing) {
+            try {
+              await github.graphql(
+                `mutation($id: ID!) {
+                  unminimizeComment(input: { subjectId: $id }) {
+                    unminimizedComment { isMinimized }
+                  }
+                }`,
+                { id: existing.node_id },
+              );
+            } catch {
+              // wasn't minimized — nothing to undo
+            }
+            await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+          }

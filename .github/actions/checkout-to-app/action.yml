@@ -1,0 +1,18 @@
+name: Checkout into /app
+description: >-
+  Checks out the repo and copies it into /app. actions/checkout always lands
+  at $GITHUB_WORKSPACE, not /app, inside container: jobs — this copies the
+  checkout into /app, where the job's container image already has
+  node_modules from its own npm i at build time, so nothing needs to
+  reinstall. Shared by every job workflow under .github/workflows/jobs/ that
+  runs inside the testing container image.
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Copy checkout into /app
+      shell: bash
+      run: cp -a "$GITHUB_WORKSPACE"/. /app/
