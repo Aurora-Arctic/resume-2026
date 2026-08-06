@@ -89,7 +89,7 @@ The `npm` column below lists the underlying script — run it inside the `devcon
 
 ## Continuous integration
 
-Every pull request against `main` runs **PR gate**: lint, format check, typecheck, Vitest, and a production build, plus a non-blocking `npm audit` that posts/updates a single PR comment. Right before a PR actually merges, the **merge queue** re-runs those same blocking checks and additionally runs the Playwright e2e suite — the one check deliberately left out of PR gate since it's the slowest.
+Every pull request against `main` runs **PR gate**: lint, format check, typecheck, Vitest, a production build, and the Playwright e2e suite, plus a non-blocking `npm audit` that posts/updates a single PR comment. Right before a PR actually merges, the **merge queue** re-runs those same blocking checks one more time, since other PRs may have merged in the meantime.
 
 If a check fails, the bot posts (or updates) a single PR comment for that check with the failure output, rather than spamming a new comment per run — a later passing run resolves or removes it. A merge-queue failure is labeled `(merge queue)` and posted as its own comment, separate from any PR-gate comment for the same check, so you can tell which phase actually failed.
 

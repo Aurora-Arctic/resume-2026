@@ -69,11 +69,9 @@ jobs:
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
 
-      # Always comments pass/fail from pr-gate (currently unused in practice,
-      # since only merge-queue.yml calls this workflow — kept symmetric with
-      # vitest.yml in case that changes); fail-only on a separate
-      # merge-queue-labeled thread from merge-queue (no action at all on
-      # success) — see .github/actions/pr-comment.
+      # Always comments pass/fail from pr-gate, same convention as vitest.yml;
+      # fail-only on a separate merge-queue-labeled thread from merge-queue
+      # (no action at all on success) — see .github/actions/pr-comment.
       - name: Comment on PR
         if: always() && inputs.pr-number
         uses: ./.github/actions/pr-comment

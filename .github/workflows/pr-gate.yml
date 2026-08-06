@@ -48,6 +48,13 @@ jobs:
     with:
       image: ${{ needs.build-image.outputs.image }}
 
+  playwright:
+    needs: build-image
+    uses: ./.github/workflows/jobs/playwright.yml
+    with:
+      image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ github.event.pull_request.number }}
+
   # Non-blocking, PR-only — see .github/workflows/jobs/audit.yml.
   audit:
     needs: build-image

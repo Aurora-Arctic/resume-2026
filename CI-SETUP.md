@@ -4,7 +4,7 @@ This document is a transcript of the work done to set up GitHub Actions CI for t
 
 ## Summary
 
-- Two phase workflows: **`pr-gate.yml`** (`pull_request` → `main`: lint, format check, typecheck, Vitest, build, non-blocking `npm audit` with a single updated PR comment) and **`merge-queue.yml`** (`merge_group`: the same five blocking checks, plus Playwright e2e).
+- Two phase workflows: **`pr-gate.yml`** (`pull_request` → `main`: lint, format check, typecheck, Vitest, build, Playwright e2e, non-blocking `npm audit` with a single updated PR comment) and **`merge-queue.yml`** (`merge_group`: the same six blocking checks, re-run right before merge — see "Follow-up: run Playwright e2e in pr-gate too" below for why Playwright now runs in both).
 - No push-to-`main` workflow — `merge-queue` already re-verifies everything (including e2e) right before a commit lands, so a post-merge run would just duplicate that coverage.
 - Every check is a standalone reusable workflow (`workflow_call`) under `.github/workflows/jobs/`, shared by both phases rather than duplicated per-phase.
 - Every check runs inside the repo's existing `testing` Docker stage (`Docker/Dockerfile.node`) — the same image already used for local e2e testing, with Playwright's Chromium and its system libs baked in.
@@ -53,6 +53,14 @@ Deliberately **not** done: collapsing `lint`/`format`/`typecheck`/`vitest` into 
 
 All five job files' YAML re-validated with `js-yaml` after the refactor; the `pr-comment` composite action's embedded script was also checked for JS syntax validity (GitHub-expression interpolations stripped, wrapped in an async function) — Docker/GHA runner behavior itself is still unverified in this sandbox, same caveat as "Verification status" below.
 
+## Follow-up: run Playwright e2e in pr-gate too
+
+Playwright previously only ran from `merge-queue`, on the reasoning that it was the slowest check and only needed to run once, right before merge. The user asked for it to also run on every PR (not just right before merge), with PR comments following the same convention as `vitest` — which, conveniently, `playwright.yml` already implemented (`success-mode: comment`, i.e. always comment with the current pass/fail result), since it had been built symmetrically with `vitest.yml` from the start even though nothing called it that way yet. So the change was entirely at the call-site level, no job-workflow logic changes:
+
+- `pr-gate.yml` gained a `playwright` job (`needs: build-image`, passing `image` and `github.event.pull_request.number` as `pr-number`, `merge-queue` omitted so it defaults to `false`) — same shape as its `vitest` job.
+- `merge-queue.yml`'s `playwright` job is unchanged — Playwright still re-runs there too, deliberately, since the merge queue can include commits from other PRs merged since `pr-gate` last ran on this one; that duplication is the same reasoning that already applied to `lint`/`format`/`typecheck`/`vitest`/`build` running in both phases.
+- The stale comment in `playwright.yml`'s "Comment on PR" step (which called the pr-gate code path "currently unused in practice") was updated to reflect that it's now the primary way Playwright results reach a PR before merge.
+
 ## Files created / changed
 
 - `.github/actions/pr-comment/action.yml` — composite action for the shared "Comment on PR" logic; see "Follow-up: DRY out the repeated step logic" above.
@@ -63,7 +71,7 @@ All five job files' YAML re-validated with `js-yaml` after the refactor; the `pr
 - `.github/workflows/jobs/vitest.yml`, `build.yml` — `vitest.yml` uses the same three composite actions as above, with `pr-comment`'s `success-mode: comment` (its `pr-gate` behavior comments on every run, not just failures); `build.yml` only uses `checkout-to-app` (no job-summary/comment steps — not part of either follow-up round).
 - `.github/workflows/jobs/playwright.yml` — same shape as `vitest.yml` (including `success-mode: comment`), plus `--ipc=host` (Chromium needs more than the container default `/dev/shm`), `CI=true` (read by `playwright.config.ts`'s `webServer.reuseExistingServer`), and a report/`test-results` artifact upload on failure.
 - `.github/workflows/jobs/audit.yml` — uses `checkout-to-app`, but keeps its own inline `actions/github-script` comment step rather than `pr-comment` — always update/create with no minimize and no `merge-queue` distinction, a genuinely different shape from the other five, not just a variant of the same one. Predates, and was the model for, the other jobs' comment steps, before they were unified into `pr-comment`.
-- `.github/workflows/pr-gate.yml`, `.github/workflows/merge-queue.yml` — phase workflows composing the job workflows above; `merge-queue.yml` also has the `pr-number`-extraction job described above and passes `merge-queue: true` to all five commenting checks.
+- `.github/workflows/pr-gate.yml`, `.github/workflows/merge-queue.yml` — phase workflows composing the job workflows above; both now call `playwright.yml` (see "Follow-up: run Playwright e2e in pr-gate too"). `merge-queue.yml` also has the `pr-number`-extraction job described above and passes `merge-queue: true` to all five commenting checks.
 - `.github/dependabot.yml` — `npm` (`/`), `github-actions` (`/`), `docker` (`/Docker`), all weekly.
 - `package.json` — added `"typecheck": "tsc --noEmit"`.
 - `CLAUDE.md` — new "Continuous Integration" section.
