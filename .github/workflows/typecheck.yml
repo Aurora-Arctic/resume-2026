@@ -1,5 +1,7 @@
 name: Typecheck
 
+# Reusable check that runs `tsc --noEmit` to surface type errors. Called
+# via workflow_call from pr-gate and merge-queue, never triggered directly.
 on:
   workflow_call:
     inputs:

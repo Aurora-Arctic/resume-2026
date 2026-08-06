@@ -1,5 +1,7 @@
 name: Lint
 
+# Reusable check that runs Oxlint against the repo. Called via
+# workflow_call from pr-gate and merge-queue, never triggered directly.
 on:
   workflow_call:
     inputs:

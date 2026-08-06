@@ -1,5 +1,8 @@
-name: Playwright e2e
+name: Playwright E2E
 
+# Reusable check that runs the Playwright e2e suite against a built and
+# served site. Called via workflow_call from pr-gate and merge-queue,
+# never triggered directly.
 on:
   workflow_call:
     inputs:
@@ -78,7 +81,7 @@ jobs:
         if: always()
         uses: ./.github/actions/job-summary
         with:
-          check-name: Playwright e2e
+          check-name: Playwright E2E
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
 
@@ -89,7 +92,7 @@ jobs:
         if: always() && inputs.pr-number
         uses: ./.github/actions/pr-comment
         with:
-          check-name: Playwright e2e
+          check-name: Playwright E2E
           marker-slug: playwright
           pr-number: ${{ inputs.pr-number }}
           merge-queue: ${{ inputs.merge-queue }}

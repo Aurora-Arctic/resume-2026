@@ -1,9 +1,7 @@
-name: Job summary
+name: Job Summary
 description: >-
   Writes a pass/fail section to $GITHUB_STEP_SUMMARY for a check step,
-  with a trailing log excerpt on failure. Shared by lint, format, typecheck,
-  vitest, and playwright so this surfaces identically in the run's own
-  Summary page for both pr-gate and merge-queue runs.
+  including a trailing log excerpt on failure.
 
 inputs:
   check-name:

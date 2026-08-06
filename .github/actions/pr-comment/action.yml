@@ -1,10 +1,8 @@
-name: PR check comment
+name: PR Check Comment
 description: >-
-  Posts or updates a single marked PR comment reporting a CI check's pass/fail
-  result. Shared by lint, format, typecheck, vitest, and playwright so the
-  fail-only/minimize-on-success (pr-gate) vs fail-only/separate-thread
-  (merge-queue) logic lives in one place instead of five near-identical
-  github-script blocks.
+  Posts or updates a single marked PR comment reporting a CI check's
+  pass/fail result, with distinct pr-gate (minimize-on-success) and
+  merge-queue (fail-only, separate thread) behavior.
 
 inputs:
   check-name:
