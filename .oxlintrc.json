@@ -6,6 +6,9 @@
       "version": "19.2.8"
     }
   },
+  "rules": {
+    "no-console": "warn"
+  },
   "ignorePatterns": ["public", ".cache"],
   "overrides": [
     {
