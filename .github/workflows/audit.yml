@@ -10,7 +10,7 @@ on:
       pr-number:
         description: Pull request number to comment on
         required: true
-        type: number
+        type: string
 
 permissions:
   contents: read
@@ -28,7 +28,7 @@ jobs:
       # The image's default user (node, non-root) can't write to the runner's
       # bind-mounted _temp/_runner_file_commands dir, which actions/checkout (and
       # any JS action using core.saveState/setOutput) needs — EACCES otherwise.
-      options: --user root -e HOME=/home/node
+      options: --user root
     defaults:
       run:
         working-directory: /app
@@ -43,7 +43,7 @@ jobs:
         run: npm audit --json > audit-results.json || true
 
       - name: Comment audit results on PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');

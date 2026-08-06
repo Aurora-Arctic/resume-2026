@@ -10,7 +10,7 @@ on:
       pr-number:
         description: Pull request number to comment on (omit to skip PR commenting)
         required: false
-        type: number
+        type: string
       merge-queue:
         description: Set true when called from merge-queue.yml — uses a separate, merge-queue-labeled comment thread and posts only on failure, instead of always commenting pass/fail
         required: false
@@ -35,10 +35,12 @@ jobs:
       # can't write to the runner's bind-mounted _temp/_runner_file_commands dir,
       # which actions/checkout (and any JS action using core.saveState/setOutput)
       # needs — EACCES otherwise. Running as root means Chromium itself now needs
-      # --no-sandbox too — see playwright.config.ts. -e HOME=/home/node: root's
-      # own $HOME (/root) doesn't have the Chromium binary — it was installed as
-      # the node user at image build time, under /home/node/.cache/ms-playwright.
-      options: --ipc=host --user root -e HOME=/home/node
+      # --no-sandbox too — see playwright.config.ts. No HOME override needed here:
+      # GitHub forces HOME=/github/home on every step regardless of what's passed
+      # via options, which silently broke a prior fix that relied on -e HOME
+      # pointing at the Chromium install location — see Dockerfile.node's
+      # PLAYWRIGHT_BROWSERS_PATH, which makes the browser location $HOME-independent.
+      options: --ipc=host --user root
     defaults:
       run:
         working-directory: /app
