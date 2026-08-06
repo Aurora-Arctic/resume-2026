@@ -30,8 +30,15 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-      # Chromium needs more than the container default 64MB /dev/shm, or it crashes.
-      options: --ipc=host
+      # --ipc=host: Chromium needs more than the container default 64MB /dev/shm,
+      # or it crashes. --user root: the image's default user (node, non-root)
+      # can't write to the runner's bind-mounted _temp/_runner_file_commands dir,
+      # which actions/checkout (and any JS action using core.saveState/setOutput)
+      # needs — EACCES otherwise. Running as root means Chromium itself now needs
+      # --no-sandbox too — see playwright.config.ts. -e HOME=/home/node: root's
+      # own $HOME (/root) doesn't have the Chromium binary — it was installed as
+      # the node user at image build time, under /home/node/.cache/ms-playwright.
+      options: --ipc=host --user root -e HOME=/home/node
     defaults:
       run:
         working-directory: /app
@@ -45,7 +52,7 @@ jobs:
       CI: true
     steps:
       - name: Checkout into /app
-        uses: ./.github/actions/checkout-to-app
+        uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
       # playwright.config.ts's webServer runs `npm run build && npm run serve`
       # itself, so no separate build step is needed here.

@@ -1,4 +1,4 @@
-name: Typecheck
+name: Lint
 
 on:
   workflow_call:
@@ -23,13 +23,17 @@ permissions:
   pull-requests: write
 
 jobs:
-  typecheck:
+  lint:
     runs-on: ubuntu-latest
     container:
       image: ${{ inputs.image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+      # The image's default user (node, non-root) can't write to the runner's
+      # bind-mounted _temp/_runner_file_commands dir, which actions/checkout (and
+      # any JS action using core.saveState/setOutput) needs — EACCES otherwise.
+      options: --user root -e HOME=/home/node
     defaults:
       run:
         working-directory: /app
@@ -39,19 +43,19 @@ jobs:
         shell: bash
     steps:
       - name: Checkout into /app
-        uses: ./.github/actions/checkout-to-app
+        uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
-      - name: Run typecheck
+      - name: Run lint
         id: run
         run: |
           set -o pipefail
-          npm run typecheck 2>&1 | tee /app/output.log
+          npm run lint 2>&1 | tee /app/output.log
 
       - name: Write job summary
         if: always()
         uses: ./.github/actions/job-summary
         with:
-          check-name: Typecheck
+          check-name: Lint
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
 
@@ -62,8 +66,8 @@ jobs:
         if: always() && inputs.pr-number
         uses: ./.github/actions/pr-comment
         with:
-          check-name: Typecheck
-          marker-slug: typecheck
+          check-name: Lint
+          marker-slug: lint
           pr-number: ${{ inputs.pr-number }}
           merge-queue: ${{ inputs.merge-queue }}
           outcome: ${{ steps.run.outcome }}
