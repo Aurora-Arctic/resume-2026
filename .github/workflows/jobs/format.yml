@@ -7,10 +7,20 @@ on:
         description: Testing image ref to run against (from build-image.yml)
         required: true
         type: string
+      pr-number:
+        description: Pull request number to comment on (omit to skip PR commenting)
+        required: false
+        type: number
+      merge-queue:
+        description: Set true when called from merge-queue.yml — uses a separate, merge-queue-labeled comment thread and posts only on failure (no minimize-on-success)
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
   packages: read
+  pull-requests: write
 
 jobs:
   format:
@@ -34,4 +44,91 @@ jobs:
         run: cp -a "$GITHUB_WORKSPACE"/. /app/
 
       - name: Run format check
-        run: npm run format:check
+        id: run
+        run: |
+          set -o pipefail
+          npm run format:check 2>&1 | tee /app/output.log
+
+      - name: Write job summary
+        if: always()
+        run: |
+          if [ "${{ steps.run.outcome }}" = "success" ]; then
+            echo "### Format check: ✅ passed" >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "### Format check: ❌ failed"
+              echo '```'
+              tail -n 100 /app/output.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # From pr-gate (merge-queue: false): only comments when the format check
+      # fails. On a later success, an open failure comment is minimized via
+      # GitHub's resolve mechanism instead of left stale on the PR. A fresh
+      # failure after that un-minimizes it again.
+      #
+      # From merge-queue (merge-queue: true): uses a separate marker/thread so
+      # a merge-queue failure is never confused with (or overwritten by) a
+      # pr-gate comment on the same PR, and is labeled accordingly. Success
+      # takes no action at all — a prior merge-queue failure comment is left
+      # open rather than auto-minimized.
+      - name: Comment on PR
+        if: always() && inputs.pr-number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const isMergeQueue = ${{ inputs.merge-queue }};
+            const marker = isMergeQueue ? '<!-- ci-format-mergequeue -->' : '<!-- ci-format -->';
+            const heading = isMergeQueue ? '### Format check (merge queue)' : '### Format check';
+            const outcome = '${{ steps.run.outcome }}';
+            const { owner, repo } = context.repo;
+            const prNumber = ${{ inputs.pr-number }};
+
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: prNumber });
+            const existing = comments.data.find((c) => c.body.includes(marker));
+
+            if (outcome === 'success') {
+              if (isMergeQueue) {
+                return;
+              }
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: existing.id,
+                  body: `${marker}\n${heading}\n✅ Passed (previously failed).`,
+                });
+                await github.graphql(
+                  `mutation($id: ID!) {
+                    minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
+                      minimizedComment { isMinimized }
+                    }
+                  }`,
+                  { id: existing.node_id },
+                );
+              }
+              return;
+            }
+
+            const log = fs.readFileSync('/app/output.log', 'utf8').split('\n').slice(-100).join('\n');
+            const body = `${marker}\n${heading}\n❌ Failed.\n\n<details><summary>Output</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>`;
+
+            if (existing) {
+              try {
+                await github.graphql(
+                  `mutation($id: ID!) {
+                    unminimizeComment(input: { subjectId: $id }) {
+                      unminimizedComment { isMinimized }
+                    }
+                  }`,
+                  { id: existing.node_id },
+                );
+              } catch {
+                // wasn't minimized — nothing to undo
+              }
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+            }

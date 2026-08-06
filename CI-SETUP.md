@@ -22,13 +22,33 @@ During implementation this was reworked, after discussion, to use GitHub Actions
 
 Everything else in the plan — the phases, triggers, job list, GHCR content-addressed image tagging/caching strategy, dependabot config, and the `typecheck` script addition — was implemented as planned.
 
+## Follow-up: per-check PR comments and job summaries
+
+After the initial setup landed, `lint`, `format`, `typecheck`, `vitest`, and `playwright` each gained a result-reporting step, modeled on the pattern `audit.yml` already used (single marked comment, updated in place rather than reposted). The exact behavior needed a couple of rounds of clarification:
+
+- **`lint`, `format`, `typecheck`**: comment on the PR only when they fail. On a later success, that failure comment isn't just edited or deleted — it's minimized via GitHub's own resolve mechanism (`minimizeComment` GraphQL mutation, `classifier: RESOLVED`), matching what "closing" a comment means in GitHub's own terms rather than an ad hoc convention. Confirmed via GitHub's public GraphQL schema that a corresponding `unminimizeComment` mutation exists too — used so a fresh failure after a resolved state reopens the same comment instead of leaving it hidden with stale content or spawning a duplicate.
+- **`vitest`, `playwright`**: always comment with the current result (pass or fail), updating the same comment on every re-run. Since these are never minimized by our own logic, the only way one could be minimized is a maintainer manually hiding it via the GitHub UI — so as a defensive measure, every update also attempts `unminimizeComment` first (ignoring the error if it wasn't minimized) to guarantee the latest result stays visible.
+- All five unconditionally write a pass/fail section (with a trailing log excerpt on failure) to `$GITHUB_STEP_SUMMARY`, regardless of PR-comment outcome — this surfaces in the workflow run's own Summary page for both `pr-gate` and `merge-queue` runs.
+- Each of the five reusable workflows gained an optional `pr-number` input; the PR-comment step only runs when one is supplied (`if: always() && inputs.pr-number`), so the same job workflow behaves identically whether or not a PR context exists.
+- `pr-gate.yml` passes `github.event.pull_request.number` through to `lint`, `format`, `typecheck`, and `vitest` (`audit` already had this).
+- `merge_group` events don't carry a plain PR number the way `pull_request` events do — it's embedded in the merge group's ref instead (`refs/heads/gh-readonly-queue/<base>/pr-<number>-<sha>`). `merge-queue.yml` gained a small `pr-number` job that regex-extracts it once and passes it to all five checks (including `playwright`, which only ever runs via the merge queue), so PR commenting works there too, not just from `pr-gate`.
+
+## Follow-up: merge-queue comments now fail-only, on a separate thread from pr-gate
+
+The `vitest`/`playwright` always-comment behavior above meant a `merge-queue` run posted a "✅ Passed" comment for every successful pre-merge check, on top of whatever `pr-gate` had already posted — noisy, and since `vitest.yml` shares a single comment marker between callers, a `merge-queue` result could silently overwrite a `pr-gate` comment for the same check (or vice versa) with no indication of which phase produced it. Fixed by adding a `merge-queue` boolean input (default `false`) to all five checks that comment (`lint`, `format`, `typecheck`, `vitest`, `playwright`), set to `true` only by `merge-queue.yml`'s calls:
+
+- With `merge-queue: true`, every check now comments **only on failure**. A success takes no action at all — no comment, and (unlike the `pr-gate` fail-only checks) no minimizing of a prior open failure comment either, since the user wants absence-of-comment to be the sole failure signal for merge-queue runs, without added resolve-tracking logic.
+- Each check uses a distinct comment marker in `merge-queue` mode (e.g. `<!-- ci-vitest-mergequeue -->` vs. plain `<!-- ci-vitest -->`) and a "(merge queue)" heading suffix, so a merge-queue failure is always its own comment thread — never confused with, or clobbering, a `pr-gate` comment for the same check.
+- `pr-gate.yml`'s calls are unaffected (`merge-queue` input just defaults to `false`), so `lint`/`format`/`typecheck`'s existing fail-only-with-minimize-on-success behavior and `vitest`'s existing always-comment behavior are unchanged there. `playwright` never runs from `pr-gate` today, but picked up the same `merge-queue` input for symmetry with `vitest`, in case that changes later.
+
 ## Files created / changed
 
 - `.github/workflows/jobs/build-image.yml` — builds/pushes the `testing` Docker stage to GHCR, tagged by `hashFiles('Docker/Dockerfile.node', 'package-lock.json')`; downstream jobs just pull that tag.
-- `.github/workflows/jobs/lint.yml`, `format.yml`, `typecheck.yml`, `vitest.yml`, `build.yml` — each a thin `container:`-based job running one `npm run` script.
-- `.github/workflows/jobs/playwright.yml` — same shape, plus `--ipc=host` (Chromium needs more than the container default `/dev/shm`), `CI=true` (read by `playwright.config.ts`'s `webServer.reuseExistingServer`), and a report/`test-results` artifact upload on failure.
-- `.github/workflows/jobs/audit.yml` — runs `npm audit --json` non-blocking (`continue-on-error: true`), then uses `actions/github-script` to find-and-update a single marked PR comment (`<!-- ci-audit -->`) rather than posting a new one each run.
-- `.github/workflows/pr-gate.yml`, `.github/workflows/merge-queue.yml` — phase workflows composing the job workflows above.
+- `.github/workflows/jobs/lint.yml`, `format.yml`, `typecheck.yml` — each a thin `container:`-based job running one `npm run` script, plus a job-summary write and a `merge-queue`-aware PR comment: fail-only with minimize-on-success when called from `pr-gate`, fail-only with no success action and a separate comment thread when called from `merge-queue` — see "Follow-up" sections above.
+- `.github/workflows/jobs/vitest.yml`, `build.yml` — `vitest.yml` has the same job-summary + `merge-queue`-aware comment step as above, except its `pr-gate` behavior comments on every run (pass or fail), not just failures; `build.yml` has neither (not part of either follow-up round).
+- `.github/workflows/jobs/playwright.yml` — same shape as `vitest.yml`, plus `--ipc=host` (Chromium needs more than the container default `/dev/shm`), `CI=true` (read by `playwright.config.ts`'s `webServer.reuseExistingServer`), and a report/`test-results` artifact upload on failure.
+- `.github/workflows/jobs/audit.yml` — runs `npm audit --json` non-blocking (`continue-on-error: true`), then uses `actions/github-script` to find-and-update a single marked PR comment (`<!-- ci-audit -->`) rather than posting a new one each run. Predates, and was the model for, the other jobs' comment steps.
+- `.github/workflows/pr-gate.yml`, `.github/workflows/merge-queue.yml` — phase workflows composing the job workflows above; `merge-queue.yml` also has the `pr-number`-extraction job described above and passes `merge-queue: true` to all five commenting checks.
 - `.github/dependabot.yml` — `npm` (`/`), `github-actions` (`/`), `docker` (`/Docker`), all weekly.
 - `package.json` — added `"typecheck": "tsc --noEmit"`.
 - `CLAUDE.md` — new "Continuous Integration" section.

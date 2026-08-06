@@ -7,10 +7,20 @@ on:
         description: Testing image ref to run against (from build-image.yml)
         required: true
         type: string
+      pr-number:
+        description: Pull request number to comment on (omit to skip PR commenting)
+        required: false
+        type: number
+      merge-queue:
+        description: Set true when called from merge-queue.yml — uses a separate, merge-queue-labeled comment thread and posts only on failure, instead of always commenting pass/fail
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
   packages: read
+  pull-requests: write
 
 jobs:
   vitest:
@@ -34,4 +44,77 @@ jobs:
         run: cp -a "$GITHUB_WORKSPACE"/. /app/
 
       - name: Run vitest
-        run: npm test
+        id: run
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee /app/output.log
+
+      - name: Write job summary
+        if: always()
+        run: |
+          if [ "${{ steps.run.outcome }}" = "success" ]; then
+            echo "### Vitest: ✅ passed" >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "### Vitest: ❌ failed"
+              echo '```'
+              tail -n 100 /app/output.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # From pr-gate (merge-queue: false): always comments with the current
+      # result (pass or fail), updating the same comment on re-runs. If a
+      # maintainer manually minimized it, a new update un-minimizes it so the
+      # latest result is visible again.
+      #
+      # From merge-queue (merge-queue: true): uses a separate marker/thread so
+      # a merge-queue failure is never confused with (or overwritten by) a
+      # pr-gate comment on the same PR, and is labeled accordingly. Only
+      # comments on failure — a success takes no action at all, including no
+      # cleanup of a prior open failure comment.
+      - name: Comment on PR
+        if: always() && inputs.pr-number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const isMergeQueue = ${{ inputs.merge-queue }};
+            const marker = isMergeQueue ? '<!-- ci-vitest-mergequeue -->' : '<!-- ci-vitest -->';
+            const heading = isMergeQueue ? '### Vitest (merge queue)' : '### Vitest';
+            const outcome = '${{ steps.run.outcome }}';
+            const { owner, repo } = context.repo;
+            const prNumber = ${{ inputs.pr-number }};
+
+            if (isMergeQueue && outcome === 'success') {
+              return;
+            }
+
+            let body;
+            if (outcome === 'success') {
+              body = `${marker}\n${heading}\n✅ Passed.`;
+            } else {
+              const log = fs.readFileSync('/app/output.log', 'utf8').split('\n').slice(-100).join('\n');
+              body = `${marker}\n${heading}\n❌ Failed.\n\n<details><summary>Output</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>`;
+            }
+
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: prNumber });
+            const existing = comments.data.find((c) => c.body.includes(marker));
+
+            if (existing) {
+              try {
+                await github.graphql(
+                  `mutation($id: ID!) {
+                    unminimizeComment(input: { subjectId: $id }) {
+                      unminimizedComment { isMinimized }
+                    }
+                  }`,
+                  { id: existing.node_id },
+                );
+              } catch {
+                // wasn't minimized — nothing to undo
+              }
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+            }

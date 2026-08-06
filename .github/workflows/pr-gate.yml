@@ -19,24 +19,28 @@ jobs:
     uses: ./.github/workflows/jobs/lint.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ github.event.pull_request.number }}
 
   format:
     needs: build-image
     uses: ./.github/workflows/jobs/format.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ github.event.pull_request.number }}
 
   typecheck:
     needs: build-image
     uses: ./.github/workflows/jobs/typecheck.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ github.event.pull_request.number }}
 
   vitest:
     needs: build-image
     uses: ./.github/workflows/jobs/vitest.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ github.event.pull_request.number }}
 
   build:
     needs: build-image

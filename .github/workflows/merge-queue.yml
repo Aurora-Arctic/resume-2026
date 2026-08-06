@@ -9,34 +9,59 @@ on:
 permissions:
   contents: read
   packages: write
+  pull-requests: write
 
 jobs:
   build-image:
     uses: ./.github/workflows/jobs/build-image.yml
 
+  # merge_group events don't carry a plain PR number the way pull_request events
+  # do — it's embedded in the merge group's ref instead
+  # (refs/heads/gh-readonly-queue/<base>/pr-<number>-<sha>), so pull it out here
+  # once for every job below to use for PR commenting.
+  pr-number:
+    runs-on: ubuntu-latest
+    outputs:
+      number: ${{ steps.extract.outputs.number }}
+    steps:
+      - name: Extract PR number from merge group ref
+        id: extract
+        run: |
+          ref="${{ github.event.merge_group.head_ref }}"
+          number=$(echo "$ref" | grep -oP 'pr-\K[0-9]+')
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
   lint:
-    needs: build-image
+    needs: [build-image, pr-number]
     uses: ./.github/workflows/jobs/lint.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ needs.pr-number.outputs.number }}
+      merge-queue: true
 
   format:
-    needs: build-image
+    needs: [build-image, pr-number]
     uses: ./.github/workflows/jobs/format.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ needs.pr-number.outputs.number }}
+      merge-queue: true
 
   typecheck:
-    needs: build-image
+    needs: [build-image, pr-number]
     uses: ./.github/workflows/jobs/typecheck.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ needs.pr-number.outputs.number }}
+      merge-queue: true
 
   vitest:
-    needs: build-image
+    needs: [build-image, pr-number]
     uses: ./.github/workflows/jobs/vitest.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ needs.pr-number.outputs.number }}
+      merge-queue: true
 
   build:
     needs: build-image
@@ -45,7 +70,9 @@ jobs:
       image: ${{ needs.build-image.outputs.image }}
 
   playwright:
-    needs: build-image
+    needs: [build-image, pr-number]
     uses: ./.github/workflows/jobs/playwright.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      pr-number: ${{ needs.pr-number.outputs.number }}
+      merge-queue: true
