@@ -45,7 +45,7 @@ jobs:
       CI: true
     steps:
       - name: Checkout into /app
-        uses: ./.github/actions/checkout-to-app
+        uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
       # playwright.config.ts's webServer runs `npm run build && npm run serve`
       # itself, so no separate build step is needed here.

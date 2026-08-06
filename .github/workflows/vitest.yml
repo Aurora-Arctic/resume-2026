@@ -39,7 +39,7 @@ jobs:
         shell: bash
     steps:
       - name: Checkout into /app
-        uses: ./.github/actions/checkout-to-app
+        uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
       - name: Run vitest
         id: run

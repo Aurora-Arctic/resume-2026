@@ -30,7 +30,7 @@ jobs:
         working-directory: /app
     steps:
       - name: Checkout into /app
-        uses: ./.github/actions/checkout-to-app
+        uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
       # Non-blocking: npm audit exits non-zero when it finds vulnerabilities, but
       # this check should only report, never fail the PR gate.
