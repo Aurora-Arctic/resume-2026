@@ -47,11 +47,22 @@ jobs:
       - name: Checkout into /app
         uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
+      - name: Start timer
+        id: timer-start
+        uses: ./.github/actions/timer-start
+
       - name: Run format check
         id: run
         run: |
           set -o pipefail
           npm run format:check 2>&1 | tee /app/output.log
+
+      - name: Compute duration
+        id: timer
+        if: always()
+        uses: ./.github/actions/timer-elapsed
+        with:
+          start: ${{ steps.timer-start.outputs.start }}
 
       - name: Write job summary
         if: always()
@@ -60,6 +71,8 @@ jobs:
           check-name: Format Check
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
+          duration: ${{ steps.timer.outputs.duration }}
+          summary: ''
 
       # Fail-only from pr-gate (resolves a prior failure comment on success),
       # fail-only on a separate merge-queue-labeled thread from merge-queue
@@ -75,3 +88,5 @@ jobs:
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
           success-mode: minimize
+          duration: ${{ steps.timer.outputs.duration }}
+          summary: ''

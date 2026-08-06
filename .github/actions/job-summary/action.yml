@@ -13,6 +13,18 @@ inputs:
   log-file:
     description: Path to the check's captured output log, tailed for the failure summary
     required: true
+  summary:
+    description: Short single-line markdown stat (e.g. "3 errors across 2 files"), rendered inline in the callout
+    required: false
+    default: ''
+  details:
+    description: Optional longer markdown block (e.g. failing-test list or table), rendered between the callout and the log
+    required: false
+    default: ''
+  duration:
+    description: Pre-formatted job duration (e.g. "12s", "1m 34s")
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -21,10 +33,40 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.outcome }}" = "success" ]; then
-          echo "### ${{ inputs.check-name }}: ✅ passed" >> "$GITHUB_STEP_SUMMARY"
+          callout="[!NOTE]"
+          emoji="✅"
+          verb="passed"
         else
+          callout="[!CAUTION]"
+          emoji="❌"
+          verb="failed"
+        fi
+
+        stat_line=""
+        if [ -n "${{ inputs.summary }}" ]; then
+          stat_line=" — ${{ inputs.summary }}"
+        fi
+
+        meta=""
+        if [ -n "${{ inputs.duration }}" ]; then
+          meta=" · ${{ inputs.duration }}"
+        fi
+
+        {
+          echo "> $callout"
+          echo "> $emoji **${{ inputs.check-name }} $verb**$stat_line$meta"
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ -n "${{ inputs.details }}" ]; then
           {
-            echo "### ${{ inputs.check-name }}: ❌ failed"
+            echo ""
+            echo "${{ inputs.details }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        if [ "${{ inputs.outcome }}" != "success" ]; then
+          {
+            echo ""
             echo '```'
             tail -n 100 "${{ inputs.log-file }}"
             echo '```'
