@@ -4,7 +4,7 @@ description: >-
   at $GITHUB_WORKSPACE, not /app, inside container: jobs — this copies the
   checkout into /app, where the job's container image already has
   node_modules from its own npm i at build time, so nothing needs to
-  reinstall. Shared by every job workflow under .github/workflows/jobs/ that
+  reinstall. Shared by every job workflow in .github/workflows/ that
   runs inside the testing container image.
 
 runs:
