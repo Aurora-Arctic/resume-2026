@@ -1,3 +1,6 @@
+# Cache-bust: forces a new content-addressed image tag/GHA cache key after a
+# prior pr-gate run's cancellation left the npm i layer's oxlint native
+# binding half-written (see pr-gate.yml's per-job concurrency comment).
 FROM node:26.5.1 AS builder
 
 WORKDIR /app
