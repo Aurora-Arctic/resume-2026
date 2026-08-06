@@ -14,7 +14,9 @@ Turn the current branch's work into a pull request against `main`, asking before
    - Run `git status`, `git diff`, and `git branch -a` (in parallel) to see uncommitted changes, staged changes, and available branches.
 
 2. **Ask which branch to merge into.**
-   - Use AskUserQuestion to ask which branch the PR should target, with `main` as the first/recommended option. Offer any other clearly-relevant long-lived branch you noticed in `git branch -a` as additional options if there are any (e.g. `develop`, `release/*`); the user can always type a custom one via "Other".
+   - Always use AskUserQuestion for this — never assume `main` without asking, even when it's the only sensible candidate. The tool requires at least 2 manually-specified options (its automatic "Other" doesn't count toward that minimum), so the question always needs a real second option:
+     - If `git branch -a` surfaced other clearly-relevant long-lived branches (e.g. `develop`, `release/*`), list `main` first/recommended plus those as additional options.
+     - Otherwise, still ask, pairing `main` with a generic second option (e.g. "A different branch" — description: "Type the branch name to target instead of main") so the call has 2 real choices; the user can also always type a custom branch via "Other".
    - If the source branch (step 1) equals the chosen target branch, stop and tell the user they need to be on a different branch — do not open a PR from a branch into itself.
    - From here on, "target" refers to the branch chosen in this step (default `main`) — use it in place of every `main` reference below.
 
