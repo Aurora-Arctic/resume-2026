@@ -90,7 +90,7 @@ The `npm` column below lists the underlying script — run it inside the `devcon
 
 ### Local CI testing
 
-The real `.github/workflows/jobs/*.yml` files can be run locally with [`act`](https://github.com/nektos/act) before pushing, so failures surface immediately instead of only in PR gate.
+The real `.github/workflows/*.yml` files can be run locally with [`act`](https://github.com/nektos/act) before pushing, so failures surface immediately instead of only in PR gate.
 
 **This one is different from every other command on this page: run it on your host machine directly, not inside the `devcontainer` service.** Every job's `container:` key means act's job containers would become siblings on the host Docker daemon rather than nested inside the devcontainer if run from there, breaking bind-mounted paths — so `act` itself, and the setup below, need to run on the host.
 

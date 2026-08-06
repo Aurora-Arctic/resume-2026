@@ -6,7 +6,7 @@ This document is a transcript of the work done to set up GitHub Actions CI for t
 
 - Two phase workflows: **`pr-gate.yml`** (`pull_request` → `main`: lint, format check, typecheck, Vitest, build, Playwright e2e, non-blocking `npm audit` with a single updated PR comment) and **`merge-queue.yml`** (`merge_group`: the same six blocking checks, re-run right before merge — see "Follow-up: run Playwright e2e in pr-gate too" below for why Playwright now runs in both).
 - No push-to-`main` workflow — `merge-queue` already re-verifies everything (including e2e) right before a commit lands, so a post-merge run would just duplicate that coverage.
-- Every check is a standalone reusable workflow (`workflow_call`) under `.github/workflows/jobs/`, shared by both phases rather than duplicated per-phase.
+- Every check is a standalone reusable workflow (`workflow_call`) under `.github/workflows/`, shared by both phases rather than duplicated per-phase.
 - Every check runs inside the repo's existing `testing` Docker stage (`Docker/Dockerfile.node`) — the same image already used for local e2e testing, with Playwright's Chromium and its system libs baked in.
 - `.github/dependabot.yml` — weekly updates for `npm`, `github-actions`, and the Docker base image pin.
 - `package.json` gained a `typecheck` script (`tsc --noEmit`) since `tsconfig.json` has `noEmit: true` and none existed.
@@ -49,7 +49,7 @@ The `merge-queue` input above made the per-file `actions/github-script` "Comment
 - **`.github/actions/checkout-to-app/`** — the "Checkout" + "Copy checkout into /app" step pair, identical across all seven job workflows (`build`, `lint`, `format`, `typecheck`, `vitest`, `playwright`, `audit`) since `container:` jobs fix `GITHUB_WORKSPACE` at `/github/workspace`, not `/app`. `build-image.yml` doesn't use it — that workflow builds the `testing` image itself, so it isn't running inside a `container:` pinned to it.
 - **`.github/actions/job-summary/`** — the `$GITHUB_STEP_SUMMARY` pass/fail write, identical across `lint`/`format`/`typecheck`/`vitest`/`playwright` apart from the check's display name. Takes `check-name`, `outcome`, `log-file`.
 
-Deliberately **not** done: collapsing `lint`/`format`/`typecheck`/`vitest` into one generic parameterized reusable workflow (e.g. a single `jobs/npm-check.yml` called four times with different `command`/`check-name`/`marker-slug`/`success-mode` inputs). That would remove the last layer of duplication (the `container:`/`permissions:`/`defaults:` boilerplate each file still repeats, which GitHub Actions has no way to share across separate `workflow_call` files short of merging them), but was explicitly declined — the current one-reusable-workflow-per-check structure stays, since it's simpler to reason about and lets a single check diverge later (as `playwright` already does, with `--ipc=host`, `CI=true`, and an artifact upload step) without adding conditional complexity to a shared file.
+Deliberately **not** done: collapsing `lint`/`format`/`typecheck`/`vitest` into one generic parameterized reusable workflow (e.g. a single `npm-check.yml` called four times with different `command`/`check-name`/`marker-slug`/`success-mode` inputs). That would remove the last layer of duplication (the `container:`/`permissions:`/`defaults:` boilerplate each file still repeats, which GitHub Actions has no way to share across separate `workflow_call` files short of merging them), but was explicitly declined — the current one-reusable-workflow-per-check structure stays, since it's simpler to reason about and lets a single check diverge later (as `playwright` already does, with `--ipc=host`, `CI=true`, and an artifact upload step) without adding conditional complexity to a shared file.
 
 All five job files' YAML re-validated with `js-yaml` after the refactor; the `pr-comment` composite action's embedded script was also checked for JS syntax validity (GitHub-expression interpolations stripped, wrapped in an async function) — Docker/GHA runner behavior itself is still unverified in this sandbox, same caveat as "Verification status" below.
 
@@ -66,11 +66,11 @@ Playwright previously only ran from `merge-queue`, on the reasoning that it was 
 - `.github/actions/pr-comment/action.yml` — composite action for the shared "Comment on PR" logic; see "Follow-up: DRY out the repeated step logic" above.
 - `.github/actions/checkout-to-app/action.yml` — composite action for the shared "Checkout" + "Copy checkout into /app" step pair; used by every job workflow below except `build-image.yml`.
 - `.github/actions/job-summary/action.yml` — composite action for the shared `$GITHUB_STEP_SUMMARY` pass/fail write; used by `lint`, `format`, `typecheck`, `vitest`, `playwright`.
-- `.github/workflows/jobs/build-image.yml` — builds/pushes the `testing` Docker stage to GHCR, tagged by `hashFiles('Docker/Dockerfile.node', 'package-lock.json')`; downstream jobs just pull that tag.
-- `.github/workflows/jobs/lint.yml`, `format.yml`, `typecheck.yml` — each a thin `container:`-based job running one `npm run` script, using `checkout-to-app`, `job-summary`, and `pr-comment` (`success-mode: minimize`) for the shared steps.
-- `.github/workflows/jobs/vitest.yml`, `build.yml` — `vitest.yml` uses the same three composite actions as above, with `pr-comment`'s `success-mode: comment` (its `pr-gate` behavior comments on every run, not just failures); `build.yml` only uses `checkout-to-app` (no job-summary/comment steps — not part of either follow-up round).
-- `.github/workflows/jobs/playwright.yml` — same shape as `vitest.yml` (including `success-mode: comment`), plus `--ipc=host` (Chromium needs more than the container default `/dev/shm`), `CI=true` (read by `playwright.config.ts`'s `webServer.reuseExistingServer`), and a report/`test-results` artifact upload on failure.
-- `.github/workflows/jobs/audit.yml` — uses `checkout-to-app`, but keeps its own inline `actions/github-script` comment step rather than `pr-comment` — always update/create with no minimize and no `merge-queue` distinction, a genuinely different shape from the other five, not just a variant of the same one. Predates, and was the model for, the other jobs' comment steps, before they were unified into `pr-comment`.
+- `.github/workflows/build-image.yml` — builds/pushes the `testing` Docker stage to GHCR, tagged by `hashFiles('Docker/Dockerfile.node', 'package-lock.json')`; downstream jobs just pull that tag.
+- `.github/workflows/lint.yml`, `format.yml`, `typecheck.yml` — each a thin `container:`-based job running one `npm run` script, using `checkout-to-app`, `job-summary`, and `pr-comment` (`success-mode: minimize`) for the shared steps.
+- `.github/workflows/vitest.yml`, `build.yml` — `vitest.yml` uses the same three composite actions as above, with `pr-comment`'s `success-mode: comment` (its `pr-gate` behavior comments on every run, not just failures); `build.yml` only uses `checkout-to-app` (no job-summary/comment steps — not part of either follow-up round).
+- `.github/workflows/playwright.yml` — same shape as `vitest.yml` (including `success-mode: comment`), plus `--ipc=host` (Chromium needs more than the container default `/dev/shm`), `CI=true` (read by `playwright.config.ts`'s `webServer.reuseExistingServer`), and a report/`test-results` artifact upload on failure.
+- `.github/workflows/audit.yml` — uses `checkout-to-app`, but keeps its own inline `actions/github-script` comment step rather than `pr-comment` — always update/create with no minimize and no `merge-queue` distinction, a genuinely different shape from the other five, not just a variant of the same one. Predates, and was the model for, the other jobs' comment steps, before they were unified into `pr-comment`.
 - `.github/workflows/pr-gate.yml`, `.github/workflows/merge-queue.yml` — phase workflows composing the job workflows above; both now call `playwright.yml` (see "Follow-up: run Playwright e2e in pr-gate too"). `merge-queue.yml` also has the `pr-number`-extraction job described above and passes `merge-queue: true` to all five commenting checks.
 - `.github/dependabot.yml` — `npm` (`/`), `github-actions` (`/`), `docker` (`/Docker`), all weekly.
 - `package.json` — added `"typecheck": "tsc --noEmit"`.
@@ -105,7 +105,7 @@ Decisions made with the user:
 - **Dependabot**: npm, GitHub Actions, and Docker (`Docker/Dockerfile.node` base image) ecosystems, weekly.
 - **Execution environment**: every check runs inside the existing `testing` stage of `Docker/Dockerfile.node` (already bakes in Playwright's Chromium + its system libs — comment in the Dockerfile calls this out as the intended CI use case). No changes to `Dockerfile.node` or `docker-compose.yaml` are needed; CI builds the `testing` target directly.
 - **Test runner naming**: the repo uses Vitest (`npm test`), not Jest — the reusable workflow and job name are `vitest`, not `jest`.
-- **Reuse mechanism**: reusable workflows (`workflow_call`), one per check, under `.github/workflows/jobs/`. Phase workflows (`pr-gate.yml`, `merge-queue.yml`) just list which job workflows they call.
+- **Reuse mechanism**: reusable workflows (`workflow_call`), one per check, under `.github/workflows/`. Phase workflows (`pr-gate.yml`, `merge-queue.yml`) just list which job workflows they call.
 - **Merge queue must be turned on in repo branch protection settings by the user** — a workflow file alone doesn't enable it. This will be called out explicitly as a manual follow-up step.
 
 ## Architecture
@@ -114,7 +114,7 @@ Decisions made with the user:
 
 If each of the 6-7 check workflows independently ran `docker build --target testing`, a single PR would trigger that many parallel builds computing the same layers whenever `Dockerfile.node` or `package-lock.json` changes (worst case). Instead:
 
-1. **`.github/workflows/jobs/build-image.yml`** (`workflow_call`, outputs `image`): computes a content-addressed tag via `hashFiles('Docker/Dockerfile.node', 'package-lock.json')`, then:
+1. **`.github/workflows/build-image.yml`** (`workflow_call`, outputs `image`): computes a content-addressed tag via `hashFiles('Docker/Dockerfile.node', 'package-lock.json')`, then:
    - Tries `docker pull ghcr.io/<owner>/<repo>/testing:<hash>`.
    - If that tag doesn't exist yet, builds `Docker/Dockerfile.node` (`--target testing`) with GitHub Actions layer caching (`docker/build-push-action`, `cache-to`/`cache-from: type=gha`) and pushes it to GHCR under that tag.
    - Outputs the full image ref for downstream jobs.
@@ -133,7 +133,7 @@ If each of the 6-7 check workflows independently ran `docker build --target test
    ```
    The separate named volume mounted over `/app/node_modules` mirrors `Docker/docker-compose.yaml`'s existing pattern (bind-mount the repo, but keep `node_modules` in its own volume so the image's baked-in `node_modules` isn't shadowed by the bind mount) — same reason that volume mapping exists today, documented in `CLAUDE.md`. Since the named volume is empty on first use inside a fresh job, Docker seeds it from the image's `/app/node_modules`, so no `npm ci`/`npm i` needs to re-run in CI at all.
 
-### Reusable job workflows (`.github/workflows/jobs/`)
+### Reusable job workflows (`.github/workflows/`)
 
 | File              | Command run in container                        | Notes                                                                                                                                                                                                                                                                                                                                                                   |
 | ----------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -173,14 +173,14 @@ Add a short "CI" section to `CLAUDE.md` (matching how it already documents Docke
 
 ## Files to change
 
-- `.github/workflows/jobs/build-image.yml` (new)
-- `.github/workflows/jobs/lint.yml` (new)
-- `.github/workflows/jobs/format.yml` (new)
-- `.github/workflows/jobs/typecheck.yml` (new)
-- `.github/workflows/jobs/vitest.yml` (new)
-- `.github/workflows/jobs/build.yml` (new)
-- `.github/workflows/jobs/playwright.yml` (new)
-- `.github/workflows/jobs/audit.yml` (new)
+- `.github/workflows/build-image.yml` (new)
+- `.github/workflows/lint.yml` (new)
+- `.github/workflows/format.yml` (new)
+- `.github/workflows/typecheck.yml` (new)
+- `.github/workflows/vitest.yml` (new)
+- `.github/workflows/build.yml` (new)
+- `.github/workflows/playwright.yml` (new)
+- `.github/workflows/audit.yml` (new)
 - `.github/workflows/pr-gate.yml` (new)
 - `.github/workflows/merge-queue.yml` (new)
 - `.github/dependabot.yml` (new)
@@ -207,7 +207,7 @@ For reference, at ~100 builds/month (one `pr-gate` run + one `merge-queue` run p
 
 A host-level (not devcontainer-integrated) setup for running the individual job workflows under [`nektos/act`](https://github.com/nektos/act) before pushing, so `lint`/`format`/`typecheck`/`vitest` failures surface locally instead of only in `pr-gate`. This is a separate, host-only workflow from the devcontainer-based `npm`/`make` commands documented in the README — it is not wired into `docker-compose.yaml` or `.devcontainer/`.
 
-Coverage of the seven job workflows under `.github/workflows/jobs/`:
+Coverage of the seven job workflows under `.github/workflows/`:
 
 | Job                                              | Status                                                                                                                                                                                                    |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -258,7 +258,7 @@ Wrapped as `make` targets (see the makefile's `act-*` section) so the full comma
 The underlying command each target runs, spelled out (using `lint` as the example — the others swap the `-j` job id and `-W` path):
 
 ```
-act -W .github/workflows/jobs/lint.yml -j lint --input image=resume-2026-testing:local -s GITHUB_TOKEN=dummy-token
+act -W .github/workflows/lint.yml -j lint --input image=resume-2026-testing:local -s GITHUB_TOKEN=dummy-token
 ```
 
 `--input image=...` supplies the `image` input every job workflow requires (normally provided by `build-image.yml`, which is deliberately never run through act — see "Out of scope" below). `-s GITHUB_TOKEN=dummy-token` supplies a placeholder — required because `container.credentials.password` reads `secrets.GITHUB_TOKEN`, and act fails to even start the job if that secret is entirely unset (an empty string doesn't work either — it must be a non-empty value). A placeholder is fine for these five jobs since nothing in their steps actually calls the GitHub API with it — `playwright.yml` is the one exception, see below.
@@ -289,7 +289,7 @@ git clone --depth 1 --branch v4 https://github.com/actions/upload-artifact ~/.ca
 **2. Port conflict with a running dev server.** act runs job containers with host networking, so Playwright's `webServer` (`npm run build && npm run serve`, bound to `:8000`) collides with anything already holding that port on the host — e.g. `docker-development-1` (`make docker-up`'s `development` service). Rather than requiring the dev server to be stopped, the port was made overridable: `package.json`'s `serve` script reads `${PORT:-8000}`, and `playwright.config.ts` reads `process.env.PORT` (both default to `8000`, so real CI and a plain `npm run serve` are unaffected). `make act-playwright` passes `PORT=8001` via act's `--env` flag; spelled out:
 
 ```
-act -W .github/workflows/jobs/playwright.yml -j playwright --input image=resume-2026-testing:local -s GITHUB_TOKEN=dummy-token --action-offline-mode --env PORT=8001
+act -W .github/workflows/playwright.yml -j playwright --input image=resume-2026-testing:local -s GITHUB_TOKEN=dummy-token --action-offline-mode --env PORT=8001
 ```
 
 With both in place, `playwright.yml` runs its actual `playwright test` suite against a real built-and-served site and passes.
@@ -305,7 +305,7 @@ Unlike the other six job files, `audit.yml` doesn't have an optional `pr-number`
    ```
 3. Ran it:
    ```
-   act -W .github/workflows/jobs/audit.yml -j audit --input image=resume-2026-testing:local --input pr-number=1 -s GITHUB_TOKEN=dummy-token --action-offline-mode
+   act -W .github/workflows/audit.yml -j audit --input image=resume-2026-testing:local --input pr-number=1 -s GITHUB_TOKEN=dummy-token --action-offline-mode
    ```
    `npm audit` ran and produced real output (this repo does have some existing vulnerabilities in transitive deps — expected, and exactly what this non-blocking check is for). No `shell: bash` fix was needed here; the step's `run:` doesn't use `set -o pipefail`.
 4. Reverted the `if: false` — `audit.yml` itself is unchanged from before this validation.
@@ -315,5 +315,5 @@ Not added to `.actrc`/documented as a repeatable command because it requires edi
 ### Out of scope (deliberately not attempted)
 
 - **`build-image.yml`**: pushes to GHCR, which has no reason to happen from a laptop — the local `docker build --target testing` above replaces it for local testing.
-- **`pr-gate.yml` / `merge-queue.yml` as whole graphs**: both start with a `needs: build-image` job that every other job depends on for its `image` input, so running either wholesale would require either running `build-image` (out of scope, see above) or fully faking its output — the individual `-W .github/workflows/jobs/<file>.yml -j <job>` invocations above already give equivalent per-check signal without either problem. `merge-queue.yml` additionally triggers on `merge_group`, which has no real local equivalent.
+- **`pr-gate.yml` / `merge-queue.yml` as whole graphs**: both start with a `needs: build-image` job that every other job depends on for its `image` input, so running either wholesale would require either running `build-image` (out of scope, see above) or fully faking its output — the individual `-W .github/workflows/<file>.yml -j <job>` invocations above already give equivalent per-check signal without either problem. `merge-queue.yml` additionally triggers on `merge_group`, which has no real local equivalent.
 - **PR-comment steps**: never exercised for real (see `pr-number` note above) — nothing real to comment on. `audit.yml`'s non-comment logic was validated once manually — see above.

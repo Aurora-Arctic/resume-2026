@@ -12,53 +12,53 @@ permissions:
 
 jobs:
   build-image:
-    uses: ./.github/workflows/jobs/build-image.yml
+    uses: ./.github/workflows/build-image.yml
 
   lint:
     needs: build-image
-    uses: ./.github/workflows/jobs/lint.yml
+    uses: ./.github/workflows/lint.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
 
   format:
     needs: build-image
-    uses: ./.github/workflows/jobs/format.yml
+    uses: ./.github/workflows/format.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
 
   typecheck:
     needs: build-image
-    uses: ./.github/workflows/jobs/typecheck.yml
+    uses: ./.github/workflows/typecheck.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
 
   vitest:
     needs: build-image
-    uses: ./.github/workflows/jobs/vitest.yml
+    uses: ./.github/workflows/vitest.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
 
   build:
     needs: build-image
-    uses: ./.github/workflows/jobs/build.yml
+    uses: ./.github/workflows/build.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
 
   playwright:
     needs: build-image
-    uses: ./.github/workflows/jobs/playwright.yml
+    uses: ./.github/workflows/playwright.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
 
-  # Non-blocking, PR-only — see .github/workflows/jobs/audit.yml.
+  # Non-blocking, PR-only — see .github/workflows/audit.yml.
   audit:
     needs: build-image
-    uses: ./.github/workflows/jobs/audit.yml
+    uses: ./.github/workflows/audit.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
