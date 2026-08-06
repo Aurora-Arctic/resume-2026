@@ -4,8 +4,7 @@ WORKDIR /app
 
 RUN chown node:node /app
 
-COPY --chown=node:node ./package.json /app/package.json
-COPY --chown=node:node ./package-lock.json /app/package-lock.json
+COPY --chown=node:node ./package.json ./package-lock.json /app/
 
 USER node
 
