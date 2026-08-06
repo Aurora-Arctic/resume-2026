@@ -55,6 +55,8 @@ jobs:
       # playwright.config.ts's webServer.reuseExistingServer reads this to decide
       # whether to always start a fresh server rather than reusing one on :8000.
       CI: true
+      # Path the json reporter writes to — read by summarize-playwright.mjs.
+      PLAYWRIGHT_JSON_OUTPUT_NAME: /app/playwright-results.json
     steps:
       - name: Checkout into /app
         uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
@@ -69,7 +71,7 @@ jobs:
         id: run
         run: |
           set -o pipefail
-          npm run test:e2e 2>&1 | tee /app/output.log
+          npm run test:e2e -- --reporter=list,json,html 2>&1 | tee /app/output.log
 
       - name: Compute duration
         id: timer
@@ -88,6 +90,11 @@ jobs:
             /app/test-results/
           retention-days: 7
 
+      - name: Summarize output
+        id: summarize
+        if: always()
+        run: node .github/scripts/summarize-playwright.mjs
+
       - name: Write job summary
         if: always()
         uses: ./.github/actions/job-summary
@@ -96,7 +103,8 @@ jobs:
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
           duration: ${{ steps.timer.outputs.duration }}
-          summary: ''
+          summary: ${{ steps.summarize.outputs.summary }}
+          details: ${{ steps.summarize.outputs.details }}
 
       # Always comments pass/fail from pr-gate, same convention as vitest.yml;
       # fail-only on a separate merge-queue-labeled thread from merge-queue
@@ -113,4 +121,5 @@ jobs:
           log-file: /app/output.log
           success-mode: comment
           duration: ${{ steps.timer.outputs.duration }}
-          summary: ''
+          summary: ${{ steps.summarize.outputs.summary }}
+          details: ${{ steps.summarize.outputs.details }}

@@ -55,7 +55,7 @@ jobs:
         id: run
         run: |
           set -o pipefail
-          npm test 2>&1 | tee /app/output.log
+          npm test -- --reporter=default --reporter=json --outputFile=/app/vitest-results.json 2>&1 | tee /app/output.log
 
       - name: Compute duration
         id: timer
@@ -63,6 +63,11 @@ jobs:
         uses: ./.github/actions/timer-elapsed
         with:
           start: ${{ steps.timer-start.outputs.start }}
+
+      - name: Summarize output
+        id: summarize
+        if: always()
+        run: node .github/scripts/summarize-vitest.mjs
 
       - name: Write job summary
         if: always()
@@ -72,7 +77,8 @@ jobs:
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
           duration: ${{ steps.timer.outputs.duration }}
-          summary: ''
+          summary: ${{ steps.summarize.outputs.summary }}
+          details: ${{ steps.summarize.outputs.details }}
 
       # Always comments pass/fail from pr-gate; fail-only on a separate
       # merge-queue-labeled thread from merge-queue (no action at all on
@@ -89,4 +95,5 @@ jobs:
           log-file: /app/output.log
           success-mode: comment
           duration: ${{ steps.timer.outputs.duration }}
-          summary: ''
+          summary: ${{ steps.summarize.outputs.summary }}
+          details: ${{ steps.summarize.outputs.details }}
