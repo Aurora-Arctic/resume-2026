@@ -280,6 +280,30 @@ Getting the composite actions this repo uses (`checkout-to-app`, `job-summary`, 
 - **`shell: bash` needed explicitly in `container:` jobs** — a real bug in the workflow files, not an act artifact: `lint`, `format`, `typecheck`, `vitest`, and `playwright` all failed identically on `set: Illegal option -o pipefail`. Per [GitHub's own docs](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container), `container:` jobs default to `sh` (dash), unlike normal `runs-on` jobs which default to `bash` — dash doesn't support `set -o pipefail`. Since this CI setup had never actually been exercised against a real PR yet at the time (see "Verification" above), this was a live, undiscovered bug — fixed by adding `shell: bash` to `defaults.run` in all five affected job files.
 - **Separately, job workflows must live directly under `.github/workflows/`, not a nested subdirectory** (fixed in commit "Fix workflow file location"; this repo originally had them under `.github/workflows/jobs/`). This is a real GitHub Actions constraint, not an act one — GitHub only discovers workflow files (including `workflow_call` reusable ones referenced via a local `uses: ./...` path) directly in `.github/workflows/`, so the original nested layout would never have actually worked on real GitHub Actions, regardless of what local act testing showed (act didn't catch this, since `act -W <path>` happily runs a workflow file from anywhere you point it).
 
+### A real bug act couldn't catch: EACCES on the real runner
+
+Every check passing under act (including a from-scratch, fully-cleared-cache run) didn't guarantee a real GitHub Actions run would succeed — a real, previously-undiscovered bug in the workflow files only surfaced once run for real:
+
+```
+Error: EACCES: permission denied, open '/__w/_temp/_runner_file_commands/save_state_...'
+    at Object.appendFileSync (node:fs:2504:6)
+    at Object.issueFileCommand (/__w/_actions/actions/checkout/v4/dist/index.js:3345:8)
+    at Object.saveState (/__w/_actions/actions/checkout/v4/dist/index.js:3262:31)
+```
+
+**Root cause:** none of the job containers specified a `user`, so each ran as the `testing` image's default (`USER node`, uid 1000, set in `Docker/Dockerfile.node`). GitHub's `container:` jobs bind-mount a `_temp/_runner_file_commands` directory from the runner host — used by `actions/checkout` and any JS action calling `core.saveState`/`core.setOutput`/etc. — owned by the runner's own user, not the container image's. A UID mismatch means the container's non-root user can't write there. This is a known class of bug for non-root container images on GitHub Actions, not specific to this repo's setup.
+
+**Why act didn't catch it:** act's own container orchestration doesn't reproduce the real runner's `_temp` bind-mount/ownership model — it has its own `/var/run/act/workflow/...` state paths, unaffected by the container image's `USER`. So this is a genuine fidelity gap between act and real GitHub Actions: a passing `act` run is strong evidence the job's own logic is correct, but not proof the container will have write access to whatever GitHub's real runner mounts in. Worth remembering next time everything's green locally but fails for real.
+
+**Fix:** added `options: --user root` to all seven job files' `container:` key — forces the ephemeral CI container to run as root regardless of the image's default `USER node`. This only affects these CI job containers; `Docker/Dockerfile.node` itself is untouched, so the devcontainer and local `npm run develop`/`test` workflows still run as the non-root `node` user as before.
+
+That fix immediately surfaced two more, each specific to running as root:
+
+- **Playwright's baked-in Chromium went missing.** Running as root changes `$HOME` from `/home/node` to `/root`, but Chromium was installed (`npx playwright install chromium` in `Dockerfile.node`) as the `node` user, under `/home/node/.cache/ms-playwright` — root's `$HOME` has no such directory. Fixed by pinning `HOME=/home/node` via `-e HOME=/home/node` in every job's `options:` (not just `playwright.yml` — applied everywhere for consistency, in case any other tool ever becomes `$HOME`-sensitive).
+- **Chromium itself refuses to launch as root without `--no-sandbox`.** `playwright.config.ts` didn't pass that. Fixed by adding `launchOptions: { args: ['--no-sandbox'] }`, gated on `process.env.CI` so local/devcontainer runs (non-root, sandboxed) are unaffected — real CI already sets `CI: true` for `playwright.config.ts`'s `webServer.reuseExistingServer`, so this reuses that existing signal rather than adding a new one.
+
+All seven job files re-verified via `act` after these fixes (`--user root` doesn't change anything act itself needed to work around — the makefile/`.actrc` setup above is unaffected).
+
 ### `playwright.yml`: two more local-only workarounds
 
 `build.yml` runs cleanly the same way as the four checks above. `playwright.yml` needed two additional, machine-local workarounds on top of the `checkout-to-app` cache seed and `shell: bash` before it passed end to end — neither changes any committed file beyond the port override below.
