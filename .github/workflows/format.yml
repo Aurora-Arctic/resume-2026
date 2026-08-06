@@ -1,5 +1,7 @@
-name: Format check
+name: Format Check
 
+# Reusable check that runs Prettier in check mode. Called via
+# workflow_call from pr-gate and merge-queue, never triggered directly.
 on:
   workflow_call:
     inputs:
@@ -55,7 +57,7 @@ jobs:
         if: always()
         uses: ./.github/actions/job-summary
         with:
-          check-name: Format check
+          check-name: Format Check
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
 
@@ -66,7 +68,7 @@ jobs:
         if: always() && inputs.pr-number
         uses: ./.github/actions/pr-comment
         with:
-          check-name: Format check
+          check-name: Format Check
           marker-slug: format
           pr-number: ${{ inputs.pr-number }}
           merge-queue: ${{ inputs.merge-queue }}

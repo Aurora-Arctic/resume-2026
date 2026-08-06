@@ -1,5 +1,7 @@
-name: Dependency audit
+name: Dependency Audit
 
+# Reusable, non-blocking check that runs `npm audit` and comments the
+# results on the PR. Called via workflow_call from pr-gate only.
 on:
   workflow_call:
     inputs:
