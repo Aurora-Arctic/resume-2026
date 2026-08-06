@@ -42,7 +42,7 @@ This attaches to an already-running dev server rather than launching one itself,
 - **Prettier** (`.prettierrc`) handles all formatting — ESLint doesn't check style itself; `eslint-config-prettier` disables the ESLint rules that would otherwise conflict with it. Run it with `make npm-format` to write changes, or `make npm-format-check` for a check-only pass (no writes) suitable for CI. `.prettierignore` excludes `node_modules`, build output (`public`, `.cache`), and generated files (`package-lock.json`).
 - Both tools cover the whole project in one pass — there's no separate config per directory — but `eslint.config.mjs` does split globals by execution context (Node globals for `gatsby-*.ts` build-time files, browser globals for `src/**`).
 - **Editor integration**: the `devcontainer` service's VS Code config ([.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)) installs the ESLint (`dbaeumer.vscode-eslint`) and Prettier (`esbenp.prettier-vscode`) extensions automatically, and sets `editor.formatOnSave` (Prettier) plus `source.fixAll.eslint` as a code action on save — so both run automatically in the editor, not just at commit time via the pre-commit hook.
-- **Pre-commit hook**: the [`pre-commit`](https://www.npmjs.com/package/pre-commit) npm package is a devDependency, configured via the `"pre-commit"` field in `package.json` to run `npm run lint` and `npm run format:check` before every commit. It registers a real `.git/hooks/pre-commit` hook as part of `npm install`'s install scripts, so it's set up automatically the first time you run `make npm-install` (or plain `npm install`) inside the `devcontainer` service — no separate setup step. A commit is blocked if either check fails; run `make npm-lint-fix` / `make npm-format` to fix and try again.
+- **Pre-commit hook**: the [`pre-commit`](https://www.npmjs.com/package/pre-commit) npm package is a devDependency, configured via the `"pre-commit"` field in `package.json` to run `npm run lint`, `npm run format:check`, and `npm run typecheck` before every commit. It registers a real `.git/hooks/pre-commit` hook as part of `npm install`'s install scripts, so it's set up automatically the first time you run `make npm-install` (or plain `npm install`) inside the `devcontainer` service — no separate setup step. A commit is blocked if any check fails; run `make npm-lint-fix` / `make npm-format` to fix what's auto-fixable and try again. Run the same three checks on demand, without committing, via `make npm-pre-commit`.
 
 ## Available commands
 
@@ -60,12 +60,13 @@ The `npm` column below lists the underlying script — run it inside the `devcon
 
 ### Linting & formatting
 
-| npm                    | make                    | Description                           |
-| ---------------------- | ----------------------- | ------------------------------------- |
-| `npm run lint`         | `make npm-lint`         | ESLint over the whole project         |
-| `npm run lint:fix`     | `make npm-lint-fix`     | ESLint with auto-fix                  |
-| `npm run format`       | `make npm-format`       | Prettier write over the whole project |
-| `npm run format:check` | `make npm-format-check` | Prettier check (no writes), for CI    |
+| npm                    | make                    | Description                                                                |
+| ---------------------- | ----------------------- | -------------------------------------------------------------------------- |
+| `npm run lint`         | `make npm-lint`         | ESLint over the whole project                                              |
+| `npm run lint:fix`     | `make npm-lint-fix`     | ESLint with auto-fix                                                       |
+| `npm run format`       | `make npm-format`       | Prettier write over the whole project                                      |
+| `npm run format:check` | `make npm-format-check` | Prettier check (no writes), for CI                                         |
+| `npm run pre-commit`   | `make npm-pre-commit`   | Run the pre-commit hook's checks (lint, format check, typecheck) on demand |
 
 ### Testing
 

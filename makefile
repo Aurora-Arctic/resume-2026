@@ -1,6 +1,6 @@
 .PHONY: docker-build docker-up docker-down docker-rebuild docker-update-token docker-logs \
 	npm-install npm-develop npm-build npm-serve npm-clean npm-lint npm-lint-fix \
-	npm-format npm-format-check npm-test npm-test-watch npm-test-e2e
+	npm-format npm-format-check npm-pre-commit npm-test npm-test-watch npm-test-e2e
 
 docker-build:
 	docker compose -f Docker/docker-compose.yaml build
@@ -46,6 +46,9 @@ npm-format:
 
 npm-format-check:
 	npm run format:check
+
+npm-pre-commit:
+	npm run pre-commit
 
 npm-test:
 	npm test
