@@ -88,6 +88,35 @@ The `npm` column below lists the underlying script — run it inside the `devcon
 
 `make docker-up` and `make docker-rebuild` also regenerate the Claude Code OAuth token used by the dev container — see `CLAUDE.md` for details.
 
+### Local CI testing
+
+The real `.github/workflows/*.yml` files can be run locally with [`act`](https://github.com/nektos/act) before pushing, so failures surface immediately instead of only in PR gate.
+
+**This one is different from every other command on this page: run it on your host machine directly, not inside the `devcontainer` service.** Every job's `container:` key means act's job containers would become siblings on the host Docker daemon rather than nested inside the devcontainer if run from there, breaking bind-mounted paths — so `act` itself, and the setup below, need to run on the host.
+
+**Setup** (once per machine, on the host — not in `devcontainer`):
+
+1. Install `act` via the official install script, targeting `~/.local/bin` (no `sudo` needed — put it wherever you like on `PATH`, this just avoids requiring Homebrew or a Go toolchain):
+   ```sh
+   curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | sh -s -- -b "$HOME/.local/bin"
+   ```
+2. Make sure Docker is running and `docker ps` works from the same host shell `act` will run in — this is your host's Docker (Docker Desktop or engine), unrelated to the `docker-*` targets above.
+
+That's it — `make act-image` (and everything below that depends on it) builds the image `act` runs against from your current working tree, and `.actrc` in the repo root already carries the flags `act` needs. Run the `make act-*` targets themselves from the host too, for the same reason as the setup above. See [CI-SETUP.md](CI-SETUP.md#local-ci-testing-with-act) for the full rationale behind `.actrc` and every workaround below.
+
+| make                  | Description                                                          |
+| --------------------- | -------------------------------------------------------------------- |
+| `make act-image`      | Build the local image `act` runs jobs against, from the current tree |
+| `make act-lint`       | Run `lint.yml` via `act`                                             |
+| `make act-format`     | Run `format.yml` via `act`                                           |
+| `make act-typecheck`  | Run `typecheck.yml` via `act`                                        |
+| `make act-vitest`     | Run `vitest.yml` via `act`                                           |
+| `make act-build`      | Run `build.yml` via `act`                                            |
+| `make act-playwright` | Run `playwright.yml` via `act`                                       |
+| `make act-test`       | Run all six of the above, in order, stopping at the first failure    |
+
+`audit.yml` and `build-image.yml` don't have `make` targets and aren't run this way — `audit.yml`'s PR-comment step can't be skipped without editing the file each time (not a repeatable local command), and `build-image.yml` pushes a real image to GHCR, which has no reason to happen from a laptop. See [CI-SETUP.md](CI-SETUP.md#local-ci-testing-with-act) for the full reasoning and the workarounds `playwright.yml` in particular needed.
+
 ## Continuous integration
 
 Every pull request against `main` runs **PR gate**: lint, format check, typecheck, Vitest, a production build, and the Playwright e2e suite, plus a non-blocking `npm audit` that posts/updates a single PR comment. Right before a PR actually merges, the **merge queue** re-runs those same blocking checks one more time, since other PRs may have merged in the meantime.
