@@ -59,6 +59,10 @@ jobs:
       - name: Checkout into /app
         uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
+      - name: Start timer
+        id: timer-start
+        uses: ./.github/actions/timer-start
+
       # playwright.config.ts's webServer runs `npm run build && npm run serve`
       # itself, so no separate build step is needed here.
       - name: Run Playwright e2e tests
@@ -66,6 +70,13 @@ jobs:
         run: |
           set -o pipefail
           npm run test:e2e 2>&1 | tee /app/output.log
+
+      - name: Compute duration
+        id: timer
+        if: always()
+        uses: ./.github/actions/timer-elapsed
+        with:
+          start: ${{ steps.timer-start.outputs.start }}
 
       - name: Upload Playwright report
         if: failure()
@@ -84,6 +95,8 @@ jobs:
           check-name: Playwright E2E
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
+          duration: ${{ steps.timer.outputs.duration }}
+          summary: ''
 
       # Always comments pass/fail from pr-gate, same convention as vitest.yml;
       # fail-only on a separate merge-queue-labeled thread from merge-queue
@@ -99,3 +112,5 @@ jobs:
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
           success-mode: comment
+          duration: ${{ steps.timer.outputs.duration }}
+          summary: ''
