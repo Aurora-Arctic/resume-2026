@@ -41,7 +41,7 @@ jobs:
       # is fast even on a rebuild, and near-instant if this exact image ref already
       # exists in GHCR (unchanged Dockerfile.node + package-lock.json).
       - name: Build and push testing image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Docker/Dockerfile.node
