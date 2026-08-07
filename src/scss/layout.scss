@@ -28,6 +28,8 @@ body {
 
 .paper-card {
   position: relative;
+  z-index: 0; // stacking context, so ::after's z-index: -1 stays behind this
+  // card's own content instead of the whole page
   width: min(100%, 960px);
   background: $silver-oxide;
   background-image: url('../images/prism-silver-oxide.png');
@@ -35,6 +37,28 @@ body {
   color: $text;
   box-shadow: 0 20px 45px $shadow;
   padding: 4rem;
+  transition:
+    background-color $theme-transition-duration $theme-transition-easing,
+    color $theme-transition-duration $theme-transition-easing;
+
+  // background-image can't itself transition, so the light-mode texture
+  // lives on this overlay instead and crossfades in/out via opacity, on top
+  // of the dark texture set above (which stays put underneath, always).
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: url('../images/prism-light.png');
+    background-repeat: repeat;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity $theme-transition-duration $theme-transition-easing;
+
+    @media print {
+      display: none;
+    }
+  }
 
   @media print {
     width: auto;
@@ -49,37 +73,44 @@ body {
 
 html[data-theme='light'] .paper-card {
   background-color: $lavender-oxide;
-  background-image: url('../images/prism-light.png');
   color: $silver-oxide;
+
+  &::after {
+    opacity: 1;
+  }
 }
 
 .theme-toggle {
-  // The button itself stays a full, unclipped square hit target — clip-path
-  // affects hit-testing as well as painting, so clipping the interactive
-  // element itself would shrink the clickable area down to a thin diagonal
-  // sliver. The "folded corner" triangle is purely visual, drawn by ::before.
+  // Clipped to the same triangle ::before paints, so both the hit area and
+  // the paint area are confined to the visible "folded corner" — clicks
+  // outside the diagonal fall through to whatever's underneath instead of
+  // being captured by the button.
   position: absolute;
   top: 0;
   right: 0;
   width: 5.125rem;
   height: 5rem;
-  padding: 1rem 1.0625rem 0 0;
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
   border: 0;
   cursor: pointer;
   background: transparent;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
   color: $text;
 
   &::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: $wine-dark;
-    clip-path: polygon(100% 0, 100% 100%, 0 0);
+    background-color: $wine-dark;
     pointer-events: none;
     border: 0.25rem solid $silver-oxide;
+    transition:
+      background-color $theme-transition-duration $theme-transition-easing,
+      border-color $theme-transition-duration $theme-transition-easing;
+  }
+
+  &:hover::before,
+  &:active::before {
+    background-color: $wine;
   }
 
   &:focus-visible {
@@ -96,23 +127,38 @@ html[data-theme='light'] .theme-toggle::before {
   border-color: $lavender-oxide;
 }
 
+.theme-toggle__facets {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+  pointer-events: none;
+}
+
 .theme-toggle__facet {
-  position: relative;
+  position: absolute;
+  top: 1rem;
+  right: 1.0625rem;
   width: 1.25rem;
   height: 1.25rem;
   color: $text;
-}
+  // Pivot at the .theme-toggle__facets wrapper's top-right corner (offset
+  // from this icon's own box: its right/top edges sit 1.0625rem/1rem inside
+  // that corner, so the origin is icon-width + 1.0625rem right, 1rem up) so
+  // rotate() alone swings the icon through an arc centered on the fold.
+  transform-origin: 2.3125rem -1rem;
+  transition: transform $theme-transition-duration $theme-transition-easing;
+  transform: rotate(0deg);
 
-.theme-toggle__facet--light {
-  display: none;
-}
+  &--out {
+    transform: rotate($theme-toggle-icon-arc);
+  }
 
-html[data-theme='light'] .theme-toggle__facet--dark {
-  display: none;
-}
-
-html[data-theme='light'] .theme-toggle__facet--light {
-  display: block;
+  &--pre-enter {
+    transform: rotate(-$theme-toggle-icon-arc);
+    opacity: 0;
+    transition: all 0s;
+  }
 }
 
 .background-credit {
@@ -139,5 +185,14 @@ html[data-theme='light'] .theme-toggle__facet--light {
   body {
     background: $print-bg;
     color: $print-text;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper-card,
+  .paper-card::after,
+  .theme-toggle::before,
+  .theme-toggle__facet {
+    transition: none;
   }
 }

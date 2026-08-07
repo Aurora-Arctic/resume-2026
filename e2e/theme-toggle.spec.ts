@@ -20,19 +20,18 @@ test.describe('paper theme toggle', () => {
     await page.goto('/');
 
     const card = page.locator('.paper-card');
-    const darkBackgroundImage = await card.evaluate((el) => getComputedStyle(el).backgroundImage);
+    const darkOverlayOpacity = await card.evaluate((el) => getComputedStyle(el, '::after').opacity);
 
     const toggle = page.getByRole('button', { name: 'Toggle light and dark mode for the paper' });
     await toggle.click();
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    // The pattern PNGs are small enough that Gatsby's production build inlines
-    // them as base64 data URIs, so asserting on a filename in the computed
-    // background-image doesn't hold there — compare against the dark-mode
-    // value instead, which is resilient to whether the build inlines or not.
+    // .paper-card's own background-image never changes — the light-mode
+    // pattern crossfades in via a ::after overlay instead (background-image
+    // can't itself transition), so assert on that overlay's opacity.
     await expect
-      .poll(() => card.evaluate((el) => getComputedStyle(el).backgroundImage))
-      .not.toBe(darkBackgroundImage);
+      .poll(() => card.evaluate((el) => getComputedStyle(el, '::after').opacity))
+      .not.toBe(darkOverlayOpacity);
 
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -70,7 +69,7 @@ test.describe('paper theme toggle', () => {
     await page.emulateMedia({ media: 'print' });
 
     // .paper-card itself goes transparent in print — the white page background
-    // comes from html/body, same as before this feature (see LAYOUT-SETUP.md).
+    // comes from html/body, same as before this feature (see claude-docs/LAYOUT-SETUP.md).
     await expect(page.locator('.paper-card')).toHaveCSS('background-image', 'none');
     await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await expect(page.locator('.theme-toggle')).toBeHidden();

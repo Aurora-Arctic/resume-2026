@@ -106,7 +106,7 @@ The real `.github/workflows/*.yml` files can be run locally with [`act`](https:/
    ```
 2. Make sure Docker is running and `docker ps` works from the same host shell `act` will run in — this is your host's Docker (Docker Desktop or engine), unrelated to the `docker-*` targets above.
 
-That's it — `make act-image` (and everything below that depends on it) builds the image `act` runs against from your current working tree, and `.actrc` in the repo root already carries the flags `act` needs. Run the `make act-*` targets themselves from the host too, for the same reason as the setup above. See [CI-SETUP.md](CI-SETUP.md#local-ci-testing-with-act) for the full rationale behind `.actrc` and every workaround below.
+That's it — `make act-image` (and everything below that depends on it) builds the image `act` runs against from your current working tree, and `.actrc` in the repo root already carries the flags `act` needs. Run the `make act-*` targets themselves from the host too, for the same reason as the setup above. See [CI-SETUP.md](claude-docs/CI-SETUP.md#local-ci-testing-with-act) for the full rationale behind `.actrc` and every workaround below.
 
 | make                  | Description                                                          |
 | --------------------- | -------------------------------------------------------------------- |
@@ -119,9 +119,9 @@ That's it — `make act-image` (and everything below that depends on it) builds 
 | `make act-playwright` | Run `playwright.yml` via `act`                                       |
 | `make act-test`       | Run all six of the above, in order, stopping at the first failure    |
 
-`act-vitest` and `act-playwright` also auto-seed a local cache for `actions/upload-artifact@v7` the first time (each now uploads a coverage-report artifact) — see [CI-SETUP.md](CI-SETUP.md#local-ci-testing-with-act) for why that's needed at all.
+`act-vitest` and `act-playwright` also auto-seed a local cache for `actions/upload-artifact@v7` the first time (each now uploads a coverage-report artifact) — see [CI-SETUP.md](claude-docs/CI-SETUP.md#local-ci-testing-with-act) for why that's needed at all.
 
-`audit.yml` and `build-image.yml` don't have `make` targets and aren't run this way — `audit.yml`'s PR-comment step can't be skipped without editing the file each time (not a repeatable local command), and `build-image.yml` pushes a real image to GHCR, which has no reason to happen from a laptop. See [CI-SETUP.md](CI-SETUP.md#local-ci-testing-with-act) for the full reasoning and the workarounds `playwright.yml` in particular needed.
+`audit.yml` and `build-image.yml` don't have `make` targets and aren't run this way — `audit.yml`'s PR-comment step can't be skipped without editing the file each time (not a repeatable local command), and `build-image.yml` pushes a real image to GHCR, which has no reason to happen from a laptop. See [CI-SETUP.md](claude-docs/CI-SETUP.md#local-ci-testing-with-act) for the full reasoning and the workarounds `playwright.yml` in particular needed.
 
 ## Continuous integration
 
@@ -129,7 +129,7 @@ Every pull request against `main` runs **PR gate**: lint, format check, typechec
 
 If a check fails, the bot posts (or updates) a single PR comment for that check with the failure output, rather than spamming a new comment per run — a later passing run resolves or removes it. A merge-queue failure is labeled `(merge queue)` and posted as its own comment, separate from any PR-gate comment for the same check, so you can tell which phase actually failed.
 
-For the full breakdown — job/workflow structure, the Docker image checks run inside, and the composite actions the check workflows share — see the "Continuous Integration" section of [CLAUDE.md](CLAUDE.md#continuous-integration). For the history of how it was designed and why (including follow-up changes after the initial setup), see [CI-SETUP.md](CI-SETUP.md).
+For the full breakdown — job/workflow structure, the Docker image checks run inside, and the composite actions the check workflows share — see the "Continuous Integration" section of [CLAUDE.md](CLAUDE.md#continuous-integration). For the history of how it was designed and why (including follow-up changes after the initial setup), see [CI-SETUP.md](claude-docs/CI-SETUP.md).
 
 ## Documentation for contributors
 
