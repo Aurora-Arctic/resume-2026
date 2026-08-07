@@ -1,17 +1,11 @@
 import React, { type ReactElement } from 'react';
+import Layout from '../components/Layout';
 
 const NotFoundPage = (): ReactElement => (
-  <main
-    style={{
-      maxWidth: '960px',
-      margin: '0 auto',
-      padding: '3rem 1.5rem',
-      fontFamily: 'sans-serif',
-    }}
-  >
+  <Layout>
     <h1>Page not found</h1>
     <p>The page you requested does not exist.</p>
-  </main>
+  </Layout>
 );
 
 export default NotFoundPage;

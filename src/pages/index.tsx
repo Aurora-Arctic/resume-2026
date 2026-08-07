@@ -1,14 +1,12 @@
 import React, { type ReactElement } from 'react';
-import '../scss/index.scss';
+import Layout from '../components/Layout';
 
 const IndexPage = (): ReactElement => (
-  <main className="page-shell">
-    <div className="page-card">
-      <h1 className="page-title">Resume 2026</h1>
-      <p className="page-copy">My resume is being built with Gatsby.</p>
-      <p className="page-copy">Use this as the starting point for your personal resume site.</p>
-    </div>
-  </main>
+  <Layout>
+    <h1>Resume 2026</h1>
+    <p>My resume is being built with Gatsby.</p>
+    <p>Use this as the starting point for your personal resume site.</p>
+  </Layout>
 );
 
 export default IndexPage;
