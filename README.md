@@ -70,11 +70,15 @@ The `npm` column below lists the underlying script — run it inside the `devcon
 
 ### Testing
 
-| npm                  | make                  | Description                                                 |
-| -------------------- | --------------------- | ----------------------------------------------------------- |
-| `npm test`           | `make npm-test`       | Run unit/component tests once (Vitest)                      |
-| `npm run test:watch` | `make npm-test-watch` | Run unit/component tests in watch mode                      |
-| `npm run test:e2e`   | `make npm-test-e2e`   | Run Playwright e2e specs (builds and serves the site first) |
+| npm                         | make                         | Description                                                      |
+| --------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| `npm test`                  | `make npm-test`              | Run unit/component tests once (Vitest)                           |
+| `npm run test:watch`        | `make npm-test-watch`        | Run unit/component tests in watch mode                           |
+| `npm run test:coverage`     | `make npm-test-coverage`     | Run unit/component tests with coverage (80% threshold, enforced) |
+| `npm run test:e2e`          | `make npm-test-e2e`          | Run Playwright e2e specs (builds and serves the site first)      |
+| `npm run test:e2e:coverage` | `make npm-test-e2e-coverage` | Run Playwright e2e specs with coverage (80% threshold, enforced) |
+
+See the "Testing" section of [CLAUDE.md](CLAUDE.md#testing) for how coverage is collected/enforced for each, including a real e2e-specific hydration-timing gotcha.
 
 ### Docker
 
@@ -115,11 +119,13 @@ That's it — `make act-image` (and everything below that depends on it) builds 
 | `make act-playwright` | Run `playwright.yml` via `act`                                       |
 | `make act-test`       | Run all six of the above, in order, stopping at the first failure    |
 
+`act-vitest` and `act-playwright` also auto-seed a local cache for `actions/upload-artifact@v7` the first time (each now uploads a coverage-report artifact) — see [CI-SETUP.md](CI-SETUP.md#local-ci-testing-with-act) for why that's needed at all.
+
 `audit.yml` and `build-image.yml` don't have `make` targets and aren't run this way — `audit.yml`'s PR-comment step can't be skipped without editing the file each time (not a repeatable local command), and `build-image.yml` pushes a real image to GHCR, which has no reason to happen from a laptop. See [CI-SETUP.md](CI-SETUP.md#local-ci-testing-with-act) for the full reasoning and the workarounds `playwright.yml` in particular needed.
 
 ## Continuous integration
 
-Every pull request against `main` runs **PR gate**: lint, format check, typecheck, Vitest, a production build, and the Playwright e2e suite, plus a non-blocking `npm audit` that posts/updates a single PR comment. Right before a PR actually merges, the **merge queue** re-runs those same blocking checks one more time, since other PRs may have merged in the meantime.
+Every pull request against `main` runs **PR gate**: lint, format check, typecheck, Vitest, a production build, and the Playwright e2e suite, plus a non-blocking `npm audit` that posts/updates a single PR comment. Right before a PR actually merges, the **merge queue** re-runs those same blocking checks one more time, since other PRs may have merged in the meantime. Vitest and Playwright each also enforce an 80% coverage threshold and upload their coverage report as a downloadable artifact — see [CLAUDE.md](CLAUDE.md#testing).
 
 If a check fails, the bot posts (or updates) a single PR comment for that check with the failure output, rather than spamming a new comment per run — a later passing run resolves or removes it. A merge-queue failure is labeled `(merge queue)` and posted as its own comment, separate from any PR-gate comment for the same check, so you can tell which phase actually failed.
 
