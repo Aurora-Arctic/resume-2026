@@ -18,6 +18,18 @@ on:
         required: false
         type: boolean
         default: false
+      should-run:
+        description: >-
+          Set false to skip the actual typecheck run while still completing this job
+          under its normal name. pr-gate passes this from its path-filter output
+          instead of putting an `if:` on the calling job — a job-level `if:` makes
+          GitHub report a differently-named, bare check run ("typecheck" instead of
+          "typecheck / typecheck") when skipped, which never satisfies the
+          "typecheck / typecheck" required status check and leaves the PR stuck.
+          Defaults true so merge-queue (no path filtering) is unaffected.
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -45,21 +57,24 @@ jobs:
         shell: bash
     steps:
       - name: Checkout into /app
+        if: inputs.should-run
         uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
       - name: Start timer
         id: timer-start
+        if: inputs.should-run
         uses: ./.github/actions/timer-start
 
       - name: Run typecheck
         id: run
+        if: inputs.should-run
         run: |
           set -o pipefail
           npm run typecheck 2>&1 | tee /app/output.log
 
       - name: Compute duration
         id: timer
-        if: always()
+        if: always() && inputs.should-run
         uses: ./.github/actions/timer-elapsed
         with:
           start: ${{ steps.timer-start.outputs.start }}
@@ -68,7 +83,7 @@ jobs:
       # and no trailing summary of its own — count errors/files ourselves.
       - name: Summarize output
         id: summarize
-        if: always()
+        if: always() && inputs.should-run
         run: |
           errors=$(grep -cE '^[^(]+\([0-9]+,[0-9]+\): error TS[0-9]+:' /app/output.log || true)
           files=$(grep -E '^[^(]+\([0-9]+,[0-9]+\): error TS[0-9]+:' /app/output.log | sed -E 's/\([0-9]+,[0-9]+\).*$//' | sort -u | wc -l | tr -d ' ' || true)
@@ -104,7 +119,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Write job summary
-        if: always()
+        if: always() && inputs.should-run
         uses: ./.github/actions/job-summary
         with:
           check-name: Typecheck
@@ -118,7 +133,7 @@ jobs:
       # fail-only on a separate merge-queue-labeled thread from merge-queue
       # (no action at all on success) — see .github/actions/pr-comment.
       - name: Comment on PR
-        if: always() && inputs.pr-number
+        if: always() && inputs.pr-number && inputs.should-run
         uses: ./.github/actions/pr-comment
         with:
           check-name: Typecheck

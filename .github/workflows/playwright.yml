@@ -19,6 +19,18 @@ on:
         required: false
         type: boolean
         default: false
+      should-run:
+        description: >-
+          Set false to skip the actual e2e run while still completing this job under
+          its normal name. pr-gate passes this from its path-filter output instead of
+          putting an `if:` on the calling job — a job-level `if:` makes GitHub report
+          a differently-named, bare check run ("playwright" instead of
+          "playwright / playwright") when skipped, which never satisfies the
+          "playwright / playwright" required status check and leaves the PR stuck.
+          Defaults true so merge-queue (no path filtering) is unaffected.
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -59,23 +71,26 @@ jobs:
       PLAYWRIGHT_JSON_OUTPUT_NAME: /app/playwright-results.json
     steps:
       - name: Checkout into /app
+        if: inputs.should-run
         uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
       - name: Start timer
         id: timer-start
+        if: inputs.should-run
         uses: ./.github/actions/timer-start
 
       # playwright.config.ts's webServer runs `npm run build && npm run serve`
       # itself, so no separate build step is needed here.
       - name: Run Playwright e2e tests
         id: run
+        if: inputs.should-run
         run: |
           set -o pipefail
           npm run test:e2e -- --reporter=list,json,html 2>&1 | tee /app/output.log
 
       - name: Compute duration
         id: timer
-        if: always()
+        if: always() && inputs.should-run
         uses: ./.github/actions/timer-elapsed
         with:
           start: ${{ steps.timer-start.outputs.start }}
@@ -92,11 +107,11 @@ jobs:
 
       - name: Summarize output
         id: summarize
-        if: always()
+        if: always() && inputs.should-run
         run: node .github/scripts/summarize-playwright.mjs
 
       - name: Write job summary
-        if: always()
+        if: always() && inputs.should-run
         uses: ./.github/actions/job-summary
         with:
           check-name: Playwright E2E
@@ -110,7 +125,7 @@ jobs:
       # fail-only on a separate merge-queue-labeled thread from merge-queue
       # (no action at all on success) — see .github/actions/pr-comment.
       - name: Comment on PR
-        if: always() && inputs.pr-number
+        if: always() && inputs.pr-number && inputs.should-run
         uses: ./.github/actions/pr-comment
         with:
           check-name: Playwright E2E

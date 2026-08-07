@@ -5,6 +5,21 @@ name: PR Gate
 # non-blocking npm audit, gating the PR before it can be merged. format
 # always runs; the rest are path-filtered by the `changes` job below so a
 # PR only pays for the checks its changed files could actually affect.
+#
+# lint/typecheck/vitest/build/playwright/build-image/format are all required
+# status checks in branch protection (as "<job> / <job>", the name GitHub
+# gives a job inside a called reusable workflow) and required for the merge
+# queue too — audit is deliberately not among them; it's PR-only and never
+# gates a merge (see the audit job below). Filtering must therefore never
+# skip the calling job itself for those six — a job-level `if:` makes
+# GitHub report the check under a different, bare name ("lint" instead of
+# "lint / lint") instead of not reporting it at all, and that bare name
+# never satisfies the "lint / lint" required check, permanently blocking
+# the PR. So those jobs (audit included, for the same consistent-naming
+# reason even though it isn't required) always run and instead pass their
+# filter result through as a `should-run` workflow_call input — see e.g.
+# lint.yml — which skips the actual work internally but keeps the job (and
+# its check name) the same either way.
 on:
   pull_request:
     branches:
@@ -116,7 +131,6 @@ jobs:
 
   lint:
     needs: [build-image, changes]
-    if: needs.changes.outputs.lint == 'true'
     concurrency:
       group: pr-gate-lint-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -124,6 +138,8 @@ jobs:
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
+      # No job-level `if:` here on purpose — see lint.yml's should-run input for why.
+      should-run: ${{ needs.changes.outputs.lint == 'true' }}
 
   # Deliberately ungated — runs on every push regardless of what changed.
   format:
@@ -138,7 +154,6 @@ jobs:
 
   typecheck:
     needs: [build-image, changes]
-    if: needs.changes.outputs.typecheck == 'true'
     concurrency:
       group: pr-gate-typecheck-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -146,10 +161,11 @@ jobs:
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
+      # No job-level `if:` here on purpose — see typecheck.yml's should-run input for why.
+      should-run: ${{ needs.changes.outputs.typecheck == 'true' }}
 
   vitest:
     needs: [build-image, changes]
-    if: needs.changes.outputs.vitest == 'true'
     concurrency:
       group: pr-gate-vitest-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -157,20 +173,22 @@ jobs:
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
+      # No job-level `if:` here on purpose — see vitest.yml's should-run input for why.
+      should-run: ${{ needs.changes.outputs.vitest == 'true' }}
 
   build:
     needs: [build-image, changes]
-    if: needs.changes.outputs.build == 'true'
     concurrency:
       group: pr-gate-build-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     uses: ./.github/workflows/build.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
+      # No job-level `if:` here on purpose — see build.yml's should-run input for why.
+      should-run: ${{ needs.changes.outputs.build == 'true' }}
 
   playwright:
     needs: [build-image, changes]
-    if: needs.changes.outputs.playwright == 'true'
     concurrency:
       group: pr-gate-playwright-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -178,11 +196,13 @@ jobs:
     with:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
+      # No job-level `if:` here on purpose — see playwright.yml's should-run input for why.
+      should-run: ${{ needs.changes.outputs.playwright == 'true' }}
 
-  # Non-blocking, PR-only — see .github/workflows/audit.yml.
+  # Non-blocking and PR-only — not a required status check, and not called from
+  # merge-queue.yml — see .github/workflows/audit.yml.
   audit:
     needs: [build-image, changes]
-    if: needs.changes.outputs.audit == 'true'
     concurrency:
       group: pr-gate-audit-${{ github.event.pull_request.number }}
       cancel-in-progress: true
