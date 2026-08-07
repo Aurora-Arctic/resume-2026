@@ -1,0 +1,23 @@
+{
+  "extraKnownMarketplaces": {
+    "cnaught-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "CNaught-Inc/claude-code-plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "carbonlog@cnaught-plugins": true
+  },
+  "permissions": {
+    "ask": [
+      "Bash(git push origin *)",
+      "Bash(git push -u origin *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr comment *)",
+      "Bash(gh pr list *)"
+    ]
+  }
+}
