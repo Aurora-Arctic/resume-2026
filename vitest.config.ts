@@ -13,7 +13,10 @@ export default defineConfig({
       // map (and counts against the threshold) instead of being invisible
       // until a test happens to import it.
       include: ['src/**/*.{ts,tsx}'],
-      reporter: ['text', 'json-summary', 'json', 'html', 'lcov'],
+      // cobertura: consumed by actions/upload-code-coverage@v1 in vitest.yml,
+      // for GitHub's native "Restrict code coverage" ruleset rule — see
+      // CLAUDE.md's Continuous Integration section.
+      reporter: ['text', 'json-summary', 'json', 'html', 'lcov', 'cobertura'],
       reportsDirectory: './coverage',
       thresholds: { lines: 80, branches: 80, functions: 80, statements: 80 },
     },

@@ -36,6 +36,10 @@ permissions:
   contents: read
   packages: read
   pull-requests: write
+  # Required by actions/upload-code-coverage@v1 below, for GitHub's native
+  # "Restrict code coverage" ruleset rule — see CLAUDE.md's Continuous
+  # Integration section.
+  code-quality: write
 
 jobs:
   playwright:
@@ -118,6 +122,19 @@ jobs:
           name: playwright-coverage
           path: /app/coverage-e2e/
           retention-days: 7
+
+      # Feeds GitHub's own native "Restrict code coverage" ruleset rule
+      # (additive to global-teardown.ts's threshold check above, not a
+      # replacement — see CLAUDE.md). Requires GitHub Code Quality to be
+      # enabled for the repo, which itself requires the org to be on GitHub
+      # Team or Enterprise Cloud — a no-op on the Free plan.
+      - name: Upload coverage report to GitHub
+        if: always() && inputs.should-run
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: /app/coverage-e2e/cobertura-coverage.xml
+          language: JavaScript
+          label: e2e
 
       - name: Summarize output
         id: summarize
