@@ -80,13 +80,16 @@ jobs:
         uses: ./.github/actions/timer-start
 
       # playwright.config.ts's webServer runs `npm run build && npm run serve`
-      # itself, so no separate build step is needed here.
+      # itself, so no separate build step is needed here. test:e2e:coverage's
+      # global-teardown.ts (see e2e/global-teardown.ts) throws when coverage
+      # drops below threshold, which fails this command's own exit code the
+      # same way a failing test does — no separate enforcement step needed.
       - name: Run Playwright e2e tests
         id: run
         if: inputs.should-run
         run: |
           set -o pipefail
-          npm run test:e2e -- --reporter=list,json,html 2>&1 | tee /app/output.log
+          npm run test:e2e:coverage -- --reporter=list,json,html 2>&1 | tee /app/output.log
 
       - name: Compute duration
         id: timer
@@ -103,6 +106,17 @@ jobs:
           path: |
             /app/playwright-report/
             /app/test-results/
+          retention-days: 7
+
+      # Unlike the report above, deliberately not failure-only — the point is
+      # a downloadable coverage report to review/track on every run, pass or
+      # fail, same as vitest.yml's equivalent step.
+      - name: Upload coverage artifact
+        if: always() && inputs.should-run
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-coverage
+          path: /app/coverage-e2e/
           retention-days: 7
 
       - name: Summarize output

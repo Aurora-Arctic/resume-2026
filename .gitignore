@@ -4,6 +4,7 @@ public
 .DS_Store
 npm-debug.log*
 coverage
+coverage-e2e
 playwright-report
 test-results
 Docker/.env

@@ -65,12 +65,16 @@ jobs:
         if: inputs.should-run
         uses: ./.github/actions/timer-start
 
+      # @vitest/coverage-v8's coverage.thresholds (vitest.config.ts) fails this
+      # command itself when coverage drops below 80% — same exit-code path as a
+      # failing test, so steps.run.outcome already reflects combined test+coverage
+      # pass/fail with no extra workflow logic needed.
       - name: Run vitest
         id: run
         if: inputs.should-run
         run: |
           set -o pipefail
-          npm test -- --reporter=default --reporter=json --outputFile=/app/vitest-results.json 2>&1 | tee /app/output.log
+          npm run test:coverage -- --reporter=default --reporter=json --outputFile=/app/vitest-results.json 2>&1 | tee /app/output.log
 
       - name: Compute duration
         id: timer
@@ -83,6 +87,17 @@ jobs:
         id: summarize
         if: always() && inputs.should-run
         run: node .github/scripts/summarize-vitest.mjs
+
+      # Unlike playwright.yml's report upload, this is deliberately not
+      # failure-only — the point is a downloadable coverage report to review/
+      # track on every run, pass or fail.
+      - name: Upload coverage artifact
+        if: always() && inputs.should-run
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitest-coverage
+          path: /app/coverage/
+          retention-days: 7
 
       - name: Write job summary
         if: always() && inputs.should-run
