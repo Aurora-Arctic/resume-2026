@@ -2,7 +2,9 @@ name: PR Gate
 
 # Runs on every pull request targeting `main`. Fans out to the blocking
 # checks (lint, format, typecheck, vitest, build, Playwright) plus a
-# non-blocking npm audit, gating the PR before it can be merged.
+# non-blocking npm audit, gating the PR before it can be merged. format
+# always runs; the rest are path-filtered by the `changes` job below so a
+# PR only pays for the checks its changed files could actually affect.
 on:
   pull_request:
     branches:
@@ -18,6 +20,81 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Determines which downstream checks a given push actually needs to run,
+  # so e.g. a docs-only edit doesn't pay for lint/typecheck/vitest/build/
+  # playwright/audit. format is deliberately NOT gated by this — Prettier
+  # covers .md/.json too, and "did formatting change" is cheap and universal
+  # enough that it should just run on every push rather than be filtered.
+  # Each filter also matches its own reusable workflow file plus
+  # .github/workflows/pr-gate.yml and .github/actions/**, so editing the
+  # check's own workflow (or a shared composite action it depends on) always
+  # reruns it rather than silently going unverified.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      lint: ${{ steps.filter.outputs.lint }}
+      typecheck: ${{ steps.filter.outputs.typecheck }}
+      vitest: ${{ steps.filter.outputs.vitest }}
+      build: ${{ steps.filter.outputs.build }}
+      playwright: ${{ steps.filter.outputs.playwright }}
+      audit: ${{ steps.filter.outputs.audit }}
+    steps:
+      - name: Determine changed-file categories
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared: &shared
+              - '.github/workflows/pr-gate.yml'
+              - '.github/actions/**'
+            lint:
+              - *shared
+              - '.github/workflows/lint.yml'
+              - '.oxlintrc.json'
+              - '**/*.ts'
+              - '**/*.tsx'
+              - '**/*.js'
+              - '**/*.jsx'
+              - '**/*.mjs'
+              - '**/*.cjs'
+              - 'package.json'
+              - 'package-lock.json'
+            typecheck:
+              - *shared
+              - '.github/workflows/typecheck.yml'
+              - '**/*.ts'
+              - '**/*.tsx'
+              - 'tsconfig.json'
+              - 'package-lock.json'
+            vitest:
+              - *shared
+              - '.github/workflows/vitest.yml'
+              - 'src/**'
+              - 'vitest.config.ts'
+              - 'package-lock.json'
+            build: &build
+              - *shared
+              - '.github/workflows/build.yml'
+              - 'src/**'
+              - 'static/**'
+              - 'gatsby-config.ts'
+              - 'gatsby-node.ts'
+              - 'gatsby-ssr.ts'
+              - 'gatsby-browser.ts'
+              - 'tsconfig.json'
+              - 'package.json'
+              - 'package-lock.json'
+            playwright:
+              - *build
+              - '.github/workflows/playwright.yml'
+              - 'e2e/**'
+              - 'playwright.config.ts'
+            audit:
+              - *shared
+              - '.github/workflows/audit.yml'
+              - 'package.json'
+              - 'package-lock.json'
+
   # build-image pushes to a shared, content-addressed GHCR tag and GHA layer
   # cache (cache-to: type=gha,mode=max) keyed off Dockerfile.node +
   # package-lock.json. Cancelling it mid-push can freeze a half-written layer
@@ -29,6 +106,8 @@ jobs:
   # left to race it in parallel (avoiding wasted/racy duplicate pushes to the
   # same tag). The jobs below are cheap to rerun and don't share mutable
   # state, so they get their own cancellable concurrency groups instead.
+  # Always runs unconditionally (not gated on `changes`) since format always
+  # needs its image output regardless of what changed.
   build-image:
     concurrency:
       group: pr-gate-build-image-${{ github.event.pull_request.number }}
@@ -36,7 +115,8 @@ jobs:
     uses: ./.github/workflows/build-image.yml
 
   lint:
-    needs: build-image
+    needs: [build-image, changes]
+    if: needs.changes.outputs.lint == 'true'
     concurrency:
       group: pr-gate-lint-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -45,6 +125,7 @@ jobs:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ github.event.pull_request.number }}
 
+  # Deliberately ungated — runs on every push regardless of what changed.
   format:
     needs: build-image
     concurrency:
@@ -56,7 +137,8 @@ jobs:
       pr-number: ${{ github.event.pull_request.number }}
 
   typecheck:
-    needs: build-image
+    needs: [build-image, changes]
+    if: needs.changes.outputs.typecheck == 'true'
     concurrency:
       group: pr-gate-typecheck-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -66,7 +148,8 @@ jobs:
       pr-number: ${{ github.event.pull_request.number }}
 
   vitest:
-    needs: build-image
+    needs: [build-image, changes]
+    if: needs.changes.outputs.vitest == 'true'
     concurrency:
       group: pr-gate-vitest-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -76,7 +159,8 @@ jobs:
       pr-number: ${{ github.event.pull_request.number }}
 
   build:
-    needs: build-image
+    needs: [build-image, changes]
+    if: needs.changes.outputs.build == 'true'
     concurrency:
       group: pr-gate-build-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -85,7 +169,8 @@ jobs:
       image: ${{ needs.build-image.outputs.image }}
 
   playwright:
-    needs: build-image
+    needs: [build-image, changes]
+    if: needs.changes.outputs.playwright == 'true'
     concurrency:
       group: pr-gate-playwright-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -96,7 +181,8 @@ jobs:
 
   # Non-blocking, PR-only — see .github/workflows/audit.yml.
   audit:
-    needs: build-image
+    needs: [build-image, changes]
+    if: needs.changes.outputs.audit == 'true'
     concurrency:
       group: pr-gate-audit-${{ github.event.pull_request.number }}
       cancel-in-progress: true
