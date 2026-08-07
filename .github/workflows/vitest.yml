@@ -1,5 +1,7 @@
 name: Vitest
 
+# Reusable check that runs the Vitest unit/component test suite. Called
+# via workflow_call from pr-gate and merge-queue, never triggered directly.
 on:
   workflow_call:
     inputs:
@@ -45,11 +47,27 @@ jobs:
       - name: Checkout into /app
         uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
+      - name: Start timer
+        id: timer-start
+        uses: ./.github/actions/timer-start
+
       - name: Run vitest
         id: run
         run: |
           set -o pipefail
-          npm test 2>&1 | tee /app/output.log
+          npm test -- --reporter=default --reporter=json --outputFile=/app/vitest-results.json 2>&1 | tee /app/output.log
+
+      - name: Compute duration
+        id: timer
+        if: always()
+        uses: ./.github/actions/timer-elapsed
+        with:
+          start: ${{ steps.timer-start.outputs.start }}
+
+      - name: Summarize output
+        id: summarize
+        if: always()
+        run: node .github/scripts/summarize-vitest.mjs
 
       - name: Write job summary
         if: always()
@@ -58,6 +76,9 @@ jobs:
           check-name: Vitest
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
+          duration: ${{ steps.timer.outputs.duration }}
+          summary: ${{ steps.summarize.outputs.summary }}
+          details: ${{ steps.summarize.outputs.details }}
 
       # Always comments pass/fail from pr-gate; fail-only on a separate
       # merge-queue-labeled thread from merge-queue (no action at all on
@@ -73,3 +94,6 @@ jobs:
           outcome: ${{ steps.run.outcome }}
           log-file: /app/output.log
           success-mode: comment
+          duration: ${{ steps.timer.outputs.duration }}
+          summary: ${{ steps.summarize.outputs.summary }}
+          details: ${{ steps.summarize.outputs.details }}

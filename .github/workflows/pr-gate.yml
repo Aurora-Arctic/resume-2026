@@ -1,5 +1,8 @@
-name: PR gate
+name: PR Gate
 
+# Runs on every pull request targeting `main`. Fans out to the blocking
+# checks (lint, format, typecheck, vitest, build, Playwright) plus a
+# non-blocking npm audit, gating the PR before it can be merged.
 on:
   pull_request:
     branches:

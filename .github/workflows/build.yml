@@ -1,5 +1,7 @@
 name: Build
 
+# Reusable check that runs the production Gatsby build. Called via
+# workflow_call from pr-gate and merge-queue, never triggered directly.
 on:
   workflow_call:
     inputs:

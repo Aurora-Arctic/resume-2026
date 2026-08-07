@@ -1,18 +1,21 @@
-name: Build testing image
+name: Build Testing Image
 
+# Builds (or reuses, if unchanged) the shared testing container image used
+# by every other job workflow, and publishes its ref as an output. Called
+# via workflow_call as the first job from both pr-gate and merge-queue.
 on:
   workflow_call:
     outputs:
       image:
         description: Fully qualified, content-addressed testing image ref
-        value: ${{ jobs.build.outputs.image }}
+        value: ${{ jobs.build-image.outputs.image }}
 
 permissions:
   contents: read
   packages: write
 
 jobs:
-  build:
+  build-image:
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.tag.outputs.image }}

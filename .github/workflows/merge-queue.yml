@@ -1,4 +1,4 @@
-name: Merge queue
+name: Merge Queue
 
 # Requires "Require merge queue" to be enabled in branch protection for `main`
 # (Settings -> Branches) — that setting is what activates merge_group events;
