@@ -11,16 +11,16 @@ Turn the current branch's work into a pull request against `main`, asking before
 
 1. **Verify GitHub authentication.**
    - Run `gh auth status` to check whether credentials are valid. This is a read-only check — safe to run every time and cheap enough not to skip.
-   - Only if it reports not-logged-in or invalid/expired credentials, authenticate. `--web` (browser/device-code flow) and `--with-token` (non-interactive) are mutually exclusive gh auth modes, so which one to run depends on whether `$GITHUB_PERSONAL_ACCESS_TOKEN` is set:
-     - If it **is** set: `gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key --with-token <<< "$GITHUB_PERSONAL_ACCESS_TOKEN"`. Non-interactive — completes immediately, nothing for the user to do.
-     - If it is **not** set: `gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key --web --clipboard`. This is interactive (device-code flow) — it will hang waiting for the user to authorize in their browser, so run it with a foreground/blocking call, surface the one-time code (also copied to the clipboard) and the URL to the user immediately, and wait for them to confirm completion rather than silently polling.
+   - Only if it reports not-logged-in or invalid/expired credentials, authenticate: `gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key --with-token <<< "$GITHUB_PERSONAL_ACCESS_TOKEN"`. Run this directly — don't check whether `$GITHUB_PERSONAL_ACCESS_TOKEN` is set first, just attempt the login. Non-interactive — completes immediately, nothing for the user to do.
+   - Never use the `--web` (browser/device-code) flow — always `--with-token`.
    - Don't run `gh auth login` at all when already authenticated — it's unnecessary and interrupts the user for no reason.
-   - Don't re-run `gh auth status` (or any other verification) after `gh auth login` completes — trust that a successful login (or the user's confirmation, for the `--web` flow) means auth is good, and move straight on to step 2.
+   - Don't re-run `gh auth status` (or any other verification) after `gh auth login` completes — trust that a successful login means auth is good, and move straight on to step 2.
 
 2. **Check preconditions.**
    - Run `git branch --show-current`. Note it as the source branch.
    - Run `git status`, `git diff`, and `git branch -a` (in parallel) to see uncommitted changes, staged changes, and available branches.
    - Take the active branch's contents as given. Don't evaluate whether the branch's diff "should" contain more than it does, compare it against what some other task or conversation implied should be there, or ask the user to confirm the code is complete — the PR is for whatever is actually committed (plus whatever gets committed in step 4), full stop.
+   - Also check whether a PR already exists for this branch: `gh pr list --head <source> --state open --json number,url`. Note the number/URL if one comes back — it determines whether step 8 creates a new PR or updates this one.
 
 3. **Ask which branch to merge into.**
    - Always use AskUserQuestion for this — never assume `main` without asking, even when it's the only sensible candidate. The tool requires at least 2 manually-specified options (its automatic "Other" doesn't count toward that minimum), so the question always needs a real second option:
@@ -47,9 +47,10 @@ Turn the current branch's work into a pull request against `main`, asking before
    - Body: a `## Summary` section (1-4 bullet points on _what_ changed and _why_, based on step 6's diff/log — not a restatement of commit messages) and a `## Test plan` section (checklist of how this was/should be verified — reference this repo's actual checks where relevant: `npm run pre-commit`, `npm test`, `npm run test:e2e`, etc., per what was actually touched).
    - Pass the body via a HEREDOC to `gh pr create` for correct formatting, same as this repo's standard PR-creation convention.
 
-8. **Create the PR.**
-   - Run `gh pr create --base <target> --title "..." --body "$(cat <<'EOF' ... EOF)"`.
-   - Report the returned PR URL back to the user.
+8. **Create or update the PR.**
+   - If step 2 found an existing open PR for this branch, update it instead of opening a duplicate: `gh pr edit <number> --title "..." --body "$(cat <<'EOF' ... EOF)"`. No need to ask first — updating an already-open PR with the branch's current state is the expected outcome of running this skill again.
+   - Otherwise, run `gh pr create --base <target> --title "..." --body "$(cat <<'EOF' ... EOF)"`.
+   - Report the PR URL back to the user either way.
 
 ## Notes
 
