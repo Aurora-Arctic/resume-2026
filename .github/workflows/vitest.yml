@@ -35,9 +35,6 @@ permissions:
   contents: read
   packages: read
   pull-requests: write
-  # Required by actions/upload-code-coverage@v1 below, for GitHub's native
-  # "Restrict code coverage" ruleset rule — see CLAUDE.md's Continuous
-  # Integration section.
   code-quality: write
 
 jobs:
