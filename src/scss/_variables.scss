@@ -1,0 +1,11 @@
+// Screen colors — two independently-tunable backgrounds so the outer page
+// and the paper card can be recolored separately.
+$wine-dark: #110011; // outer page background
+$silver-oxide: #211d28; // paper card background, and print text color
+$text: #fff;
+$shadow: rgba(8, 7, 9, 0.8);
+
+// Print colors — the paper card disappears into the page in print, so
+// there's only one background/text pair.
+$print-bg: #fff;
+$print-text: $silver-oxide;
