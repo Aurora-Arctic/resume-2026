@@ -1,4 +1,5 @@
 import React, { type ReactElement, type ReactNode } from 'react';
+import BackgroundCredit from './BackgroundCredit';
 import '../scss/layout.scss';
 
 interface LayoutProps {
@@ -7,7 +8,10 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps): ReactElement => (
   <main className="paper-chrome">
-    <div className="paper-card">{children}</div>
+    <div className="paper-card">
+      {children}
+      <BackgroundCredit />
+    </div>
   </main>
 );
 
