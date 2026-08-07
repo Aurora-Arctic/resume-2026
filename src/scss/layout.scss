@@ -29,6 +29,8 @@ body {
 .paper-card {
   width: min(100%, 960px);
   background: $silver-oxide;
+  background-image: url('../images/prism-silver-oxide.png');
+  background-repeat: repeat;
   color: $text;
   box-shadow: 0 20px 45px $shadow;
   padding: 4rem;
