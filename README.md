@@ -4,6 +4,21 @@ My resume for 2026 made in Gatsby.
 
 A personal resume site built with [Gatsby 5](https://www.gatsbyjs.com/), React 18, and TypeScript. Fully static — no backend, database, or state management.
 
+## Table of contents
+
+- [Prerequisites](#prerequisites)
+- [Getting started](#getting-started)
+- [Debugging](#debugging)
+- [Linting & formatting](#linting--formatting)
+- [Available commands](#available-commands)
+  - [App](#app)
+  - [Linting & formatting](#linting--formatting-1)
+  - [Testing](#testing)
+  - [Docker](#docker)
+  - [Local CI testing](#local-ci-testing)
+- [Continuous integration](#continuous-integration)
+- [Documentation for contributors](#documentation-for-contributors)
+
 ## Prerequisites
 
 [Docker](https://docs.docker.com/get-docker/) (with Compose). This project is developed and run through the Docker Compose setup in `Docker/docker-compose.yaml` — there is no supported host/local Node workflow.
