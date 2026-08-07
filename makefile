@@ -1,7 +1,8 @@
 .PHONY: docker-build docker-up docker-down docker-rebuild docker-update-token docker-logs \
 	npm-install npm-develop npm-build npm-serve npm-clean npm-lint npm-lint-fix \
-	npm-format npm-format-check npm-pre-commit npm-test npm-test-watch npm-test-e2e \
-	act-image act-cache-checkout act-lint act-format act-typecheck act-vitest act-build act-playwright act-test
+	npm-format npm-format-check npm-pre-commit npm-test npm-test-watch npm-test-coverage \
+	npm-test-e2e npm-test-e2e-coverage \
+	act-image act-cache-checkout act-cache-artifact act-lint act-format act-typecheck act-vitest act-build act-playwright act-test
 
 npm-install:
 	npm install
@@ -39,8 +40,14 @@ npm-test:
 npm-test-watch:
 	npm run test:watch
 
+npm-test-coverage:
+	npm run test:coverage
+
 npm-test-e2e:
 	npm run test:e2e
+
+npm-test-e2e-coverage:
+	npm run test:e2e:coverage
 
 # Host-level (not devcontainer-integrated)
 
@@ -69,6 +76,7 @@ docker-logs:
 # for why.
 ACT_IMAGE := resume-2026-testing:local
 ACT_CHECKOUT_CACHE := $(HOME)/.cache/act/mjoynes-wombat-web-resume-2026-.github-actions-checkout-to-app@main
+ACT_ARTIFACT_CACHE := $(HOME)/.cache/act/actions-upload-artifact@v7
 
 act-image:
 	docker build -f Docker/Dockerfile.node --target testing -t $(ACT_IMAGE) .
@@ -81,6 +89,16 @@ act-cache-checkout:
 	@[ -d "$(ACT_CHECKOUT_CACHE)" ] || \
 		git clone --branch main https://github.com/mjoynes-wombat-web/resume-2026 "$(ACT_CHECKOUT_CACHE)"
 
+# actions/upload-artifact@v7 needs to be a real git checkout (not a flat copy) at
+# act's expected cache path, since act resolves the v7 tag through it — see
+# CI-SETUP.md. Only clones the first time per machine / whenever ~/.cache/act is
+# cleared. Both act-vitest and act-playwright now upload a coverage artifact
+# (vitest.yml/playwright.yml), so both depend on this — it used to be
+# act-playwright-only, seeded at the (by-then-stale) v4 tag.
+act-cache-artifact:
+	@[ -d "$(ACT_ARTIFACT_CACHE)" ] || \
+		git clone --depth 1 --branch v7 https://github.com/actions/upload-artifact "$(ACT_ARTIFACT_CACHE)"
+
 act-lint: act-image act-cache-checkout
 	act -W .github/workflows/lint.yml -j lint --input image=$(ACT_IMAGE) -s GITHUB_TOKEN=dummy-token --action-offline-mode
 
@@ -90,19 +108,13 @@ act-format: act-image act-cache-checkout
 act-typecheck: act-image act-cache-checkout
 	act -W .github/workflows/typecheck.yml -j typecheck --input image=$(ACT_IMAGE) -s GITHUB_TOKEN=dummy-token --action-offline-mode
 
-act-vitest: act-image act-cache-checkout
+act-vitest: act-image act-cache-checkout act-cache-artifact
 	act -W .github/workflows/vitest.yml -j vitest --input image=$(ACT_IMAGE) -s GITHUB_TOKEN=dummy-token --action-offline-mode
 
 act-build: act-image act-cache-checkout
 	act -W .github/workflows/build.yml -j build --input image=$(ACT_IMAGE) -s GITHUB_TOKEN=dummy-token --action-offline-mode
 
-# actions/upload-artifact@v4 needs to be a real git checkout (not a flat copy) at
-# act's expected cache path, since act resolves the v4 tag through it — see
-# CI-SETUP.md. Only clones the first time per machine / whenever ~/.cache/act is
-# cleared.
-act-playwright: act-image act-cache-checkout
-	@[ -d "$$HOME/.cache/act/actions-upload-artifact@v4" ] || \
-		git clone --depth 1 --branch v4 https://github.com/actions/upload-artifact "$$HOME/.cache/act/actions-upload-artifact@v4"
+act-playwright: act-image act-cache-checkout act-cache-artifact
 	act -W .github/workflows/playwright.yml -j playwright --input image=$(ACT_IMAGE) -s GITHUB_TOKEN=dummy-token --action-offline-mode --env PORT=8001
 
 act-test: act-lint act-format act-typecheck act-vitest act-build act-playwright
