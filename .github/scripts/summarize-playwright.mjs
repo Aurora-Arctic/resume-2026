@@ -3,8 +3,11 @@
 // short `summary` stat line and collapsible `details` block consumed by
 // the job-summary and pr-comment composite actions.
 import fs from 'node:fs';
+import { buildCoverageSection } from './lib/coverage-table.mjs';
 
 const RESULTS_PATH = '/app/playwright-results.json';
+const COVERAGE_SUMMARY_PATH = '/app/coverage-e2e/coverage-summary.json';
+const REPO_ROOT = '/app';
 const MAX_DETAILS = 15;
 
 function setOutput(name, value) {
@@ -23,7 +26,10 @@ const { expected = 0, unexpected = 0, skipped = 0, flaky = 0 } = data.stats ?? {
 const summaryParts = [`${expected} passed`, `${unexpected} failed`];
 if (skipped > 0) summaryParts.push(`${skipped} skipped`);
 if (flaky > 0) summaryParts.push(`${flaky} flaky`);
-const summary = summaryParts.join(', ');
+const testSummary = summaryParts.join(', ');
+
+const coverage = buildCoverageSection(COVERAGE_SUMMARY_PATH, REPO_ROOT);
+const summary = coverage ? `${testSummary} — ${coverage.stat}` : testSummary;
 
 // Suites nest recursively (suite.suites[] inside suite.suites[]). The
 // outermost suite per spec file has title/file equal to the spec file name
@@ -64,6 +70,10 @@ if (failures.length > 0) {
   lines.push('');
   lines.push('</details>');
   details = lines.join('\n');
+}
+
+if (coverage) {
+  details = details ? `${details}\n\n${coverage.table}` : coverage.table;
 }
 
 setOutput('summary', summary);

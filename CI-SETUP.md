@@ -273,17 +273,17 @@ Running `act` inside the devcontainer via a socket-mounted Docker-outside-of-Doc
 
 Wrapped as `make` targets (see the makefile's `act-*` section) so the full command doesn't need to be retyped:
 
-| make                      | Runs                                                                                                                                             |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `make act-image`          | Builds `resume-2026-testing:local` from the current working tree (a prerequisite of every target below, so it's always kept fresh)               |
-| `make act-cache-checkout` | Seeds the `checkout-to-app` action cache the first time (see below); a prerequisite of every target below                                        |
-| `make act-lint`           | `lint.yml -j lint`                                                                                                                               |
-| `make act-format`         | `format.yml -j format`                                                                                                                           |
-| `make act-typecheck`      | `typecheck.yml -j typecheck`                                                                                                                     |
-| `make act-vitest`         | `vitest.yml -j vitest`                                                                                                                           |
-| `make act-build`          | `build.yml -j build`                                                                                                                             |
-| `make act-playwright`     | `playwright.yml -j playwright` (also auto-seeds the `actions/upload-artifact@v4` cache the first time — see below — then adds `--env PORT=8001`) |
-| `make act-test`           | All six of the above, in order, stopping at the first failure — the closest local equivalent to `pr-gate`/`merge-queue`'s blocking checks        |
+| make                      | Runs                                                                                                                                               |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make act-image`          | Builds `resume-2026-testing:local` from the current working tree (a prerequisite of every target below, so it's always kept fresh)                 |
+| `make act-cache-checkout` | Seeds the `checkout-to-app` action cache the first time (see below); a prerequisite of every target below                                          |
+| `make act-lint`           | `lint.yml -j lint`                                                                                                                                 |
+| `make act-format`         | `format.yml -j format`                                                                                                                             |
+| `make act-typecheck`      | `typecheck.yml -j typecheck`                                                                                                                       |
+| `make act-vitest`         | `vitest.yml -j vitest` (also auto-seeds the `actions/upload-artifact@v7` cache the first time — see below — for its coverage-artifact upload step) |
+| `make act-build`          | `build.yml -j build`                                                                                                                               |
+| `make act-playwright`     | `playwright.yml -j playwright` (also auto-seeds the `actions/upload-artifact@v7` cache the first time — see below — then adds `--env PORT=8001`)   |
+| `make act-test`           | All six of the above, in order, stopping at the first failure — the closest local equivalent to `pr-gate`/`merge-queue`'s blocking checks          |
 
 The underlying command each target runs, spelled out (using `lint` as the example — the others swap the `-j` job id and `-W` path):
 
@@ -348,13 +348,13 @@ This is a second instance of the same fidelity gap noted above: a fully green `a
 
 `build.yml` runs cleanly the same way as the four checks above. `playwright.yml` needed two additional, machine-local workarounds on top of the `checkout-to-app` cache seed and `shell: bash` before it passed end to end — neither changes any committed file beyond the port override below.
 
-**1. Seeding act's action cache for `actions/upload-artifact@v4`.** act evaluates every action a job references up front, during "Set up job" — including `Upload Playwright report` (`uses: actions/upload-artifact@v4`), even though that step only runs `if: failure()`. Unlike `actions/checkout`, which act resolves without a network call, `actions/upload-artifact` isn't special-cased: act does a real HTTPS `git clone`, authenticated with `secrets.GITHUB_TOKEN`. The placeholder token above gets sent as invalid Basic auth and GitHub returns `401` (`authentication required: Invalid username or token`) — confirmed this isn't host-level (`git clone https://github.com/actions/upload-artifact` works anonymously from this machine outside of act) and isn't fixable with an empty-string token (that fails act's own `container.credentials.password` interpolation instead, before the job even starts). Rather than supply a real token, the action was seeded directly into act's local cache — a real git checkout at the `v4` tag (`.git` included; act resolves the ref through it, a flat file copy isn't enough) placed exactly where act's own clone would have gone:
+**1. Seeding act's action cache for `actions/upload-artifact@v7`.** act evaluates every action a job references up front, during "Set up job" — including `Upload Playwright report` (`uses: actions/upload-artifact@v7`), even though that step only runs `if: failure()`. Unlike `actions/checkout`, which act resolves without a network call, `actions/upload-artifact` isn't special-cased: act does a real HTTPS `git clone`, authenticated with `secrets.GITHUB_TOKEN`. The placeholder token above gets sent as invalid Basic auth and GitHub returns `401` (`authentication required: Invalid username or token`) — confirmed this isn't host-level (`git clone https://github.com/actions/upload-artifact` works anonymously from this machine outside of act) and isn't fixable with an empty-string token (that fails act's own `container.credentials.password` interpolation instead, before the job even starts). Rather than supply a real token, the action was seeded directly into act's local cache — a real git checkout at the `v7` tag (`.git` included; act resolves the ref through it, a flat file copy isn't enough) placed exactly where act's own clone would have gone:
 
 ```
-git clone --depth 1 --branch v4 https://github.com/actions/upload-artifact ~/.cache/act/actions-upload-artifact@v4
+git clone --depth 1 --branch v7 https://github.com/actions/upload-artifact ~/.cache/act/actions-upload-artifact@v7
 ```
 
-`make act-playwright` runs this automatically (only if the directory doesn't already exist — see the makefile) before invoking act with `--action-offline-mode`, so this doesn't need to be run by hand; included here for what the target is actually doing under the hood, and as a manual fallback if `~/.cache/act` is ever cleared outside of `make`.
+Originally seeded at `v4` and only needed by `act-playwright` (its Playwright HTML report upload was the only `upload-artifact` step in any job). Both moved to `v7` (a real Dependabot bump this doc had gone stale on) and `act-vitest` now needs the same seed too, once `vitest.yml` gained its own coverage-artifact upload step. `make act-vitest`/`make act-playwright` both run this automatically now (only if the directory doesn't already exist — see the makefile's shared `act-cache-artifact` target) before invoking act with `--action-offline-mode`, so this doesn't need to be run by hand; included here for what the target is actually doing under the hood, and as a manual fallback if `~/.cache/act` is ever cleared outside of `make`.
 
 **2. Port conflict with a running dev server.** act runs job containers with host networking, so Playwright's `webServer` (`npm run build && npm run serve`, bound to `:8000`) collides with anything already holding that port on the host — e.g. `docker-development-1` (`make docker-up`'s `development` service). Rather than requiring the dev server to be stopped, the port was made overridable: `package.json`'s `serve` script reads `${PORT:-8000}`, and `playwright.config.ts` reads `process.env.PORT` (both default to `8000`, so real CI and a plain `npm run serve` are unaffected). `make act-playwright` passes `PORT=8001` via act's `--env` flag; spelled out:
 

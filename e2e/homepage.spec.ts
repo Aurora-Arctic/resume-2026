@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test('homepage renders the resume heading', async ({ page }) => {
   await page.goto('/');

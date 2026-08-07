@@ -4,8 +4,10 @@
 // job-summary and pr-comment composite actions.
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildCoverageSection } from './lib/coverage-table.mjs';
 
 const RESULTS_PATH = '/app/vitest-results.json';
+const COVERAGE_SUMMARY_PATH = '/app/coverage/coverage-summary.json';
 const REPO_ROOT = '/app';
 const MAX_DETAILS = 15;
 
@@ -17,10 +19,13 @@ function setOutput(name, value) {
 const data = JSON.parse(fs.readFileSync(RESULTS_PATH, 'utf8'));
 const { numPassedTests, numFailedTests } = data;
 
-const summary =
+const testSummary =
   numFailedTests === 0
     ? `${numPassedTests} passed`
     : `${numPassedTests} passed, ${numFailedTests} failed`;
+
+const coverage = buildCoverageSection(COVERAGE_SUMMARY_PATH, REPO_ROOT);
+const summary = coverage ? `${testSummary} — ${coverage.stat}` : testSummary;
 
 const failures = [];
 for (const testResult of data.testResults ?? []) {
@@ -45,6 +50,10 @@ if (failures.length > 0) {
   lines.push('');
   lines.push('</details>');
   details = lines.join('\n');
+}
+
+if (coverage) {
+  details = details ? `${details}\n\n${coverage.table}` : coverage.table;
 }
 
 setOutput('summary', summary);
