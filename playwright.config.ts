@@ -7,6 +7,11 @@ const port = process.env.PORT ?? '8000';
 
 export default defineConfig({
   testDir: './e2e',
+  // Coverage collection/reporting (see e2e/coverage-options.ts) only runs
+  // for `npm run test:e2e:coverage` — a plain `npm run test:e2e` skips both
+  // hooks entirely.
+  globalSetup: process.env.E2E_COVERAGE === 'true' ? './e2e/global-setup.ts' : undefined,
+  globalTeardown: process.env.E2E_COVERAGE === 'true' ? './e2e/global-teardown.ts' : undefined,
   use: {
     baseURL: `http://localhost:${port}`,
   },

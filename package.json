@@ -14,7 +14,9 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:coverage": "npm run clean && E2E_COVERAGE=true playwright test",
     "pre-commit": "npm run lint && npm run format:check && npm run typecheck"
   },
   "pre-commit": [
@@ -39,7 +41,9 @@
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^30.0.1",
+    "monocart-coverage-reports": "^2.12.12",
     "oxlint": "^1.77.0",
     "pre-commit": "^2.0.0",
     "prettier": "^3.9.6",
