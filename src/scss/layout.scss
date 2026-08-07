@@ -1,5 +1,5 @@
-@import './variables';
-@import './typography';
+@use './variables' as *;
+@use './typography';
 
 * {
   box-sizing: border-box;
@@ -27,6 +27,7 @@ body {
 }
 
 .paper-card {
+  position: relative;
   width: min(100%, 960px);
   background: $silver-oxide;
   background-image: url('../images/prism-silver-oxide.png');
@@ -37,13 +38,81 @@ body {
 
   @media print {
     width: auto;
-    background: transparent;
-    color: $print-text;
+    background: transparent !important;
+    color: $print-text !important;
     border-radius: 0;
     box-shadow: none;
     padding: 0;
     page-break-inside: avoid;
   }
+}
+
+html[data-theme='light'] .paper-card {
+  background-color: $lavender-oxide;
+  background-image: url('../images/prism-light.png');
+  color: $silver-oxide;
+}
+
+.theme-toggle {
+  // The button itself stays a full, unclipped square hit target — clip-path
+  // affects hit-testing as well as painting, so clipping the interactive
+  // element itself would shrink the clickable area down to a thin diagonal
+  // sliver. The "folded corner" triangle is purely visual, drawn by ::before.
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5.125rem;
+  height: 5rem;
+  padding: 1rem 1.0625rem 0 0;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  color: $text;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: $wine-dark;
+    clip-path: polygon(100% 0, 100% 100%, 0 0);
+    pointer-events: none;
+    border: 0.25rem solid $silver-oxide;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $text;
+    outline-offset: 2px;
+  }
+
+  @media print {
+    display: none;
+  }
+}
+
+html[data-theme='light'] .theme-toggle::before {
+  border-color: $lavender-oxide;
+}
+
+.theme-toggle__facet {
+  position: relative;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: $text;
+}
+
+.theme-toggle__facet--light {
+  display: none;
+}
+
+html[data-theme='light'] .theme-toggle__facet--dark {
+  display: none;
+}
+
+html[data-theme='light'] .theme-toggle__facet--light {
+  display: block;
 }
 
 .background-credit {

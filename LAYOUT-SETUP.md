@@ -43,3 +43,59 @@ After the initial implementation landed, styling was tuned further directly in t
 - `npm test` (scoped to `src/pages`) — `index.test.tsx` and `404.test.tsx` both pass unchanged (they assert on heading/copy text, not markup structure). The full unscoped `npm test` run also surfaces 22 unrelated pre-existing failures under `Docker/claude-home/plugins/...` (a bind-mounted Claude Code plugin cache, not part of this project) — not a regression from this change.
 - Visual verification: started the Gatsby dev server and drove headless Chromium directly via Playwright (no `chromium-cli` on `PATH` in this environment, so a small ad hoc script was used instead) to screenshot `/` and `/404` in both normal and `@media print`-emulated rendering, confirming the dark `$wine-dark` page / `$silver-oxide` card split with shadow on screen, and the flip to a plain white/`$silver-oxide`-text page with no shadow in print. Also rendered both pages to actual PDF (`page.pdf()`, which — unlike media-emulation screenshots — respects the `@page` rule) and confirmed each is a single 8.5"×11" page with the `@page` margin applied, so no follow-up on the old resume's font-size-shrink trick was needed for this placeholder-length content.
 - Re-verified after adding the `prism.png` pattern: screenshots confirm the texture renders on the card in screen mode and correctly disappears in print (plain white background, no pattern). `npm run typecheck` and `npm run lint` re-run clean.
+
+## Light/dark mode toggle for the paper card
+
+A second `prism-light.png` palette had been prototyped earlier (recolored/contrast-tuned over several rounds, see below) but never wired into the page. This feature makes it selectable: `.paper-card` (not `.paper-chrome`, which stays `$wine-dark` always) can render in either its dark look or a new light look, switchable via a visible toggle, defaulting to `prefers-color-scheme`. Print stays unaffected by any of it.
+
+This went through `EnterPlanMode`/`ExitPlanMode` — a Plan agent's design was reviewed and approved before implementation (see the session's plan file for the full writeup). Key decisions:
+
+- **`$lavender-oxide: #958e9f`** (`_variables.scss`) — the light-mode card background, the darkest facet of `prism-light.png`, mirroring how `$silver-oxide` is the darkest facet of `prism-silver-oxide.png`.
+- **Theme tracked via `data-theme` on `<html>`**, not React state: `data-theme="light"` when active, no attribute at all for dark (the unmarked default). `html[data-theme='light'] .paper-card { ... }` is the only new override needed.
+- **No-flash-of-wrong-theme via `gatsby-ssr.ts`** (new file): a synchronous inline `<script>`, injected into `<head>` via `onRenderBody`/`setHeadComponents`, reads `localStorage`'s `theme` key or falls back to `matchMedia('(prefers-color-scheme: dark)')`, and sets the attribute before `<body>` paints — necessary because Gatsby statically generates the HTML once at build time with no knowledge of a given visitor's preference. Confirmed in the actual built `public/index.html`: a plain synchronous `<script>` in `<head>`, no `async`/`defer`/`type="module"`.
+- **`ThemeToggle.tsx`** (new, standalone component per explicit request) renders identical markup on every render — both icons always in the DOM, pure CSS attribute selectors show/hide the right one — so nothing branches on `localStorage`/`matchMedia` (unavailable at SSR time) and there's no hydration-mismatch risk. The click handler is fully DOM-imperative (no `useState`).
+- **Persistence**: no `theme` key in storage → follow `prefers-color-scheme` live (a `matchMedia('change')` listener registered by the same init script, only when there's no stored override). A stored key → explicit override, ignored by the live listener until toggled again.
+- **Print-specificity fix**: `html[data-theme='light'] .paper-card` (two selectors) is more specific than the plain `.paper-card` print rule (one selector) — `@media` blocks add no specificity of their own. Without a fix, printing while light mode was active on screen would leak the light-mode background-image into print output. Fixed with `!important` on just the two contested print declarations (`background`, `color`), not the whole print block.
+- **Toggle hidden in print** (mid-turn follow-up ask): `.theme-toggle { @media print { display: none; } }`, same pattern as the existing `.background-credit` rule.
+
+### Accessibility pass (mid-turn follow-up ask)
+
+The first draft had two real gaps, caught and fixed before moving on:
+
+- `aria-pressed` was only ever set imperatively in a `useEffect` after mount — meaning the button had no `aria-pressed` at all in the initial static HTML, a real (if brief) gap for assistive tech. Fixed by rendering `aria-pressed={false}` directly in JSX as a safe default (matching the dark-mode default, so no hydration mismatch), corrected post-mount if the actual theme is light.
+- The button's hit target was originally the same `clip-path`-triangle as its visual shape — `clip-path` affects hit-testing, not just painting, so the actual clickable area was a thin diagonal sliver rather than a proper touch target. Fixed by keeping the `<button>` itself a full, unclipped square (the real interactive element) and drawing the "folded corner" triangle purely visually via a `pointer-events: none` `::before` pseudo-element layered on top.
+- Also added: a visible `:focus-visible` outline drawn _outside_ the button (not inset, which would've been clipped by the visual triangle), and a `title` attribute for a native hover tooltip.
+
+### Icon design iteration
+
+Several rounds, each caught by actually looking at the rendered result rather than reasoning about coordinates blindly:
+
+1. Simple up/down triangles (matching the site's `prism.png` triangle motif directly) — rejected as too abstract to read as "light/dark mode" at a glance.
+2. Standard sun-with-rays / crescent-moon glyphs — instantly recognizable, adopted as the base shape language.
+3. "Make the moon more eclipsed" — the crescent cutout was widened relative to the outer shape for a thinner, more dramatic sliver.
+4. "Make the sun and moon a septagon" — both icons rebuilt from 7-sided polygons (computed via Python for precise, evenly-spaced vertices) instead of circles, matching the eclipse/cutout alignment between the two septagons so the crescent reads cleanly.
+5. "Make the sun ray diamonds 2.5x longer, pointing away from center" — rays rebuilt as proper kite shapes (inner point near the sun, outer tip far from it, width only at the midpoint) computed per-angle so each one actually points radially outward, rather than axis-aligned diamonds that only looked radial for 4 of the 8 positions.
+6. "Rays too close to the sun, move them out and shrink 10%" — radii recomputed: base pushed outward, tip-to-base length reduced 10%, tangential width reduced 10%, all recalculated to stay within the SVG viewBox.
+7. `.theme-toggle::before`'s border color set to `$lavender-oxide` in light mode (base stays `$silver-oxide`) and the icon fill color iterated between `currentColor`/`$text`/`$lavender-oxide` directly in the editor.
+
+### Two real test-environment bugs found and fixed
+
+Neither is specific to this feature's code — both are environment gaps that simply hadn't been exercised by any prior test:
+
+- **`window.localStorage` was `undefined` in the Vitest/jsdom environment** on this project's Node version (v26.5.1) — Node's own native `localStorage` global (a lazy getter that requires `--localstorage-file` to actually work) shadows jsdom's working implementation once Vitest merges jsdom's `window` into the global scope. Confirmed jsdom's own `localStorage` works fine when constructed directly — this is purely a Vitest+jsdom+Node26 integration gap, and `ThemeToggle`'s real `localStorage` usage was already confirmed correct via Playwright screenshots. Fixed with a minimal in-memory `Storage` polyfill in `vitest.setup.ts`, only installed if `window.localStorage` isn't already a working object.
+- **React Testing Library's automatic `afterEach(cleanup)` never ran** — `vitest.config.ts` doesn't set `test.globals: true`, which RTL's auto-registration depends on. Every prior test file only ever called `render()` once per file, so the resulting DOM buildup across tests in the same file went unnoticed until `ThemeToggle.test.tsx` (the first file with multiple `it()` blocks each calling `render()`) hit `getByRole` "multiple elements found" errors. Fixed with an explicit `afterEach(() => cleanup())` in `vitest.setup.ts`, the standard pattern for this exact Vitest+RTL configuration.
+
+### Also: scoped `npm test` to `src/`
+
+Unrelated to the toggle itself, but done in the same pass: `vitest.config.ts` picked up dozens of unrelated test files from `Docker/claude-home/` (a bind-mounted Claude Code plugin cache, not part of this project — see earlier "Verification status" notes about this). Replaced the ad hoc `exclude` list with an explicit `include: ['src/**/*.test.{ts,tsx}']`, which scopes discovery to just this project's own tests and makes the `Docker/**` exclusion (and any other future stray directory) unnecessary.
+
+### Also: migrated `layout.scss` off the deprecated Sass `@import` rule
+
+`npm run build` was surfacing `DEPRECATION WARNING [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0` for `layout.scss`'s two local partial imports. Migrated to the modern module system: `@import './variables'; @import './typography';` became `@use './variables' as *; @use './typography';` — `as *` keeps every variable unprefixed (`$wine-dark`, `$silver-oxide`, etc.) so nothing else in the file needed renaming, while `./typography` doesn't need a namespace since nothing outside it references its members directly (its rules apply themselves, to `body`/`h1`–`h4`/`p`). `_typography.scss`'s own `@import url('https://fonts.googleapis.com/...')` is unrelated and untouched — that's a plain CSS `@import` for an external stylesheet, not a Sass module import, and was never part of this warning. Rebuilt and confirmed the `[import]` warning is gone; the remaining `[legacy-js-api]` warning is unrelated (comes from how `gatsby-plugin-sass` itself invokes the `sass` package, not fixable from within these `.scss` files).
+
+### Verification status
+
+- `npm run typecheck`, `npm run lint`, `npm run format:check` — all clean.
+- `npm test` — 3 files, 6 tests, all passing (now scoped to `src/`, so this is the complete, accurate count — no more unrelated `Docker/` noise in the numbers).
+- `npm run build` — succeeds, no `[import]` deprecation warnings after the `@use` migration (only the unrelated pre-existing `[legacy-js-api]` one remains). Confirmed the init script is present in the built `public/index.html`'s `<head>`, as a plain synchronous script.
+- `npm run test:e2e` — all 7 tests pass, including the 5 new `e2e/theme-toggle.spec.ts` cases: OS-preference defaulting (both light and dark), toggle-click + persistence across reload, storage isolation across a fresh browser context, and print output staying plain/light/toggle-hidden regardless of the active screen theme. One assertion needed a fix after first failing against the production build specifically: `prism-light.png` (9.4KB) gets base64-inlined into the computed `background-image` by Gatsby's production asset pipeline, so a filename-pattern match doesn't hold there — replaced with a before/after value comparison, which is resilient to whether a given build inlines the asset or not.
