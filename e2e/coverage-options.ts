@@ -10,10 +10,7 @@ export const coverageOptions: CoverageReportOptions = {
   // the webpack runtime and bundled framework code, not just our own src/, so
   // threshold enforcement in global-teardown.ts reads coverage-summary.json
   // (the sourceFilter-scoped, sourcemap-remapped report below) instead.
-  // cobertura: consumed by actions/upload-code-coverage@v1 in playwright.yml,
-  // for GitHub's native "Restrict code coverage" ruleset rule — see
-  // CLAUDE.md's Continuous Integration section.
-  reports: ['json-summary', 'html', 'lcovonly', 'text', 'cobertura'],
+  reports: ['json-summary', 'html', 'lcovonly', 'text'],
   // Real bundle chunks all end in .js — this drops tiny inline <script>
   // snippets Gatsby embeds directly in the HTML (e.g. the webpack compilation
   // hash), which have no sourcemap to unpack and would otherwise bypass
