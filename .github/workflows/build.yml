@@ -9,6 +9,18 @@ on:
         description: Testing image ref to run against (from build-image.yml)
         required: true
         type: string
+      should-run:
+        description: >-
+          Set false to skip the actual build while still completing this job under
+          its normal name. pr-gate passes this from its path-filter output instead of
+          putting an `if:` on the calling job — a job-level `if:` makes GitHub report
+          a differently-named, bare check run ("build" instead of "build / build")
+          when skipped, which never satisfies the "build / build" required status
+          check and leaves the PR stuck. Defaults true so merge-queue (no path
+          filtering) is unaffected.
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -31,7 +43,9 @@ jobs:
         working-directory: /app
     steps:
       - name: Checkout into /app
+        if: inputs.should-run
         uses: mjoynes-wombat-web/resume-2026/.github/actions/checkout-to-app@main
 
       - name: Run build
+        if: inputs.should-run
         run: npm run build
