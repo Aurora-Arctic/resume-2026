@@ -3,8 +3,19 @@
 $wine-dark: #110011; // outer page background
 $silver-oxide: #211d28; // paper card background (dark mode), and print text color
 $lavender-oxide: #958e9f; // paper card background (light mode) — darkest facet of prism-light.png
+$wine: #6a2854; // accent color
 $text: #e6ddf4;
 $shadow: rgba(8, 7, 9, 0.8);
+
+// Shared timing for the theme-toggle color fades and icon motion, kept in
+// one place so the speed can be tuned without hunting through layout.scss.
+$theme-transition-duration: 400ms;
+$theme-transition-easing: ease-in-out;
+
+// How far around the .theme-toggle__facets pivot the sun/moon swing when
+// parked/exiting — larger than a bare 90deg so the two icons read as further
+// apart mid-swing instead of crowding the corner.
+$theme-toggle-icon-arc: 130deg;
 
 // Print colors — the paper card disappears into the page in print, so
 // there's only one background/text pair.
