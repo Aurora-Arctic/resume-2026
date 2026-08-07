@@ -1,11 +1,11 @@
 ---
 name: create-pr
-description: Use when the user asks to open a PR, create a pull request, or wrap up the current branch for review (e.g. "create a PR", "open a PR for this", "let's get this reviewed"). Commits and pushes the current branch's work (after asking), then opens a PR with a generated summary of the work done — asks which branch to target, defaulting to main.
+description: Use when the user asks to open a PR, create a pull request, or wrap up the current branch for review (e.g. "create a PR", "open a PR for this", "let's get this reviewed"). Commits (after asking) and automatically pushes the current branch's work, then opens a PR with a generated summary of the work done — asks which branch to target, defaulting to main.
 ---
 
 # create-pr
 
-Turn the current branch's work into a pull request against `main`, asking before any commit or push.
+Turn the current branch's work into a pull request against `main`, asking before any commit. Pushing happens automatically once there's something to push.
 
 ## Steps
 
@@ -15,6 +15,7 @@ Turn the current branch's work into a pull request against `main`, asking before
      - If it **is** set: `gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key --with-token <<< "$GITHUB_PERSONAL_ACCESS_TOKEN"`. Non-interactive — completes immediately, nothing for the user to do.
      - If it is **not** set: `gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key --web --clipboard`. This is interactive (device-code flow) — it will hang waiting for the user to authorize in their browser, so run it with a foreground/blocking call, surface the one-time code (also copied to the clipboard) and the URL to the user immediately, and wait for them to confirm completion rather than silently polling.
    - Don't run `gh auth login` at all when already authenticated — it's unnecessary and interrupts the user for no reason.
+   - Don't re-run `gh auth status` (or any other verification) after `gh auth login` completes — trust that a successful login (or the user's confirmation, for the `--web` flow) means auth is good, and move straight on to step 2.
 
 2. **Check preconditions.**
    - Run `git branch --show-current`. Note it as the source branch.
@@ -32,10 +33,10 @@ Turn the current branch's work into a pull request against `main`, asking before
    - If `git status` shows uncommitted or unstaged changes, summarize what changed and use AskUserQuestion to ask whether to commit them before opening the PR (yes / no — describe what would be committed). Do not commit without asking, even though the PR is the user's explicit goal.
    - If they say yes, stage the relevant files (never blind `git add -A`) and commit following this repo's normal commit conventions (see the Git Safety Protocol / commit instructions already in context) — draft a concise message focused on why, use a HEREDOC, include the `Co-Authored-By` trailer.
 
-5. **Offer to push.**
+5. **Push automatically if there's anything to push.**
    - Check whether the current branch has an upstream and whether local commits are ahead of it (`git status -sb` or `git rev-list @{u}..HEAD` if an upstream exists).
    - Run `git log <target>..HEAD --oneline` to confirm there are commits ahead of the target. If there's nothing to push (no commits ahead of the target even after step 4), stop and tell the user there's no work to open a PR for.
-   - Otherwise use AskUserQuestion to confirm pushing to `origin` before running `git push` (or `git push -u origin <branch>` if no upstream is set yet). Never push to `main` directly — this pushes the source branch, not the target.
+   - Otherwise, push right away without asking first — run `git push` (or `git push -u origin <branch>` if no upstream is set yet) whenever step 4 produced a new commit, or whenever the branch already has commits that aren't on `origin`. Never push to `main` directly — this pushes the source branch, not the target.
 
 6. **Gather context for the summary.**
    - Run `git diff <target>...HEAD` and `git log <target>..HEAD` (note the triple-dot vs double-dot: diff against the merge base, log of all commits on the branch) to see the full set of changes that will be in the PR, not just the latest commit.
