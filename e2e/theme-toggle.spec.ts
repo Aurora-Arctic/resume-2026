@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('paper theme toggle', () => {
   test('defaults to dark when the OS prefers dark', async ({ page }) => {
@@ -35,9 +35,13 @@ test.describe('paper theme toggle', () => {
 
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+    await toggle.click();
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'light');
   });
 
   test("a fresh browser context is not affected by another context's stored choice", async ({
+    page,
     browser,
   }) => {
     const overridden = await browser.newContext();
@@ -50,12 +54,11 @@ test.describe('paper theme toggle', () => {
     await expect(overriddenPage.locator('html')).toHaveAttribute('data-theme', 'light');
     await overridden.close();
 
-    const fresh = await browser.newContext();
-    const freshPage = await fresh.newPage();
-    await freshPage.emulateMedia({ colorScheme: 'dark' });
-    await freshPage.goto('/');
-    await expect(freshPage.locator('html')).not.toHaveAttribute('data-theme', 'light');
-    await fresh.close();
+    // `page` is its own isolated context per Playwright test, so it doubles as
+    // the "fresh" context here instead of spinning up a third, unused one.
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/');
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'light');
   });
 
   test('print output stays plain and light regardless of the active screen theme', async ({
