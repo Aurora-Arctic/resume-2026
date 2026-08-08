@@ -1,0 +1,87 @@
+@use './variables' as *;
+
+// How much the :active fill shrinks by — the fade itself reuses
+// $theme-transition-duration/$theme-transition-easing (same speed/easing as
+// every other color transition in the app, background-color included).
+$button-push-scale: 0.98;
+
+// .tooltip__dismiss (Tooltip/index.scss) is the one button in the app that
+// stays exempt from everything below — see TOOLTIP.md. :not(:where(...))
+// keeps this exclusion at zero added specificity (:not()'s specificity
+// normally equals its argument's, but :where()'s own specificity is always
+// zero), so every rule below stays exactly as specific as a bare
+// button/button::before selector — no more. A plain :not(.tooltip__dismiss)
+// (no :where) would add its own specificity point and incorrectly outrank
+// single-class overrides like .theme-toggle's own position: absolute, or
+// stomp .tooltip__dismiss's load-bearing translateY(-50%) centering with the
+// :active push transform below.
+button {
+  // The one declaration safe to also apply to the exempt dismiss button.
+  cursor: pointer;
+}
+
+button:not(:where(.tooltip__dismiss)) {
+  // Own stacking context so ::before's z-index: -1 below resolves locally
+  // (behind this button's own content) instead of escaping to compare
+  // against the nearest ancestor stacking context — same reasoning as
+  // .paper-card's position: relative; z-index: 0; (Layout/index.scss) for
+  // its own ::after.
+  position: relative;
+  z-index: 0;
+  border: none;
+  border-radius: 0; // buttons never have rounded corners
+  background: transparent; // the real fill lives on ::before, below
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    // Without z-index: -1 here, an absolutely-positioned ::before with
+    // z-index: auto paints *after* (on top of) this button's own in-flow
+    // text per normal CSS painting order — not hypothetical, this is what
+    // would happen to RestoreTooltips' "I Need Tooltips" text without it.
+    z-index: -1;
+    border-radius: 0;
+    background-color: $silver-oxide; // off-paper default
+    // Bottom-anchored so the :active scale below shrinks the fill toward its
+    // own bottom edge (kept constant here, not toggled alongside `transform`,
+    // so only the scale itself animates rather than the origin jumping too).
+    transform-origin: bottom;
+    transition:
+      background-color $theme-transition-duration $theme-transition-easing,
+      transform $theme-transition-duration $theme-transition-easing;
+
+    // On-paper default. Specificity ties with the hover/focus and active
+    // rules below, so source order matters — this must stay first among
+    // the three so the later rules can win their ties.
+    .paper-card & {
+      background-color: $wine-dark;
+    }
+  }
+
+  &:hover::before,
+  &:focus-visible::before {
+    background-color: $wine;
+  }
+
+  // Applied to ::before only, not the real button — the fill shrinks in on
+  // itself (both axes, bottom-anchored so the bottom edge stays planted) to
+  // read as "pressed", while the button's own content (icon/text/facets)
+  // stays exactly where it is, unscaled.
+  &:active::before {
+    background-color: $grape-press;
+    transform: scale($button-push-scale);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $text;
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:where(.tooltip__dismiss)),
+  button:not(:where(.tooltip__dismiss))::before {
+    transition: none;
+  }
+}
