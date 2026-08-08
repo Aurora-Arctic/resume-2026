@@ -827,3 +827,55 @@ wouldn't change anything it actually gates.
 Docs updated to match: `claude-docs/CI-SETUP.md` (new bullet after the
 path-filtering one) and top-of-file comments in `pr-gate.yml` and
 `merge-queue.yml`.
+
+## Bringing `main` back down into `staging`: `main-sync/*` and `/create-main-sync`
+
+Requested directly: a way to bring changes that land on `main` back down
+into `staging`. This gap existed because every existing Gitflow path moves
+work "up" (`feature/*` → `staging`, `release/*`/`hotfix/*` → `main`) but
+nothing moves it back down again — so a fix pushed straight to a cut
+`release/*` branch (a valid source into `release/*` per the existing rules:
+`staging` or `hotfix/*`) ships to `main` via that release's PR but never
+reaches `staging`, silently drifting the two apart.
+
+**Approach**: mirror the existing `release/*`/`create-release` pattern
+exactly, but reversed — a new branch prefix validated by `gitflow.yml`, cut
+by a dedicated skill that also opens the PR itself rather than deferring to
+`/create-pr`.
+
+- **Branch naming**: `main-sync/YYYY-MM-DD-HH-MM-SS` (UTC), the exact format
+  requested rather than an incrementing counter or a slug — a timestamp is
+  always unique without needing to check against prior syncs, and doesn't
+  require asking the user to name anything (unlike `feature/*`/`hotfix/*`,
+  a sync isn't really "about" anything nameable — it's just "whatever's on
+  `main` that isn't on `staging` yet").
+- **`gitflow.yml`**: added `main-sync/[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}`
+  as an accepted source into `staging` only — never into `main` or
+  `release/*`, since a sync branch's only job is closing the `main` →
+  `staging` gap. Verified the interval-expression regex (`{4}`, `{2}`)
+  works as expected under bash's `[[ =~ ]]` (glibc ERE supports `{n}`
+  without special flags) before relying on it, the same way the existing
+  `release/[0-9]+\.[0-9]+\.[0-9]+` pattern already does for release
+  branches. Header comment block and prose both updated alongside the
+  `case` pattern, same as every prior gitflow.yml change in this file.
+- **`.claude/skills/create-main-sync`**: new skill, structured as
+  `create-release`'s mirror image — fetches `main`+`staging`, bails early if
+  `git log origin/staging..origin/main` is empty (nothing to sync), branches
+  off `origin/main` at the computed timestamp, pushes directly (same
+  "pushing here is the point of the skill" exception `create-release` uses,
+  not deferred to `/create-pr`), then opens a PR into `staging`. The
+  PR-summary logic reuses `create-release` step 11's merged-PR-attribution
+  trick verbatim but with the base/target swapped: `gh pr list --base main
+--state merged` intersected via `git merge-base --is-ancestor` against the
+  sync branch (in) and `origin/staging` (not already there), instead of
+  `--base staging` intersected against the release branch and `origin/main`.
+- **`/create-pr`**: added `main-sync/*` → `staging` (single target, no
+  question needed) to the source-branch classification table, for the edge
+  case of someone running `/create-pr` from an already-created sync branch
+  instead of relying on `create-main-sync`'s own PR creation — kept
+  consistent with the pattern already used for `staging` itself only having
+  one valid target (`release/*`).
+
+Docs updated to match: `claude-docs/CI-SETUP.md` (Gitflow bullet and the
+Gitflow-aware-skills bullet), `README.md`'s Gitflow workflow table, and
+`CLAUDE.md`'s Continuous Integration section.

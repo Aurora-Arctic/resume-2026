@@ -25,11 +25,11 @@ Turn the current branch's work into a pull request against a Gitflow-appropriate
 3. **Determine the target branch(es), proposing only Gitflow-valid ones.**
    - This repo enforces Gitflow branch-source rules via a required `gitflow` check (`.github/workflows/gitflow.yml` is the source of truth — re-read it if these rules ever look out of date):
 
-     | Target      | Allowed source                       |
-     | ----------- | ------------------------------------ |
-     | `main`      | `release/*`, `hotfix/*`              |
-     | `staging`   | `feature/*`, `release/*`, `hotfix/*` |
-     | `release/*` | `staging`, `hotfix/*`                |
+     | Target      | Allowed source                                      |
+     | ----------- | --------------------------------------------------- |
+     | `main`      | `release/*`, `hotfix/*`                             |
+     | `staging`   | `feature/*`, `release/*`, `hotfix/*`, `main-sync/*` |
+     | `release/*` | `staging`, `hotfix/*`                               |
 
      Any _other_ target (e.g. another `feature/*` branch) has no source restriction at all — the check only gates `main`/`staging`/`release/*` targets.
 
@@ -37,6 +37,7 @@ Turn the current branch's work into a pull request against a Gitflow-appropriate
    - Otherwise, classify the source branch (from step 2) by prefix and compute its valid targets:
      - `feature/*` → `staging`, plus any other existing `feature/*` branch from step 2's `git branch -a` (excluding itself) — feature-into-feature stacking is unrestricted by the check.
      - `release/*` → `main` and `staging`.
+     - `main-sync/*` → `staging` only — same single-target shape as `staging` itself below, since a sync branch's only job is to land back on `staging`.
      - `staging` itself → any existing `release/*` branch (there's no other valid target).
      - anything else (e.g. a personal `name/description` branch, or `main`) → no valid target among `main`/`staging`/`release/*`.
    - When a bucket needs concrete `release/*` or `feature/*` branches (not just the pattern), pull the actual names from step 2's `git branch -a` output.
@@ -83,5 +84,6 @@ Turn the current branch's work into a pull request against a Gitflow-appropriate
 - This project's `.claude/settings.json` has `git push origin *` and `gh pr create/view/comment/list` under `permissions.ask` — expect (and don't try to suppress) a confirmation prompt on those calls; that's intentional, not a bug.
 - Never force-push, never push to `main`, and never skip the pre-commit hook (`--no-verify`) to make a commit succeed.
 - Target selection is Gitflow-aware (see step 3) — don't default to `main` out of habit, and don't ask for `hotfix/*` branches, which always get both `main` and `staging`. `.github/workflows/gitflow.yml` is the source of truth if the rules table in step 3 ever drifts from the real check.
+- `main-sync/*` branches are normally created and PR'd directly by `/create-main-sync`, which doesn't defer to this skill (same reasoning `/create-release` uses for its own release branch). This skill's `main-sync/*` handling exists so re-running `/create-pr` from an already-created sync branch still proposes the right (only) target.
 - If the user only asked for a summary of work done (not a PR), skip `gh pr create` and just present the step 7 summary directly instead (both diffs, for a hotfix branch).
 - Don't second-guess the branch's contents against prior conversation context, other branches, or what you think "should" be there. If something you worked on earlier isn't on the active branch, that's out of scope for this skill — PR what's there, and let the user raise it if it's actually a problem.
