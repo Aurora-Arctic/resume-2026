@@ -50,9 +50,10 @@ A personal resume site (`resume-2026`) built with Gatsby 5, React 18, and TypeSc
 
 ## Continuous Integration
 
-- GitHub Actions, `.github/workflows/`. Two phase workflows, each composed from small reusable per-check workflows (`lint`, `format`, `typecheck`, `vitest`, `build`, `playwright`, `audit`):
-  - **`pr-gate.yml`** (`pull_request` → `main`): format check (always), plus lint, typecheck, Vitest, build, Playwright e2e, and a non-blocking `npm audit`, each path-filtered to skip when irrelevant.
-  - **`merge-queue.yml`** (`merge_group`): the same six blocking checks re-run right before merge. No `audit` here; that's PR-only. No push-to-`main` workflow — `merge-queue` already covers that moment.
+- GitHub Actions, `.github/workflows/`. Two phase workflows, each composed from small reusable per-check workflows (`lint`, `format`, `typecheck`, `vitest`, `build`, `playwright`, `audit`, `gitflow`):
+  - **`pr-gate.yml`** (`pull_request` → `main`, `staging`, or `release/**`): format check and Gitflow branch-source check (always), plus lint, typecheck, Vitest, build, Playwright e2e, and a non-blocking `npm audit`, each path-filtered to skip when irrelevant.
+  - **`merge-queue.yml`** (`merge_group`): the same six blocking checks re-run right before merge — except `gitflow`, which only makes sense against a PR's real source branch (`merge_group` only exposes a synthetic one); see `claude-docs/CI-SETUP.md`. No `audit` here either; that's PR-only. No push-to-`main` workflow — `merge-queue` already covers that moment.
+  - **`gitflow`** enforces which source branches may PR into which targets: `main` accepts `release/*`/`hotfix/*`; `staging` accepts `feature/*`/`release/*`/`hotfix/*`; `release/*` accepts `staging`/`hotfix/*` — see `claude-docs/CI-SETUP.md`.
   - **Enabling the merge queue is a manual, one-time repo setting** ("Require merge queue" in Settings → Branches → branch protection) — without it `merge-queue.yml` never triggers.
 - Every check runs inside the `testing` stage of `Docker/Dockerfile.node` via each job's `container:` key — the same image used for local e2e testing. `build-image.yml` builds/pushes that stage to GHCR (skipping the build entirely if the content-addressed tag already exists) and is called first by both phase workflows.
 - Local testing via [`act`](https://github.com/nektos/act): `make act-lint|format|typecheck|vitest|build|playwright|test` (host-level only, not devcontainer-integrated). `audit.yml`/`build-image.yml` are excluded.

@@ -1,0 +1,106 @@
+name: Gitflow Rules
+
+# Reusable check that enforces which source branches may PR into which target
+# branches, mirroring https://medium.com/@ariifischbein/automate-gitflow-branching-rules-with-github-actions-d672f80d335b
+# with this repo's `staging` branch standing in for the article's `develop`:
+#
+#   target `main`        <- `release/*` or `hotfix/*`
+#   target `staging`     <- `feature/*`, `release/*`, or `hotfix/*`
+#   target `release/*`   <- `staging` or `hotfix/*`
+#
+# Branch protection/rulesets can gate a target branch (required checks, no
+# force-push, etc.) but can't express "only branch X may merge into target
+# Y" — this check fills that gap. Called via workflow_call from pr-gate
+# only (see pr-gate.yml for why merge-queue doesn't also need it). Doesn't
+# need the testing container or a checkout — it only reads the PR's head/base
+# ref names, no npm/build tooling involved.
+on:
+  workflow_call:
+    inputs:
+      pr-number:
+        description: Pull request number to comment on (omit to skip PR commenting)
+        required: false
+        type: string
+      merge-queue:
+        description: Set true when called from merge-queue.yml — uses a separate, merge-queue-labeled comment thread and posts only on failure (no minimize-on-success)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gitflow:
+    runs-on: ubuntu-latest
+    steps:
+      # Local action references (./.github/actions/...) below resolve against
+      # $GITHUB_WORKSPACE, so a checkout is needed even though this job never
+      # reads repo content itself. No container/checkout-to-app needed since
+      # nothing here runs npm — a plain checkout is enough.
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Start timer
+        id: timer-start
+        uses: ./.github/actions/timer-start
+
+      - name: Validate source -> target branch
+        id: run
+        run: |
+          HEAD_REF="${{ github.event.pull_request.head.ref }}"
+          BASE_REF="${{ github.event.pull_request.base.ref }}"
+
+          case "$BASE_REF" in
+            main)      pattern='^(release|hotfix)/.+$' ;;
+            staging)   pattern='^(feature|release|hotfix)/.+$' ;;
+            release/*) pattern='^(staging|hotfix/.+)$' ;;
+            *)         pattern='' ;;
+          esac
+
+          {
+            echo "Source branch: $HEAD_REF"
+            echo "Target branch: $BASE_REF"
+          } | tee output.log
+
+          if [ -n "$pattern" ] && ! [[ "$HEAD_REF" =~ $pattern ]]; then
+            echo "::error::PRs into '$BASE_REF' must come from a branch matching /$pattern/ (got '$HEAD_REF')." | tee -a output.log
+            exit 1
+          fi
+
+          echo "No Gitflow violation for '$HEAD_REF' -> '$BASE_REF'." | tee -a output.log
+
+      - name: Compute duration
+        id: timer
+        if: always()
+        uses: ./.github/actions/timer-elapsed
+        with:
+          start: ${{ steps.timer-start.outputs.start }}
+
+      - name: Write job summary
+        if: always()
+        uses: ./.github/actions/job-summary
+        with:
+          check-name: Gitflow Rules
+          outcome: ${{ steps.run.outcome }}
+          log-file: output.log
+          duration: ${{ steps.timer.outputs.duration }}
+          summary: ${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}
+
+      # Fail-only from pr-gate (resolves a prior failure comment on success),
+      # fail-only on a separate merge-queue-labeled thread from merge-queue
+      # (no action at all on success) — see .github/actions/pr-comment.
+      - name: Comment on PR
+        if: always() && inputs.pr-number
+        uses: ./.github/actions/pr-comment
+        with:
+          check-name: Gitflow Rules
+          marker-slug: gitflow
+          pr-number: ${{ inputs.pr-number }}
+          merge-queue: ${{ inputs.merge-queue }}
+          outcome: ${{ steps.run.outcome }}
+          log-file: output.log
+          success-mode: minimize
+          duration: ${{ steps.timer.outputs.duration }}
+          summary: ${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}
