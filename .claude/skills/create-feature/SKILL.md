@@ -13,7 +13,7 @@ Start a new Gitflow feature branch off the latest `staging`, asking what to call
    - Run `git status`. If there are uncommitted or unstaged changes, warn the user that they'll carry onto the new branch and use AskUserQuestion to confirm how to proceed: bring the changes along, stash them first (`git stash push -u`), or stop.
 
 2. **Ask what the feature should be called.**
-   - Use AskUserQuestion (this surfaces a dialog the user gets notified for, unlike a plain chat message) even though there's no sensible fixed set of options — give a couple of generic placeholder options (e.g. labeled as examples) and rely on the user picking "Other" to type the actual free-text name. Wait for the reply before continuing.
+   - Send a `PushNotification` (status `proactive`) saying input is needed for the new feature branch name, then ask in plain chat what to call it — a free-text question, no multiple-choice options. Wait for the reply before continuing.
 
 3. **Slugify the name.**
    - Lowercase it, turn spaces/underscores into hyphens, strip anything outside `[a-z0-9-]`, and collapse repeated hyphens. This becomes `<slug>` in `feature/<slug>`.
