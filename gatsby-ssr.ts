@@ -45,27 +45,8 @@ export const onRenderBody: GatsbySSR['onRenderBody'] = ({
   setHtmlAttributes({ lang: 'en' });
 
   setHeadComponents([
-    // Preconnect + a real <link rel="stylesheet">, rather than the SCSS
-    // bundle's old `@import url(...)`, so the browser can discover and
-    // start the Google Fonts request as soon as <head> is parsed instead of
-    // only after it's fetched and parsed the compiled CSS bundle looking
-    // for the @import.
-    React.createElement('link', {
-      key: 'font-preconnect-googleapis',
-      rel: 'preconnect',
-      href: 'https://fonts.googleapis.com',
-    }),
-    React.createElement('link', {
-      key: 'font-preconnect-gstatic',
-      rel: 'preconnect',
-      href: 'https://fonts.gstatic.com',
-      crossOrigin: 'anonymous',
-    }),
-    React.createElement('link', {
-      key: 'font-stylesheet',
-      rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Lexend:wght@200;300;400;500&family=Syne:wght@400;500;600;700&display=swap',
-    }),
+    // Fonts are self-hosted via @fontsource (see gatsby-browser.ts) — no
+    // Google Fonts <link>s needed here anymore.
     React.createElement('script', {
       key: 'theme-init',
       dangerouslySetInnerHTML: { __html: themeInitScript },

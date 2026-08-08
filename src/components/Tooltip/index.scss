@@ -16,6 +16,8 @@ $tooltip-long-hover-delay: 1s;
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   // No pointer-events: none here (deliberately) — an element excluded from
   // hit-testing can never register the hover that would turn it back on,
   // and unlike opacity/visibility that exclusion flips instantly rather

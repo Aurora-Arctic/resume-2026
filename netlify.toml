@@ -1,0 +1,11 @@
+[[redirects]]
+  from = "https://marwynn.net/*"
+  to = "https://resume.marwynn.net/:splat"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "https://www.marwynn.net/*"
+  to = "https://resume.marwynn.net/:splat"
+  status = 302
+  force = true

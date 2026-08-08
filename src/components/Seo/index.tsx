@@ -5,6 +5,7 @@ interface SiteMetadataQuery {
   site: {
     siteMetadata: {
       title: string;
+      description: string;
     };
   };
 }
@@ -15,12 +16,18 @@ const Seo = (): ReactElement => {
       site {
         siteMetadata {
           title
+          description
         }
       }
     }
   `);
 
-  return <title>{data.site.siteMetadata.title}</title>;
+  return (
+    <>
+      <title>{data.site.siteMetadata.title}</title>
+      <meta name="description" content={data.site.siteMetadata.description} />
+    </>
+  );
 };
 
 export default Seo;
