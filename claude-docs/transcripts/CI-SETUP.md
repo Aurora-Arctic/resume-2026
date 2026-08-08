@@ -446,3 +446,104 @@ same `gh api` call).
 `merge-queue.yml` needed no trigger change — `on: merge_group` already fires
 for whichever branch has "Require merge queue" active, regardless of branch
 name — just a comment update.
+
+## Adding Gitflow branch-source enforcement (`feature`/`release`/`hotfix` → `staging`/`main`)
+
+The user asked for a branch-protection flow modeled on [this article's
+Gitflow-enforcement pattern](https://medium.com/@ariifischbein/automate-gitflow-branching-rules-with-github-actions-d672f80d335b),
+with this repo's `staging` branch standing in for the article's `develop`.
+The article's own gap is exactly what motivated this: GitHub branch
+protection/rulesets can gate a _target_ branch (required checks, no
+force-push, etc.) but can't express "only branch X may merge into target
+Y" — nothing already in this repo enforced that, so e.g. a PR from any
+random branch straight into `main` was previously unrestricted.
+
+Two decisions came from directly asking the user rather than assuming, since
+they change the shape of the whole feature:
+
+- **Full Gitflow (`feature/*`/`release/*`/`hotfix/*`), not a simplified
+  staging-only flow.** The repo's existing convention (documented in the
+  "Adding a `staging` branch" section above) was `main` promoted via direct
+  `staging` → `main` PRs, no release branch, and free-form branch names like
+  `mjoynes/<description>` for day-to-day work. The user chose the article's
+  full three-branch-type model instead, explicitly accepting that this
+  **replaces** the direct `staging → main` promotion path with a
+  `release/*` → `main` one, and that existing free-form branch names (e.g.
+  `mjoynes/staging-branch-setup`, the very branch this change was made on)
+  will fail the new check once it's wired into a ruleset as required — going
+  forward, branches feeding `staging`/`main`/`release/*` need Gitflow-style
+  prefixes.
+- **Blocking, not a warning.** Matches every other required check in this
+  repo (lint/format/typecheck/vitest/build/playwright) rather than the
+  non-blocking pattern `audit.yml` uses — the user picked blocking
+  specifically because it matches the article's own intent (`exit 1` on
+  violation) and this repo's existing house style of failing required
+  checks rather than just commenting.
+
+Rules enforced (`develop` → `staging` substitution applied to the article's
+three rules):
+
+| Target      | Allowed source                       |
+| ----------- | ------------------------------------ |
+| `main`      | `release/*`, `hotfix/*`              |
+| `staging`   | `feature/*`, `release/*`, `hotfix/*` |
+| `release/*` | `staging`, `hotfix/*`                |
+
+**Implementation**: a new reusable check, `.github/workflows/gitflow.yml`,
+modeled on `format.yml` (the repo's existing "always runs, no path-filter"
+pattern) rather than `lint`/`typecheck`/etc., since branch-name validation
+has nothing to do with which files changed. Unlike every other check, it
+doesn't use the `testing` container or `checkout-to-app` — it only reads
+`github.event.pull_request.head.ref`/`base.ref`, no npm/build tooling
+involved, so a plain `actions/checkout` (needed only so the job's local
+`./.github/actions/...` references resolve) on a bare `ubuntu-latest`
+runner is enough. Core logic is a bash `case` over `base.ref` selecting an
+allowed-source regex, `exit 1` with a `::error::` annotation on mismatch —
+matching the article's own `exit 1`-on-violation approach. Reuses
+`job-summary`/`pr-comment` (`success-mode: minimize`) like every other
+check, so a violation shows up the same way a lint/format failure does.
+
+Wired into `pr-gate.yml` as an always-run `gitflow` job (job id `gitflow`,
+giving the required-check name `gitflow / gitflow` per this repo's
+`<job> / <job>` convention). Two other `pr-gate.yml` changes rode along:
+
+- `on.pull_request.branches` gained `'release/**'` (glob, not a literal
+  branch name) alongside `main`/`staging`, so `release/*` branches get the
+  same full CI (lint/format/typecheck/vitest/build/playwright/audit) plus
+  the new gitflow check — they had no CI coverage at all before this.
+- `on.pull_request.types` was made explicit (`[opened, synchronize,
+reopened, edited]`) — previously left at GitHub's implicit default
+  (`opened`/`synchronize`/`reopened`), which doesn't include `edited`. Added
+  specifically so retargeting a PR's base branch (the one way a PR's
+  gitflow source/target relationship can change without a new push)
+  re-triggers this check rather than leaving a stale result in place.
+
+**Deliberately not wired into `merge-queue.yml`.** `merge_group` events only
+expose a synthetic head ref
+(`refs/heads/gh-readonly-queue/<base>/pr-<n>-<sha>`), not the PR's real
+source branch — revalidating there would need an extra API call to resolve
+the original PR (the way `merge-queue.yml`'s existing `pr-number` job
+already extracts a PR _number_ from that ref, but one step further, an
+actual `gh api`/octokit lookup). Skipped as a deliberate simplification:
+the `edited` trigger type above already prevents the one scenario
+(post-approval retargeting) where the merge queue could otherwise see a
+stale gitflow result, so the extra API call would guard against a case that
+can no longer happen.
+
+**Manual follow-up left for the user** (same reason as the still-outstanding
+"Staging" ruleset above — this session's token can't write repo
+Administration settings):
+
+1. Add `gitflow / gitflow` to the existing "Main" ruleset's required status
+   checks (only selectable once the check has reported at least once).
+2. When creating the still-pending "Staging" ruleset, include
+   `gitflow / gitflow` alongside the original 7 required checks.
+3. Create a new "Release Branches" ruleset (`refs/heads/release/**`,
+   mirroring "Main"/"Staging") — `release/*` had no ruleset of any kind
+   before this change.
+
+Docs updated to match: `claude-docs/CI-SETUP.md` (gitflow bullet, `main`
+promotion path description), `README.md` (CI section), and `CLAUDE.md`
+(fixed a pre-existing stale line that still said `pull_request` → `main`
+only — missed by the earlier staging-branch commit, caught while updating
+the same section for this change).
