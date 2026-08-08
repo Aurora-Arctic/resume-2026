@@ -2,7 +2,6 @@
   margin: 3rem 0 0;
   font-size: 0.75rem;
   opacity: 0.6;
-  letter-spacing: 0.03em;
 
   a {
     color: inherit;
@@ -10,11 +9,5 @@
 
   @media print {
     display: none;
-  }
-}
-
-html[data-theme='light'] {
-  .background-credit {
-    letter-spacing: normal;
   }
 }

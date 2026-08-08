@@ -6,12 +6,5 @@
   &__meta {
     margin: 0.25rem 0 0.5rem;
     font-style: italic;
-    letter-spacing: 0.03em;
-  }
-}
-
-html[data-theme='light'] {
-  .resume-experience__meta {
-    letter-spacing: normal;
   }
 }
