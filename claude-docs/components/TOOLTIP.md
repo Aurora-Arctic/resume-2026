@@ -124,6 +124,14 @@ The real mechanism: at the exact moment of the first dismiss, `cleared` and `for
 
 Fixed by also setting `transition: 'none'` in the same inline `style` object whenever `forceHidden` is true — this discards whatever `transition-delay`/`transition-property` the currently-matched stylesheet rule would otherwise contribute, so the opacity/visibility jump is instant regardless of which rule matched at the moment of dismiss. A regression test was added for the inline style itself (`Tooltip/index.test.tsx`'s `'disables the transition on force-hide...'` case) — it can only assert the style attribute is present, not that hiding is actually instant in a real browser (jsdom's limitation, same as above), so this needs to stay covered by the manual/e2e verification pass too, not just this unit test.
 
+#### Bug: lingering `:focus` after dismiss kept a later mouse-only long-hover stuck open
+
+Found while fixing a failing e2e run, not during original development. Repro: dismiss via mouse click, move the pointer away, then hover the trigger again for >1s to force the "long-hover reshow" (§ above) — and leave. The bubble should hide the instant the pointer leaves (§ above: "leaving always falls back to the base, undelayed rule"), but stayed stuck open indefinitely instead.
+
+Cause: dismiss returns real DOM focus to the trigger (§ above), and nothing ever blurs it afterwards — a mouse-only visit later still leaves the trigger sitting in a plain `:focus` state from that earlier dismiss. The reveal rules matched on `:focus` (not just `:hover`), so even once the pointer left and `:hover` stopped matching, the stale `:focus` from the unrelated earlier dismiss kept the rule matching, and the bubble never fell back to the unmatched (instant-hide) base rule.
+
+Fixed by matching `:focus-visible` (and `:has(:focus-visible)` in place of `:focus-within`) instead of plain `:focus` in both reveal rules. `:focus-visible` reflects the browser's own input-modality heuristic rather than raw focus state: verified via an ad hoc Playwright script (`el.matches(':focus-visible')`) that a `.focus()` call made from within a mouse click handler — dismiss's exact case — resolves `:focus-visible` to `false`, while real `Tab`-driven focus (the keyboard-accessibility case these rules also need to keep working) resolves it to `true`. So a stale, mouse-click-induced focus no longer keeps the tooltip open, while genuine keyboard navigation still does. `:has()` support was confirmed against the Chromium build this repo's Playwright config actually runs (`e2e/tooltip.spec.ts:69`'s regression test) rather than assumed from caniuse alone.
+
 ### `role="tooltip"` kept, against WAI-ARIA APG guidance — explicit exception
 
 The WAI-ARIA Authoring Practices reserve `role="tooltip"` for non-interactive, transient content, and specifically advise against nesting interactive elements (like this new dismiss button) inside it — assistive tech that treats `role="tooltip"` as read-only/transient may not expose a focusable descendant meaningfully via non-linear/virtual-cursor navigation, even though it remains linearly Tab-reachable regardless of role. This component keeps `role="tooltip"` anyway, **at the site owner's explicit direction** — a deliberate, acknowledged deviation for a small personal site, not a resolved tradeoff via a different pattern. `aria-describedby` on the trigger is unaffected either way, since it only requires the referenced element to contain descriptive text, not carry that specific role.
@@ -140,5 +148,6 @@ The WAI-ARIA Authoring Practices reserve `role="tooltip"` for non-interactive, t
 
 ## Verification status
 
-- `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` — TODO, fill in after running.
-- `npm run test:e2e` — TODO, fill in after running.
+- `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` — all clean; 29 unit/component tests passing.
+- `npm run test:e2e` — all clean; 15 e2e tests passing (including the `:focus-visible` fix above, added as its own regression case at `e2e/tooltip.spec.ts:69`).
+- `npm run test:coverage` / `npm run test:e2e:coverage` — both above the 80% threshold (Tooltip's own branch coverage is 83–90%, short of 100% only on defensive `localStorage`-unavailable `catch` branches that aren't exercised by either suite).
