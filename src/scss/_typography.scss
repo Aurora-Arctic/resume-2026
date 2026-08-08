@@ -1,6 +1,10 @@
 @use './variables' as *;
 
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500&family=Bitter:wght@400;500&display=swap');
+// Font files themselves are loaded via a <link rel="stylesheet"> injected
+// into <head> by gatsby-ssr.ts's onRenderBody, not a CSS @import here — an
+// @import can only be discovered after the browser fetches and parses this
+// file's compiled output, delaying the Google Fonts request behind that
+// round trip instead of starting it immediately alongside the rest of <head>.
 
 body {
   font-family: $font-body;
