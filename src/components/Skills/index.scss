@@ -1,0 +1,19 @@
+.resume-skills {
+  margin: 2rem 0;
+
+  dl {
+    margin: 0;
+  }
+
+  &__group {
+    margin: 0 0 0.5rem;
+  }
+
+  dt {
+    font-weight: bold;
+  }
+
+  dd {
+    margin: 0;
+  }
+}

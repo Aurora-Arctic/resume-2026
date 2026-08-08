@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 test('homepage renders the resume heading', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'Resume 2026' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Placeholder Name' })).toBeVisible();
 });
 
 test('unknown route renders the Gatsby 404 page', async ({ page }) => {
@@ -22,5 +22,5 @@ test('the 404 page link navigates back home client-side', async ({ page }) => {
   await page.getByRole('link', { name: 'Back to home' }).click();
 
   await expect(page).toHaveURL('/');
-  await expect(page.getByRole('heading', { name: 'Resume 2026' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Placeholder Name' })).toBeVisible();
 });
