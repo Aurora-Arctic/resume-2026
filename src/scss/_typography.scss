@@ -8,11 +8,12 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  // letter-spacing: 0.02em;
 }
 
 body {
   font-family: $font-body;
-  font-weight: 200;
+  font-weight: 300;
 }
 
 h1,
@@ -20,7 +21,7 @@ h2,
 h3,
 h4 {
   font-family: $font-heading;
-  font-weight: 400;
+  font-weight: 500;
   margin: 0 0 1rem;
 }
 
@@ -47,8 +48,15 @@ h4 {
 p {
   margin: 0.5rem 0;
   font-size: 1.2rem;
-  line-height: 1.25;
-  font-weight: 200;
+  line-height: 1.375;
+  font-weight: 300;
+}
+
+p,
+a,
+dt,
+dd {
+  letter-spacing: 0.01em;
 }
 
 a {
@@ -76,11 +84,9 @@ html[data-theme='light'] a {
   }
 }
 
-// Dark mode (the default) uses the lighter weights above — thin text reads
-// heavier against a dark background than the same weight does on light, so
-// light mode compensates back up to the fonts' regular/medium instances and
-// drops the letter-spacing added above to offset those lighter weights'
-// narrower glyphs.
+// Dark mode (the default) needs antialiased/grayscale font smoothing since
+// light text on a dark background renders heavier than the reverse; light
+// mode reverts to the browser default.
 html[data-theme='light'] {
   -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: auto;
