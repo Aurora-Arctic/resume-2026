@@ -11,31 +11,27 @@
   width: 5.125rem;
   height: 5rem;
   clip-path: polygon(100% 0, 100% 100%, 0 0);
-  border: 0;
-  cursor: pointer;
-  background: transparent;
   color: $text;
 
   &::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-color: $wine-dark;
     pointer-events: none;
     border: 0.25rem solid $silver-oxide;
+    // The base button system (src/scss/_buttons.scss) supplies
+    // background-color/transform for default/hover/focus/active/pushed —
+    // this selector still needs to re-list both here anyway (not just
+    // border-color) since `transition` is a single property: this rule's
+    // own value replaces the base file's entirely rather than merging with
+    // it, so leaving transform out would make the push effect snap instead
+    // of fading for this button specifically. This is the one place
+    // border-color's own transition is declared, though — the base system
+    // has no border to animate.
     transition:
       background-color $theme-transition-duration $theme-transition-easing,
-      border-color $theme-transition-duration $theme-transition-easing;
-  }
-
-  &:hover::before,
-  &:active::before {
-    background-color: $wine;
-  }
-
-  &:focus-visible {
-    outline: 2px solid $text;
-    outline-offset: 2px;
+      border-color $theme-transition-duration $theme-transition-easing,
+      transform $theme-transition-duration $theme-transition-easing;
   }
 
   @media print {

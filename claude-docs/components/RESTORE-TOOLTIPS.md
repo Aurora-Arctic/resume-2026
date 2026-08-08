@@ -30,3 +30,7 @@ This document is a transcript of the work done to add `src/components/RestoreToo
 
 - `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` — TODO, fill in after running.
 - `npm run test:e2e` — TODO, fill in after running.
+
+## Adopting the shared button base (`_buttons.scss`)
+
+See [../LAYOUT-SETUP.md](../LAYOUT-SETUP.md)'s "A third shared partial: `_buttons.scss`" for the full site-wide rationale. This button's own `background: $silver-oxide;`, `border-radius: 0.5rem;`, `border: none;`, `cursor: pointer;`, and the opacity-based `&:hover, &:focus-visible { opacity: 0.85; }` were all removed from `index.scss` — every one is now supplied by the shared base rule instead: the `$silver-oxide` fill is the shared system's _default off-paper_ color (this button renders outside `.paper-card`, so it gets that default for free, no extra selector needed — requirement 3 above is satisfied by the shared system now, not a bespoke declaration), corners are square (`border-radius: 0`, not `0.5rem` — a real, visible change from before), and hover/focus/active now read `$wine`/`$wine`/`$grape-press` with a bottom-anchored "pushed" shrink of the fill on click (the label text itself doesn't scale), instead of a flat opacity fade. `position: fixed`, `padding`, `color`, `font-family`, `font-size`, and `box-shadow` stayed local — placement/typography/elevation aren't part of the shared button look.
