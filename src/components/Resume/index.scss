@@ -1,0 +1,8 @@
+// Single column now — a future sidebar/multi-column web layout can turn
+// this into a grid at a wider breakpoint without moving the section
+// components themselves. Plain block stacking also keeps print
+// single-column for free, since there's no grid/columns here to override.
+.resume {
+  display: flex;
+  flex-direction: column;
+}

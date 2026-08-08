@@ -1,0 +1,14 @@
+.resume-header {
+  &__title {
+    margin: 0.25rem 0 1rem;
+  }
+
+  &__contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+}

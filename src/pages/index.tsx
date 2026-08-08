@@ -1,12 +1,12 @@
 import React, { type ReactElement } from 'react';
 import Layout from '../components/Layout';
+import Resume from '../components/Resume';
 import Seo from '../components/Seo';
+import { resumeData } from '../data/resume';
 
 const IndexPage = (): ReactElement => (
   <Layout>
-    <h1>Resume 2026</h1>
-    <p>My resume is being built with Gatsby.</p>
-    <p>Use this as the starting point for your personal resume site.</p>
+    <Resume data={resumeData} />
   </Layout>
 );
 
