@@ -1,5 +1,7 @@
 volumes:
   node_modules:
+  gatsby_cache_development:
+  gatsby_cache_devcontainer:
 
 services:
   development:
@@ -12,12 +14,14 @@ services:
     volumes:
       - ..:/app:cached
       - node_modules:/app/node_modules
+      - gatsby_cache_development:/gatsby-cache
     init: true
     tty: true
     ports:
       - '8000:8000'
     environment:
       NODE_ENV: development
+      CONTAINER_CACHE_DIR: /gatsby-cache
     command: ['npm', 'run', 'develop', '--', '--host', '0.0.0.0']
 
   devcontainer:
@@ -30,10 +34,12 @@ services:
     volumes:
       - ..:/app:cached
       - node_modules:/app/node_modules
+      - gatsby_cache_devcontainer:/gatsby-cache
       - ./claude-home:/home/node/.claude:cached
     init: true
     tty: true
     environment:
       NODE_ENV: development
+      CONTAINER_CACHE_DIR: /gatsby-cache
       CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN}
       GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PERSONAL_ACCESS_TOKEN}

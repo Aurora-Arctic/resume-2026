@@ -85,6 +85,13 @@ export const resumeData: ResumeData = {
       name: 'Placeholder Project',
       description: 'Placeholder project description.',
       stack: ['Placeholder tech'],
+      link: 'https://placeholder.example.com/project',
+      bullets: ['Placeholder bullet describing the project.'],
+    },
+    {
+      name: 'Placeholder Project Without A Link',
+      description: 'Placeholder project description.',
+      stack: ['Placeholder tech'],
       bullets: ['Placeholder bullet describing the project.'],
     },
   ],

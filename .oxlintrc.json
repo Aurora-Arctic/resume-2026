@@ -18,7 +18,8 @@
         "gatsby-ssr.ts",
         "vitest.config.ts",
         "playwright.config.ts",
-        "e2e/**/*.ts"
+        "e2e/**/*.ts",
+        "Docker/link-cache.js"
       ],
       "env": {
         "node": true

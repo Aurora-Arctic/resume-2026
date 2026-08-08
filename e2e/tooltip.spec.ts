@@ -13,6 +13,19 @@ test.describe('clearable tooltip', () => {
     page.getByRole('button', { name: 'Toggle light and dark mode for the paper' });
   const tooltip = (page: import('@playwright/test').Page) => page.locator('#theme-toggle-tooltip');
 
+  test('corrupted (non-array) stored JSON is treated as no dismissals rather than throwing', async ({
+    page,
+  }) => {
+    await page.evaluate(() => {
+      window.localStorage.setItem('tooltip-cleared', JSON.stringify({ not: 'an array' }));
+    });
+    await page.reload();
+
+    await trigger(page).hover();
+    await expect(tooltip(page)).toBeVisible();
+    await expect(tooltip(page)).not.toHaveClass(/tooltip--cleared/);
+  });
+
   test('dismissing via the × persists across a reload', async ({ page }) => {
     await trigger(page).hover();
     await expect(tooltip(page)).toBeVisible();

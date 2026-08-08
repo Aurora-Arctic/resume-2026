@@ -9,3 +9,4 @@ playwright-report
 test-results
 Docker/.env
 Docker/claude-home
+.scratch**.**

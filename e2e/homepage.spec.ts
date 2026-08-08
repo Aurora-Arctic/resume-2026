@@ -6,6 +6,25 @@ test('homepage renders the resume heading', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Placeholder Name' })).toBeVisible();
 });
 
+test('a project with a link renders its name as an anchor', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(
+    page.getByRole('link', { name: 'Placeholder Project', exact: true }),
+  ).toHaveAttribute('href', 'https://placeholder.example.com/project');
+});
+
+test('a project without a link renders its name as plain text', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(
+    page.getByRole('heading', { level: 3, name: 'Placeholder Project Without A Link' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Placeholder Project Without A Link' }),
+  ).not.toBeVisible();
+});
+
 test('unknown route renders the Gatsby 404 page', async ({ page }) => {
   await page.goto('/this-page-does-not-exist');
 
