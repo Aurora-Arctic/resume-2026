@@ -1,10 +1,10 @@
 @use './variables' as *;
 
-// Font files themselves are loaded via a <link rel="stylesheet"> injected
-// into <head> by gatsby-ssr.ts's onRenderBody, not a CSS @import here — an
-// @import can only be discovered after the browser fetches and parses this
-// file's compiled output, delaying the Google Fonts request behind that
-// round trip instead of starting it immediately alongside the rest of <head>.
+// Font files themselves are self-hosted via @fontsource, imported in
+// gatsby-browser.ts — not loaded from fonts.googleapis.com/fonts.gstatic.com
+// and not a CSS @import here. This avoids the external DNS/connection/CSS/
+// woff2 request chain a Google Fonts <link> or @import would add to the
+// critical path entirely, rather than just making it non-blocking.
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
