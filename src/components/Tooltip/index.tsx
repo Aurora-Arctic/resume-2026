@@ -56,6 +56,16 @@ const Tooltip = ({ id, content, className, children }: TooltipProps): ReactEleme
   // fires and it just stays shown. This inline-style override forces it
   // closed regardless of the live :hover/:focus-within state, until the
   // trigger is deliberately hovered/focused again (a fresh attempt).
+  //
+  // The override must also kill the transition itself (transition: 'none'),
+  // not just flip the target opacity/visibility values: at the moment of
+  // dismiss the element still matches `.tooltip.tooltip--cleared:hover`
+  // (cleared just became true while still hovered), which sets a 1s
+  // transition-delay. Inline style beats that rule's opacity/visibility
+  // declarations, but not its transition-delay — so without disabling the
+  // transition too, the browser would honor that delay (and, since
+  // `visibility` only flips at transition-end, stay fully visible) for a
+  // full second before actually hiding.
   const [forceHidden, setForceHidden] = useState(false);
   // trigger.focus() below (returning focus after dismiss) fires the
   // trigger's own onFocus synchronously — without this guard that would
@@ -132,7 +142,7 @@ const Tooltip = ({ id, content, className, children }: TooltipProps): ReactEleme
         role="tooltip"
         id={id}
         className={['tooltip', className, cleared && 'tooltip--cleared'].filter(Boolean).join(' ')}
-        style={forceHidden ? { opacity: 0, visibility: 'hidden' } : undefined}
+        style={forceHidden ? { opacity: 0, visibility: 'hidden', transition: 'none' } : undefined}
       >
         <button
           type="button"

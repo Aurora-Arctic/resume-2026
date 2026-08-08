@@ -157,7 +157,32 @@ describe('Tooltip', () => {
     // The refocus-to-trigger side effect of dismiss fires the trigger's own
     // onFocus synchronously; this only stays hidden if that doesn't
     // immediately undo the force-hide (see suppressNextTriggerFocusRef).
-    expect(screen.getByRole('tooltip')).toHaveStyle({ opacity: 0, visibility: 'hidden' });
+    expect(screen.getByRole('tooltip')).toHaveStyle({
+      opacity: 0,
+      visibility: 'hidden',
+      transition: 'none',
+    });
+  });
+
+  it('disables the transition on force-hide, so a still-matching transition-delay rule cannot stall the hide', () => {
+    // Regression test: jsdom never runs real CSS transitions, so this only
+    // asserts the inline style itself, not rendered timing — see
+    // TOOLTIP.md's "Force-hide must also kill the transition" for why the
+    // transition override is necessary in a real browser. At the instant of
+    // dismiss the bubble still matches `.tooltip.tooltip--cleared:hover`
+    // (cleared just became true while still hovered), which sets a 1s
+    // transition-delay in index.scss; without `transition: 'none'` here,
+    // opacity/visibility would still win on value but inherit that rule's
+    // delay, leaving the tooltip visibly stuck open for a second.
+    render(
+      <Tooltip id="force-hide-transition-tooltip" content="Info">
+        <button type="button">Trigger</button>
+      </Tooltip>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss tooltip' }));
+
+    expect(screen.getByRole('tooltip')).toHaveStyle({ transition: 'none' });
   });
 
   it('clears the force-hide once the trigger is hovered again', () => {
