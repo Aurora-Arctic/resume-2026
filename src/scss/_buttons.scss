@@ -18,6 +18,8 @@ $button-push-scale: 0.98;
 button {
   // The one declaration safe to also apply to the exempt dismiss button.
   cursor: pointer;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button:not(:where(.tooltip__dismiss)) {
