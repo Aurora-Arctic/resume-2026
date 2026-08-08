@@ -1,7 +1,7 @@
 import React from 'react';
 import type { GatsbySSR } from 'gatsby';
 
-const STORAGE_KEY = 'theme'; // keep in sync with src/components/ThemeToggle.tsx's STORAGE_KEY
+const STORAGE_KEY = 'theme'; // keep in sync with src/components/ThemeToggle/index.tsx's STORAGE_KEY
 
 // Runs synchronously in <head>, before <body> is parsed, so the correct
 // theme is applied before first paint — avoids a flash of the wrong theme

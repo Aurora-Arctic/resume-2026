@@ -1,0 +1,13 @@
+.background-credit {
+  margin: 3rem 0 0;
+  font-size: 0.75rem;
+  opacity: 0.6;
+
+  a {
+    color: inherit;
+  }
+
+  @media print {
+    display: none;
+  }
+}

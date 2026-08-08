@@ -1,0 +1,101 @@
+@use '../../scss/variables' as *;
+@use '../../scss/typography';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: $wine-dark;
+  color: $text;
+}
+
+.paper-chrome {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+
+  @media print {
+    min-height: 0;
+    padding: 0;
+  }
+}
+
+.paper-card {
+  position: relative;
+  z-index: 0; // stacking context, so ::after's z-index: -1 stays behind this
+  // card's own content instead of the whole page
+  width: min(100%, 960px);
+  background: $silver-oxide;
+  background-image: url('../../images/prism-silver-oxide.png');
+  background-repeat: repeat;
+  color: $text;
+  box-shadow: 0 20px 45px $shadow;
+  padding: 4rem;
+  transition:
+    background-color $theme-transition-duration $theme-transition-easing,
+    color $theme-transition-duration $theme-transition-easing;
+
+  // background-image can't itself transition, so the light-mode texture
+  // lives on this overlay instead and crossfades in/out via opacity, on top
+  // of the dark texture set above (which stays put underneath, always).
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: url('../../images/prism-light.png');
+    background-repeat: repeat;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity $theme-transition-duration $theme-transition-easing;
+
+    @media print {
+      display: none;
+    }
+  }
+
+  @media print {
+    width: auto;
+    background: transparent !important;
+    color: $print-text !important;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    page-break-inside: avoid;
+  }
+}
+
+html[data-theme='light'] .paper-card {
+  background-color: $lavender-oxide;
+  color: $silver-oxide;
+
+  &::after {
+    opacity: 1;
+  }
+}
+
+@page {
+  size: 8.5in 11in;
+  margin: 0.5in;
+}
+
+@media print {
+  html,
+  body {
+    background: $print-bg;
+    color: $print-text;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper-card,
+  .paper-card::after {
+    transition: none;
+  }
+}

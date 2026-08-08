@@ -1,0 +1,120 @@
+@use '../../scss/variables' as *;
+
+.theme-toggle {
+  // Clipped to the same triangle ::before paints, so both the hit area and
+  // the paint area are confined to the visible "folded corner" — clicks
+  // outside the diagonal fall through to whatever's underneath instead of
+  // being captured by the button.
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5.125rem;
+  height: 5rem;
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: $text;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: $wine-dark;
+    pointer-events: none;
+    border: 0.25rem solid $silver-oxide;
+    transition:
+      background-color $theme-transition-duration $theme-transition-easing,
+      border-color $theme-transition-duration $theme-transition-easing;
+  }
+
+  &:hover::before,
+  &:active::before {
+    background-color: $wine;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $text;
+    outline-offset: 2px;
+  }
+
+  @media print {
+    display: none;
+  }
+}
+
+html[data-theme='light'] .theme-toggle::before {
+  border-color: $lavender-oxide;
+}
+
+.theme-toggle__facets {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+  pointer-events: none;
+}
+
+.theme-toggle__facet {
+  position: absolute;
+  top: 1rem;
+  right: 1.0625rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: $text;
+  // Pivot at the .theme-toggle__facets wrapper's top-right corner (offset
+  // from this icon's own box: its right/top edges sit 1.0625rem/1rem inside
+  // that corner, so the origin is icon-width + 1.0625rem right, 1rem up) so
+  // rotate() alone swings the icon through an arc centered on the fold.
+  transform-origin: 2.3125rem -1rem;
+  transition: transform $theme-transition-duration $theme-transition-easing;
+  transform: rotate(0deg);
+
+  &--out {
+    transform: rotate($theme-toggle-icon-arc);
+  }
+
+  &--pre-enter {
+    transform: rotate(-$theme-toggle-icon-arc);
+    opacity: 0;
+    transition: all 0s;
+  }
+}
+
+// Placement is per-instance, not part of the shared .tooltip look (see
+// Tooltip/index.scss). Sits below .theme-toggle, right-aligned with it
+// (sharing .paper-card as their positioned ancestor). The arrow sits near
+// the tooltip's right edge, not centered — .theme-toggle::before's triangle
+// (clip-path: polygon(100% 0, 100% 100%, 0 0)) is solid along the button's
+// right edge but tapers to nothing at its left, so the arrow lines up with
+// the triangle's actual visible mass instead of the button's full invisible
+// box.
+.theme-toggle-tooltip {
+  top: -2.5rem;
+  right: 0.25rem;
+
+  &::before {
+    top: 1.75rem;
+    right: 0.5rem;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+}
+
+.theme-toggle-tooltip__label--to-dark {
+  display: none;
+}
+
+html[data-theme='light'] .theme-toggle-tooltip__label--to-light {
+  display: none;
+}
+
+html[data-theme='light'] .theme-toggle-tooltip__label--to-dark {
+  display: inline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle::before,
+  .theme-toggle__facet {
+    transition: none;
+  }
+}

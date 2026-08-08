@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import Tooltip from './Tooltip';
+import Tooltip from '.';
 
 describe('Tooltip', () => {
   it('renders the trigger and associates it with the tooltip via aria-describedby', () => {
