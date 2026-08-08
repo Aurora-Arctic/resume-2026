@@ -760,3 +760,70 @@ way the `dependabot.yml`/`gitflow.yml` mismatch itself did.
 
 Docs updated to match: `claude-docs/CI-SETUP.md` (Gitflow bullet, and the
 `staging`/Dependabot bullet above it) and `README.md`'s CI section.
+
+## Gating build/format/lint/playwright/typecheck/vitest on Gitflow
+
+Requested directly: only run `build`, `format`, `lint`, `playwright`,
+`typecheck`, and `vitest` in CI if `gitflow` succeeds first, so a PR from
+the wrong source/target branch doesn't burn CI minutes on the full check
+suite before anyone notices the branch itself is the problem.
+
+**Approach considered and initially recommended**: reuse the `should-run`
+pass-through pattern already used for path filtering (`changes` job output)
+— add `gitflow` to each job's `needs:`, override the implicit
+`if: success()` with `if: ${{ !cancelled() }}` so the job still runs and
+posts under its qualified `<job> / <job>` name, and AND
+`needs.gitflow.result == 'success'` into the existing `should-run` input
+(and add a new `should-run` input to `format.yml`, which didn't have one —
+it's the one job that's currently ungated on `changes`). This preserves the
+required-status-check name on every run, gitflow failure or not.
+
+**Pushback**: asked directly whether plain `needs: [gitflow]` (accepting
+GitHub's implicit skip-on-failed-dependency behavior, with no `if:`
+override) wouldn't be simpler. Initial answer was that this hits the exact
+bare-name problem the path-filtering comments already warn about — a
+skipped job reports under an unqualified name that can never satisfy a
+"<job> / <job>"-shaped required check, so the fear was a permanently stuck
+PR.
+
+**Re-examined and found the "permanently stuck" framing didn't actually
+transfer from the path-filtering case.** For path filtering, a skip can
+persist indefinitely across further pushes to the same PR if the diff never
+touches the relevant paths — the bare-name check genuinely never resolves.
+Gitflow gating is structurally different: a gitflow failure has exactly two
+possible fixes, and both naturally produce a _new_ workflow run on the same
+PR (or need a new PR anyway, independent of this change):
+
+- **Wrong target (base) branch** — retargeting the PR's base branch fires
+  the `edited` event `pr-gate.yml` already listens for (added earlier for
+  gitflow's own source→target re-validation), re-running the whole workflow
+  including gitflow on the same PR. The new run's gitflow succeeds, so the
+  downstream jobs run for real and post their correctly-qualified names —
+  the earlier failed run's bare-named checks are irrelevant since GitHub
+  only evaluates the latest run per commit/PR for merge-blocking.
+- **Wrong source (head) branch name** — fixing this generally requires a
+  new PR already, gating or not: GitHub PRs are bound to their head ref,
+  and there's no way to repoint an existing PR to a differently-named
+  branch (a raw `git branch -m` + push orphans the PR rather than
+  preserving it, unlike GitHub's own branch-rename UI feature for
+  unrelated cases).
+
+So the bare-name risk from plain `needs:` is real only in a case that
+already needs a new PR regardless of this change — not a regression it
+introduces.
+
+**Fix applied**: plain `needs: [build-image, changes, gitflow]` (or the
+job's equivalent existing `needs:` list, extended) on `lint`, `format`,
+`typecheck`, `vitest`, `build`, and `playwright` in both `pr-gate.yml` and
+`merge-queue.yml` — no `should-run`/`if:` changes, no new input on
+`format.yml`. `merge-queue.yml`'s `gitflow` job runs with `should-run:
+false` and so always succeeds trivially there, making the `needs: gitflow`
+addition a no-op in practice — added anyway purely so the dependency graph
+matches `pr-gate.yml` exactly rather than diverging for no reason. `audit`
+was deliberately left out — it's non-blocking and PR-only already, not one
+of the six named checks, and gating a non-blocking check on gitflow
+wouldn't change anything it actually gates.
+
+Docs updated to match: `claude-docs/CI-SETUP.md` (new bullet after the
+path-filtering one) and top-of-file comments in `pr-gate.yml` and
+`merge-queue.yml`.
