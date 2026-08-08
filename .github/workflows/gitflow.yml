@@ -4,9 +4,14 @@ name: Gitflow Rules
 # branches, mirroring https://medium.com/@ariifischbein/automate-gitflow-branching-rules-with-github-actions-d672f80d335b
 # with this repo's `staging` branch standing in for the article's `develop`:
 #
-#   target `main`        <- `release/*` or `hotfix/*`
-#   target `staging`     <- `feature/*`, `release/*`, or `hotfix/*`
+#   target `main`        <- `release/MAJOR.MINOR.PATCH` or `hotfix/*`
+#   target `staging`     <- `feature/*`, `release/MAJOR.MINOR.PATCH`, or `hotfix/*`
 #   target `release/*`   <- `staging` or `hotfix/*`
+#
+# `release/*` branches must follow the precise `release/MAJOR.MINOR.PATCH`
+# semver naming (e.g. `release/1.2.3`) to be accepted as a source into
+# `main`/`staging` — see .claude/skills/create-release, which is the intended
+# way to cut one and always produces a name matching this pattern.
 #
 # Branch protection/rulesets can gate a target branch (required checks, no
 # force-push, etc.) but can't express "only branch X may merge into target
@@ -53,8 +58,8 @@ jobs:
           BASE_REF="${{ github.event.pull_request.base.ref }}"
 
           case "$BASE_REF" in
-            main)      pattern='^(release|hotfix)/.+$' ;;
-            staging)   pattern='^(feature|release|hotfix)/.+$' ;;
+            main)      pattern='^(release/[0-9]+\.[0-9]+\.[0-9]+|hotfix/.+)$' ;;
+            staging)   pattern='^(feature/.+|release/[0-9]+\.[0-9]+\.[0-9]+|hotfix/.+)$' ;;
             release/*) pattern='^(staging|hotfix/.+)$' ;;
             *)         pattern='' ;;
           esac
