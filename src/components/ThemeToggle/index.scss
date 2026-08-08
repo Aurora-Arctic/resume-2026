@@ -92,6 +92,12 @@ html[data-theme='light'] .theme-toggle::before {
 .theme-toggle-tooltip {
   top: -2.5rem;
   right: 0.25rem;
+  // Closes most of the real gap down to .theme-toggle's top edge (0) — see
+  // Tooltip/index.scss's ::after for what this reaches. Deliberately kept a
+  // little short of the true gap rather than exact, since .tooltip stacks
+  // above .theme-toggle (z-index: 1 vs. auto) and any overshoot here would
+  // sit on top of the toggle button and swallow its clicks.
+  --tooltip-bridge-reach: 0.5rem;
 
   &::before {
     top: 1.75rem;

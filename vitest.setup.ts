@@ -16,8 +16,12 @@ afterEach(() => {
 // implementation once vitest merges jsdom's window into the global scope,
 // leaving `window.localStorage` undefined in tests even though it works
 // correctly in real browsers. Polyfill with a minimal in-memory Storage so
-// tests that touch localStorage (e.g. ThemeToggle) can run.
-if (typeof window !== 'undefined' && typeof window.localStorage !== 'object') {
+// tests that touch localStorage (e.g. ThemeToggle) can run. `vitest.config.ts`
+// always runs this file under `environment: 'jsdom'`, so the polyfill is
+// unconditional — merely reading `window.localStorage` to check it first
+// would invoke Node's getter and print its ExperimentalWarning as a
+// side effect, even though the value it returns is then discarded.
+if (typeof window !== 'undefined') {
   class MemoryStorage implements Storage {
     private store = new Map<string, string>();
 

@@ -50,3 +50,104 @@ A small `box-shadow: 0 4px 10px $shadow;` was added to the tooltip per follow-up
 ## Moved into its own folder, with colocated SCSS
 
 `src/components/Tooltip.tsx` moved to `src/components/Tooltip/index.tsx`, no longer sharing `src/scss/layout.scss` with every other component — `.tooltip`/`.tooltip-trigger` (the generic look: color, fade, shadow, direction-agnostic arrow base) now live in a colocated `src/components/Tooltip/index.scss`. The per-instance placement CSS (`.theme-toggle-tooltip` and its label modifiers) stayed with `ThemeToggle` instead, since that's this particular usage's placement, not part of `Tooltip`'s own generic look — see [THEME-TOGGLE.md](THEME-TOGGLE.md). `Tooltip.test.tsx` moved to `index.test.tsx` alongside it. Full rationale for the restructuring (including the `$font-body` variable move this component's `font-family: $font-body` declaration depended on) is in [../LAYOUT-SETUP.md](../LAYOUT-SETUP.md)'s "Splitting component SCSS out of `layout.scss`, per component" section.
+
+## Dismissible tooltips, with a long-hover override
+
+Requirements: each tooltip becomes individually dismissible via a small × inside the bubble; the dismissal persists in `localStorage`; a >1s continuous hover/focus reshows a dismissed tooltip anyway (a "temporary reshow only" — the dismissal itself isn't undone by this, only by explicitly clicking × again... which is moot since it's already cleared, or by the new site-wide restore button); and clicking × hides the tooltip immediately, even though the pointer is still physically over it at that instant. A companion component, `RestoreTooltips` (see [RESTORE-TOOLTIPS.md](RESTORE-TOOLTIPS.md)), resets every dismissed tooltip at once.
+
+### The reveal mechanism ended up pure CSS
+
+The long-hover reshow needed no JS timer at all, via `transition-delay`:
+
+```scss
+.tooltip-trigger:hover + .tooltip.tooltip--cleared,
+.tooltip-trigger:focus + .tooltip.tooltip--cleared,
+.tooltip.tooltip--cleared:hover,
+.tooltip.tooltip--cleared:focus-within {
+  transition-delay: $tooltip-long-hover-delay; // 1s, local to this file
+  opacity: 1;
+  visibility: visible;
+}
+```
+
+A hover shorter than the delay never starts the opacity/visibility transition at all — the moment `:hover`/`:focus-within` stop matching, the target value simply reverts to its start point, so nothing shows and nothing needs cancelling in JS. Leaving always falls back to the base (unmatched) rule, which has no delay, so hiding is always instant. This is also why the cleared flag itself is never touched by hovering — only the dismiss button writes to storage.
+
+One real gotcha: `prefers-reduced-motion: reduce` can't use the existing blanket `transition: none` override here — that would drop `transition-delay` too, making a cleared tooltip reveal _instantly_ on any hover for reduced-motion users, defeating the dwell requirement rather than just its animation. Fixed by zeroing only `transition-duration`, keeping `transition-delay`/`transition-property` intact — the gate still functions, it just snaps instead of fading once the delay elapses.
+
+### Closing the gap between trigger and bubble
+
+Trigger and bubble are real DOM siblings with genuine visual space between them (e.g. `.theme-toggle-tooltip` sits at `top: -2.5rem` above a `.theme-toggle` that starts at `top: 0`). Moving the pointer across that space can momentarily hover neither element, dropping out of the `:hover` chain mid-crossing — which matters here specifically because the dismiss button lives inside the bubble, so a user needs to be able to travel from the trigger into the bubble to reach it. Fixed with an invisible `::after` bridge on `.tooltip`, sized per-instance via a CSS custom property so it isn't a `Tooltip`-component concern:
+
+```scss
+// Tooltip/index.scss
+&::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%; // starts at the bubble's own bottom edge, never overlaps its content
+  height: var(--tooltip-bridge-reach, 0);
+}
+```
+
+```scss
+// ThemeToggle/index.scss, on .theme-toggle-tooltip
+--tooltip-bridge-reach: 0.5rem;
+```
+
+Deliberately kept a little short of the true gap rather than exact — `.tooltip` stacks above `.theme-toggle` (`z-index: 1` vs. `auto`), so any overshoot here would sit on top of the toggle button and swallow its clicks. A tooltip placed _below_ its trigger instead would need the mirror version (`bottom: 100%`, height extending upward); not needed by any instance today.
+
+Also had to drop the base rule's `pointer-events: none` — it's a chicken-and-egg trap: an element excluded from hit-testing can never register the hover that would turn it back on, and unlike `opacity`/`visibility` that exclusion flips instantly rather than being smoothed by the transition. `visibility: hidden` already fully excludes a truly-hidden tooltip from hit-testing/tab order on its own, so nothing else needed to gate pointer interaction.
+
+### Storage: one key, not one per tooltip
+
+`TOOLTIP_STORAGE_KEY = 'tooltip-cleared'` holds a single JSON array of dismissed ids (`["theme-toggle-tooltip"]`), rather than a `tooltip-cleared:<id>` key per tooltip as first drafted — proposed as a simplification once a second feature (the site-wide restore button) needed to enumerate every dismissed tooltip at once. One key turns that into a single `removeItem` instead of a `localStorage` key-prefix scan, while each `Tooltip` instance still tracks its own dismissal independently by checking whether its own `id` is present in the array. Read in a mount `useEffect` (not SSR-injected like theme — the bubble is hidden by default regardless of cleared state, so there's no flash-of-wrong-content risk the way theme has, and no `gatsby-ssr.ts` change was needed here). `TOOLTIP_RESTORE_EVENT`, dispatched by `RestoreTooltips`, is listened for in the same component so an already-mounted tooltip updates immediately without a page reload — see [RESTORE-TOOLTIPS.md](RESTORE-TOOLTIPS.md).
+
+### Force-hiding on dismiss, despite still being hovered
+
+Clicking × while the pointer is still over the dismiss button doesn't change the CSS target value — whichever rule matched before (uncleared+hover, or cleared+hover past the delay) and whichever matches immediately after (cleared+hover, itself gated by the delay) both still resolve to `opacity: 1; visibility: visible`, since the value doesn't change no transition fires, and the bubble would incorrectly stay visible until the pointer eventually left. Fixed with a small, explicit JS override — a `forceHidden` boolean applied as an inline `style` (which always wins over any external stylesheet rule, sidestepping a specificity fight):
+
+```tsx
+setCleared(true);
+setForceHidden(true);
+```
+
+`forceHidden` clears on the _next_ genuine hover/focus of the trigger (`onMouseEnter`/`onFocus`, composed onto whatever handlers the caller's own trigger element already has, rather than clobbering them), or when the restore event fires. The tricky part: this component also refocuses the trigger after dismiss (see below), which fires the trigger's own `onFocus` _synchronously_ — indistinguishable, from that handler's perspective, from a genuine subsequent focus. A one-shot ref guard (`suppressNextTriggerFocusRef`) ignores exactly that one, programmatically-caused focus event, set immediately before calling `.focus()` and consumed the first time the handler runs. The mouse-based reset path (`onMouseEnter`) needs no such guard — `.focus()` never synthesizes a mouse event.
+
+Dismissing also still returns focus to the trigger — the × is about to become unreachable again (tooltip suppresses), so focus shouldn't fall through to `<body>`. Walks the known Fragment-sibling DOM structure (`event.currentTarget.closest('.tooltip')?.previousElementSibling`) rather than adding a `ref` via `cloneElement`, which would otherwise clobber a caller's own `ref` on the trigger (`ThemeToggle` already has one, for its `aria-pressed`/facet logic).
+
+#### Bug: force-hide must also kill the transition, not just the target value
+
+The first version of `forceHidden` only set `opacity: 0; visibility: 'hidden'` inline — verified by a unit test asserting those two inline style values, which passed, but the tooltip still visibly stayed open for a second in an actual browser. jsdom (what the unit test runs against) never runs real CSS transitions, so it couldn't catch this.
+
+The real mechanism: at the exact moment of the first dismiss, `cleared` and `forceHidden` both flip to `true` in the same render, while the bubble is still being hovered (the pointer hasn't moved). That means the element now matches `.tooltip.tooltip--cleared:hover` (§ above), which sets `transition-delay: $tooltip-long-hover-delay` (1s) in the stylesheet. Inline style beats that rule's `opacity`/`visibility` _declarations_ on specificity, so the target values do become `0`/`hidden` — but inline style wasn't setting `transition-delay` at all, so the _timing_ the browser uses to animate toward those new values still came from the matched stylesheet rule. And since `visibility` transitions to `hidden` only take effect at transition-end (not transition-start, unlike animating to `visible`), the bubble stayed fully visible for the whole 1s delay plus the transition duration on top.
+
+Fixed by also setting `transition: 'none'` in the same inline `style` object whenever `forceHidden` is true — this discards whatever `transition-delay`/`transition-property` the currently-matched stylesheet rule would otherwise contribute, so the opacity/visibility jump is instant regardless of which rule matched at the moment of dismiss. A regression test was added for the inline style itself (`Tooltip/index.test.tsx`'s `'disables the transition on force-hide...'` case) — it can only assert the style attribute is present, not that hiding is actually instant in a real browser (jsdom's limitation, same as above), so this needs to stay covered by the manual/e2e verification pass too, not just this unit test.
+
+#### Bug: lingering `:focus` after dismiss kept a later mouse-only long-hover stuck open
+
+Found while fixing a failing e2e run, not during original development. Repro: dismiss via mouse click, move the pointer away, then hover the trigger again for >1s to force the "long-hover reshow" (§ above) — and leave. The bubble should hide the instant the pointer leaves (§ above: "leaving always falls back to the base, undelayed rule"), but stayed stuck open indefinitely instead.
+
+Cause: dismiss returns real DOM focus to the trigger (§ above), and nothing ever blurs it afterwards — a mouse-only visit later still leaves the trigger sitting in a plain `:focus` state from that earlier dismiss. The reveal rules matched on `:focus` (not just `:hover`), so even once the pointer left and `:hover` stopped matching, the stale `:focus` from the unrelated earlier dismiss kept the rule matching, and the bubble never fell back to the unmatched (instant-hide) base rule.
+
+Fixed by matching `:focus-visible` (and `:has(:focus-visible)` in place of `:focus-within`) instead of plain `:focus` in both reveal rules. `:focus-visible` reflects the browser's own input-modality heuristic rather than raw focus state: verified via an ad hoc Playwright script (`el.matches(':focus-visible')`) that a `.focus()` call made from within a mouse click handler — dismiss's exact case — resolves `:focus-visible` to `false`, while real `Tab`-driven focus (the keyboard-accessibility case these rules also need to keep working) resolves it to `true`. So a stale, mouse-click-induced focus no longer keeps the tooltip open, while genuine keyboard navigation still does. `:has()` support was confirmed against the Chromium build this repo's Playwright config actually runs (`e2e/tooltip.spec.ts:69`'s regression test) rather than assumed from caniuse alone.
+
+### `role="tooltip"` kept, against WAI-ARIA APG guidance — explicit exception
+
+The WAI-ARIA Authoring Practices reserve `role="tooltip"` for non-interactive, transient content, and specifically advise against nesting interactive elements (like this new dismiss button) inside it — assistive tech that treats `role="tooltip"` as read-only/transient may not expose a focusable descendant meaningfully via non-linear/virtual-cursor navigation, even though it remains linearly Tab-reachable regardless of role. This component keeps `role="tooltip"` anyway, **at the site owner's explicit direction** — a deliberate, acknowledged deviation for a small personal site, not a resolved tradeoff via a different pattern. `aria-describedby` on the trigger is unaffected either way, since it only requires the referenced element to contain descriptive text, not carry that specific role.
+
+## Files changed
+
+- `src/components/Tooltip/index.tsx` — `cleared`/`forceHidden` state, the dismiss button + handler, the `TOOLTIP_RESTORE_EVENT` listener, `TOOLTIP_STORAGE_KEY`/`TOOLTIP_RESTORE_EVENT` exports.
+- `src/components/Tooltip/index.scss` — the `transition-delay` reveal, the `::after` bridge, dismiss-button styling, the narrowed `prefers-reduced-motion` override, `pointer-events: none` removed.
+- `src/components/Tooltip/index.test.tsx` — dismiss/persistence/restore/force-hide coverage.
+- `src/components/ThemeToggle/index.scss` — `--tooltip-bridge-reach` added to `.theme-toggle-tooltip`.
+- `src/components/RestoreTooltips/` (new) — see [RESTORE-TOOLTIPS.md](RESTORE-TOOLTIPS.md).
+- `src/components/Layout/index.tsx` — renders `RestoreTooltips`.
+- `e2e/tooltip.spec.ts` (new) — dismiss-persists-across-reload, storage isolation across a fresh context, long-vs-short hover reshow, leaving after a reshow re-suppresses without un-clearing, the trigger→bubble crossing doesn't flicker (validates the bridge in a real browser), keyboard reachability, and the restore button.
+
+## Verification status
+
+- `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` — all clean; 29 unit/component tests passing.
+- `npm run test:e2e` — all clean; 15 e2e tests passing (including the `:focus-visible` fix above, added as its own regression case at `e2e/tooltip.spec.ts:69`).
+- `npm run test:coverage` / `npm run test:e2e:coverage` — both above the 80% threshold (Tooltip's own branch coverage is 83–90%, short of 100% only on defensive `localStorage`-unavailable `catch` branches that aren't exercised by either suite).

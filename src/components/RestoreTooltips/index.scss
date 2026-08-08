@@ -1,0 +1,31 @@
+@use '../../scss/variables' as *;
+
+.restore-tooltips {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 10;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: $silver-oxide;
+  color: $text;
+  font-family: $font-body;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px $shadow;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 0.85;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $text;
+    outline-offset: 2px;
+  }
+
+  @media print {
+    display: none;
+  }
+}
