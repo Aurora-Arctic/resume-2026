@@ -6,8 +6,11 @@ export interface ContactLink {
 export interface HeaderData {
   name: string;
   title: string;
+  /** AES-GCM ciphertext (src/utils/crypto.ts) — decrypted client-side via a `?k=` URL param. See claude-docs/CONTACT-ENCRYPTION.md. */
   location: string;
+  /** AES-GCM ciphertext (src/utils/crypto.ts) — decrypted client-side via a `?k=` URL param. See claude-docs/CONTACT-ENCRYPTION.md. */
   email: string;
+  /** AES-GCM ciphertext (src/utils/crypto.ts) — decrypted client-side via a `?k=` URL param. See claude-docs/CONTACT-ENCRYPTION.md. */
   phone: string;
   links: ContactLink[];
 }
@@ -58,9 +61,14 @@ export const resumeData: ResumeData = {
   header: {
     name: 'Placeholder Name',
     title: 'Placeholder Title',
-    location: 'Placeholder Location',
-    email: 'placeholder@example.com',
-    phone: '000-000-0000',
+    // location/email/phone below are ciphertext, produced via `npm run
+    // encrypt:value` — see the HeaderData field comments above. Don't leave
+    // a plaintext hint next to these when swapping in real values; that
+    // defeats the point. Keep the key that decrypts them out of the repo
+    // entirely — including test fixtures (see e2e/contact-encryption.spec.ts).
+    location: 'PK2oFvoOQzBvNijJ2MN-UwvurYB3ywueeLAvCZ0crdvR7puFNvIP',
+    email: 'eQjuvxGJ8duWWKVphhpoQA7QjnnMIpNJtinrTF8cnPWK0Jco1-9ovYFG',
+    phone: 'F7FyYjtp1MQftGdg7K2HU8_6pWlmC46sR7xCmZtmZt7V-HDkAL0fiQ',
     links: [{ label: 'placeholder.dev', href: 'https://placeholder.example.com' }],
   },
   summary: 'Placeholder summary paragraph.',
