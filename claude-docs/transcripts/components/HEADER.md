@@ -12,3 +12,19 @@ This document is a transcript of the work done around `src/components/Header` �
 - `index.scss`: minimal — wrapping flex row for the contact list, spacing under the title. No columns.
 - `index.test.tsx`: renders with sample data, asserts the `<h1>` reads the name, and that the email/GitHub links have the right `href`s.
 - Deliberately no styling decisions about visual hierarchy/prominence yet — that's content-and-design work for the follow-up task that fills in real data.
+
+## Contact info encrypted at rest
+
+`email`/`phone`, and later `location` too, moved from plaintext to
+AES-GCM ciphertext, decrypted client-side only when the page is loaded
+with a `?k=` URL key. Full rationale and implementation detail (including
+a close call where real contact info nearly got encrypted with a key
+already exposed in a committed test fixture — caught before anything was
+pushed) lives in
+[claude-docs/transcripts/CONTACT-ENCRYPTION.md](../CONTACT-ENCRYPTION.md) —
+this is just the pointer from `Header`'s own history. In short: `index.tsx`
+gained a `useEffect`/`useState` pair to decrypt on mount (previously a pure
+synchronous component with no hooks at all), all three fields decrypt
+together as one all-or-nothing `Promise.all`, and the pre-existing `links`
+anchors gained `rel="noreferrer"` so clicking one from an unlocked page
+can't leak the key via the `Referer` header.

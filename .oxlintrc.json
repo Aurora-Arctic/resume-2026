@@ -19,7 +19,8 @@
         "vitest.config.ts",
         "playwright.config.ts",
         "e2e/**/*.ts",
-        "Docker/link-cache.js"
+        "Docker/link-cache.js",
+        "scripts/**/*.ts"
       ],
       "env": {
         "node": true
@@ -29,6 +30,12 @@
       "files": ["src/**/*.{ts,tsx}", "gatsby-browser.ts"],
       "env": {
         "browser": true
+      }
+    },
+    {
+      "files": ["scripts/**/*.ts"],
+      "rules": {
+        "no-console": "off"
       }
     }
   ]
