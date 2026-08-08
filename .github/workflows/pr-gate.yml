@@ -1,6 +1,6 @@
 name: PR Gate
 
-# Runs on every pull request targeting `main`. Fans out to the blocking
+# Runs on every pull request targeting `main` or `staging`. Fans out to the blocking
 # checks (lint, format, typecheck, vitest, build, Playwright) plus a
 # non-blocking npm audit, gating the PR before it can be merged. format
 # always runs; the rest are path-filtered by the `changes` job below so a
@@ -24,6 +24,7 @@ on:
   pull_request:
     branches:
       - main
+      - staging
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}

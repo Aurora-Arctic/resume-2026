@@ -1,8 +1,11 @@
 name: Merge Queue
 
 # Requires "Require merge queue" to be enabled in branch protection for `main`
-# (Settings -> Branches) — that setting is what activates merge_group events;
-# this workflow file alone does not turn the merge queue itself on.
+# and `staging` (Settings -> Branches, or each branch's repo ruleset) — that
+# setting is what activates merge_group events; this workflow file alone does
+# not turn the merge queue itself on. Applies to both branches unconditionally
+# since merge_group carries the target branch itself, with no `branches:`
+# filter to update here.
 on:
   merge_group:
 

@@ -393,3 +393,56 @@ Not added to `.actrc`/documented as a repeatable command because it requires edi
 - **`build-image.yml`**: pushes to GHCR, which has no reason to happen from a laptop — the local `docker build --target testing` above replaces it for local testing.
 - **`pr-gate.yml` / `merge-queue.yml` as whole graphs**: both start with a `needs: build-image` job that every other job depends on for its `image` input, so running either wholesale would require either running `build-image` (out of scope, see above) or fully faking its output — the individual `-W .github/workflows/<file>.yml -j <job>` invocations above already give equivalent per-check signal without either problem. `merge-queue.yml` additionally triggers on `merge_group`, which has no real local equivalent.
 - **PR-comment steps**: never exercised for real (see `pr-number` note above) — nothing real to comment on. `audit.yml`'s non-comment logic was validated once manually — see above.
+
+## Adding a `staging` branch with parity to `main`
+
+The user wanted a `staging` branch: deployed to a staging subdomain by an
+external, dashboard-connected platform (confirmed no in-repo deploy config
+exists — no `vercel.json`/`netlify.toml`/GitHub Pages — so that wiring
+happens outside this repo entirely), taking day-to-day PRs, and getting the
+same CI/branch-protection treatment `main` has today. Branch flow: `staging`
+takes feature PRs, periodically promotes to `main` (production) via an
+ordinary `staging` → `main` PR.
+
+Two decisions came from directly asking the user rather than assuming:
+
+- **`main` stays the GitHub default branch**, `staging` is an opt-in PR base.
+  The alternative (making `staging` default) would've made PR creation
+  frictionless — no manually picking a base — but at the cost of the repo
+  looking like it's showing "production" when browsed on GitHub while
+  actually showing in-progress `staging` code. The user chose to keep `main`
+  as default and pick `staging` manually per PR.
+- **Dependabot was pointed at `staging` too** (`target-branch: staging` added
+  to all three `.github/dependabot.yml` ecosystem entries). Initial plan
+  left dependabot alone (targeting `main`, the default, since GitHub's
+  default `target-branch` behavior follows the default branch) reasoning the
+  user only asked about the human PR flow — the user corrected this
+  explicitly during plan review: dependency-bump PRs should flow through
+  `staging` first like everything else, not merge straight to production.
+
+**Branch protection**: `main`'s existing repo ruleset ("Main", id
+`20490347`) targets the dynamic `~DEFAULT_BRANCH` ref-name condition, not a
+literal `main` string — since `main` stays default, that ruleset needed no
+edit and will keep applying only to it. A **second** ruleset ("Staging"),
+targeting `refs/heads/staging` explicitly, mirrors "Main"'s rules exactly
+(deletion, non-fast-forward, 0-approval pull_request, merge_queue with the
+same ALLGREEN/MERGE parameters, and the same 7 required status checks:
+`build / build`, `build-image / build-image`, `format / format`,
+`lint / lint`, `playwright / playwright`, `typecheck / typecheck`,
+`vitest / vitest`) plus the same always-bypass actor. Attempted via
+`gh api repos/Aurora-Arctic/resume-2026/rulesets -X POST` with the mirrored
+JSON body — failed with `403 Resource not accessible by personal access
+token`: the fine-grained PAT `gh` is authenticated with (visible via
+`gh auth status`) lacks repo Administration write, the same permission gap
+that made reading `main`'s classic branch-protection endpoint 403 earlier
+too (rulesets _listing_, a read, worked fine — only the write failed). Left
+as a manual follow-up for the user (either create the ruleset by hand in
+Settings → Rules, or grant the token Administration write and re-run the
+same `gh api` call).
+
+`pr-gate.yml`'s `pull_request.branches` list gained `staging` alongside
+`main` (a plain trigger-list edit, unlike the ruleset — GitHub Actions
+`branches:` filters don't have a `~DEFAULT_BRANCH`-style dynamic target).
+`merge-queue.yml` needed no trigger change — `on: merge_group` already fires
+for whichever branch has "Require merge queue" active, regardless of branch
+name — just a comment update.

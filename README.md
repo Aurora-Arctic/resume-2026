@@ -140,7 +140,9 @@ That's it — `make act-image` (and everything below that depends on it) builds 
 
 ## Continuous integration
 
-Every pull request against `main` runs **PR gate**: lint, format check, typecheck, Vitest, a production build, and the Playwright e2e suite, plus a non-blocking `npm audit` that posts/updates a single PR comment. Right before a PR actually merges, the **merge queue** re-runs those same blocking checks one more time, since other PRs may have merged in the meantime. Vitest and Playwright each also enforce an 80% coverage threshold and upload their coverage report as a downloadable artifact — see [CLAUDE.md](CLAUDE.md#testing).
+Every pull request against `main` or `staging` runs **PR gate**: lint, format check, typecheck, Vitest, a production build, and the Playwright e2e suite, plus a non-blocking `npm audit` that posts/updates a single PR comment. Right before a PR actually merges, the **merge queue** re-runs those same blocking checks one more time, since other PRs may have merged in the meantime. Vitest and Playwright each also enforce an 80% coverage threshold and upload their coverage report as a downloadable artifact — see [CLAUDE.md](CLAUDE.md#testing).
+
+`main` is still the repo's default branch, but `staging` (deployed to a staging subdomain by an external platform outside this repo) is the normal PR target day-to-day — pick it as the base when opening a PR. `staging` gets the exact same required checks and merge queue as `main`, via its own repo ruleset. Periodically, `staging` is promoted to `main` (production) via an ordinary `staging` -> `main` PR. Dependabot's PRs target `staging` too, same as everyone else's.
 
 If a check fails, the bot posts (or updates) a single PR comment for that check with the failure output, rather than spamming a new comment per run — a later passing run resolves or removes it. A merge-queue failure is labeled `(merge queue)` and posted as its own comment, separate from any PR-gate comment for the same check, so you can tell which phase actually failed.
 
