@@ -6,13 +6,21 @@ name: Gitflow Rules
 #
 #   target `main`        <- `release/MAJOR.MINOR.PATCH` or `hotfix/*`
 #   target `staging`     <- `feature/*`, `release/MAJOR.MINOR.PATCH`, `hotfix/*`,
-#                           or any branch when the PR author is `dependabot[bot]`
+#                           `main-sync/YYYY-MM-DD-HH-MM-SS`, or any branch
+#                           when the PR author is `dependabot[bot]`
 #   target `release/*`   <- `staging` or `hotfix/*`
 #
 # `release/*` branches must follow the precise `release/MAJOR.MINOR.PATCH`
 # semver naming (e.g. `release/1.2.3`) to be accepted as a source into
 # `main`/`staging` — see .claude/skills/create-release, which is the intended
 # way to cut one and always produces a name matching this pattern.
+#
+# `main-sync/*` branches exist to bring commits that landed straight on
+# `main` (e.g. a hotfix merged there but not yet ported to `staging`) back
+# down into `staging`. They must follow the precise
+# `main-sync/YYYY-MM-DD-HH-MM-SS` timestamp naming to be accepted as a
+# source into `staging` — see .claude/skills/create-main-sync, which always
+# produces a name matching this pattern.
 #
 # Dependabot is a standing exception to the `staging` rule above: its
 # branches (e.g. `dependabot/npm_and_yarn/foo`) never match the
@@ -90,7 +98,7 @@ jobs:
 
           case "$BASE_REF" in
             main)      pattern='^(release/[0-9]+\.[0-9]+\.[0-9]+|hotfix/.+)$' ;;
-            staging)   pattern='^(feature/.+|release/[0-9]+\.[0-9]+\.[0-9]+|hotfix/.+)$' ;;
+            staging)   pattern='^(feature/.+|release/[0-9]+\.[0-9]+\.[0-9]+|hotfix/.+|main-sync/[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2})$' ;;
             release/*) pattern='^(staging|hotfix/.+)$' ;;
             *)         pattern='' ;;
           esac
