@@ -3,25 +3,26 @@ import { test, expect } from './fixtures';
 test('homepage renders the resume heading', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Placeholder Name' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Marwynn Joynes' })).toBeVisible();
 });
 
 test('a project with a link renders its name as an anchor', async ({ page }) => {
   await page.goto('/');
 
-  await expect(
-    page.getByRole('link', { name: 'Placeholder Project', exact: true }),
-  ).toHaveAttribute('href', 'https://placeholder.example.com/project');
+  await expect(page.getByRole('link', { name: 'EDMO.com', exact: true })).toHaveAttribute(
+    'href',
+    'https://edmo.com',
+  );
 });
 
 test('a project without a link renders its name as plain text', async ({ page }) => {
   await page.goto('/');
 
   await expect(
-    page.getByRole('heading', { level: 3, name: 'Placeholder Project Without A Link' }),
+    page.getByRole('heading', { level: 3, name: 'FHIR-Based Insurance Partner API' }),
   ).toBeVisible();
   await expect(
-    page.getByRole('link', { name: 'Placeholder Project Without A Link' }),
+    page.getByRole('link', { name: 'FHIR-Based Insurance Partner API' }),
   ).not.toBeVisible();
 });
 
@@ -41,5 +42,5 @@ test('the 404 page link navigates back home client-side', async ({ page }) => {
   await page.getByRole('link', { name: 'Back to home' }).click();
 
   await expect(page).toHaveURL('/');
-  await expect(page.getByRole('heading', { level: 1, name: 'Placeholder Name' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Marwynn Joynes' })).toBeVisible();
 });

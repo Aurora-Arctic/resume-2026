@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import Header from '.';
 import type { HeaderData } from '../../data/resume';
 import { encryptText } from '../../utils/crypto';
@@ -21,6 +21,7 @@ async function buildData(): Promise<HeaderData> {
 describe('Header', () => {
   afterEach(() => {
     window.history.pushState({}, '', '/');
+    vi.unstubAllEnvs();
   });
 
   it('renders the name as the primary heading and contact links that never need a key', async () => {
@@ -98,5 +99,65 @@ describe('Header', () => {
     expect(container.textContent).not.toContain(data.location);
     expect(container.textContent).not.toContain(data.email);
     expect(container.textContent).not.toContain(data.phone);
+  });
+
+  it('appends the ?k= key to the own-domain link once a valid key unlocks the page, leaving other links untouched', async () => {
+    vi.stubEnv('GATSBY_SITE_URL', 'https://resume.marwynn.net');
+    window.history.pushState({}, '', `/?k=${KEY}`);
+    const data = await buildData();
+    data.links = [
+      { label: 'github.com/janedoe', href: 'https://github.com/janedoe' },
+      { label: 'resume.marwynn.net', href: 'https://resume.marwynn.net' },
+    ];
+    render(<Header data={data} />);
+
+    await screen.findByText('Remote'); // wait for decrypt to settle before checking links
+
+    expect(screen.getByRole('link', { name: 'github.com/janedoe' })).toHaveAttribute(
+      'href',
+      'https://github.com/janedoe',
+    );
+    expect(screen.getByRole('link', { name: 'resume.marwynn.net' })).toHaveAttribute(
+      'href',
+      `https://resume.marwynn.net/?k=${KEY}`,
+    );
+  });
+
+  it('leaves the own-domain link bare when no valid key is present', async () => {
+    vi.stubEnv('GATSBY_SITE_URL', 'https://resume.marwynn.net');
+    const data = await buildData();
+    data.links = [{ label: 'resume.marwynn.net', href: 'https://resume.marwynn.net' }];
+    render(<Header data={data} />);
+
+    expect(screen.getByRole('link', { name: 'resume.marwynn.net' })).toHaveAttribute(
+      'href',
+      'https://resume.marwynn.net/',
+    );
+  });
+
+  it('resolves the own-domain link to GATSBY_SITE_URL for the current environment, e.g. staging', async () => {
+    vi.stubEnv('GATSBY_SITE_URL', 'https://staging.resume.marwynn.net');
+    window.history.pushState({}, '', `/?k=${KEY}`);
+    const data = await buildData();
+    data.links = [{ label: 'resume.marwynn.net', href: 'https://resume.marwynn.net' }];
+    render(<Header data={data} />);
+
+    await screen.findByText('Remote');
+
+    expect(screen.getByRole('link', { name: 'staging.resume.marwynn.net' })).toHaveAttribute(
+      'href',
+      `https://staging.resume.marwynn.net/?k=${KEY}`,
+    );
+  });
+
+  it('falls back to localhost:8000 for the own-domain link when GATSBY_SITE_URL is unset, as in local development', async () => {
+    const data = await buildData();
+    data.links = [{ label: 'resume.marwynn.net', href: 'https://resume.marwynn.net' }];
+    render(<Header data={data} />);
+
+    expect(screen.getByRole('link', { name: 'localhost:8000' })).toHaveAttribute(
+      'href',
+      'http://localhost:8000/',
+    );
   });
 });

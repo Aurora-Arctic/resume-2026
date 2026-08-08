@@ -226,3 +226,102 @@ and `src/utils/crypto.test.ts` still fully exercise the successful-decrypt
 logic — they always used their own throwaway `'test-key'`/`generateKey()`
 fixtures, never anything tied to real data, so no change was needed
 there beyond adding `location` alongside `email`/`phone`.
+
+## Deliberately propagating the key to `resume.marwynn.net`
+
+When `resumeData` was filled in with real content (see
+[claude-docs/transcripts/components/HEADER.md](components/HEADER.md) for
+the full data-sourcing story), one of the new `header.links` entries was
+the user's portfolio site, `resume.marwynn.net` — which turns out to run
+the same client-side contact-encryption scheme as this site. The user
+asked for the page's own `?k=` value to be carried over to that link
+automatically, so unlocking this page also unlocks the portfolio without
+the visitor needing the link twice.
+
+This is worth distinguishing carefully from the `Referer`-leak concern
+`rel="noreferrer"` exists for elsewhere in this doc: that guard stops the
+_browser_ from automatically attaching the key to an outbound request
+header without anyone asking it to. This is the opposite — code in
+`Header` deliberately reads its own `decryptKey` state and writes `k` into
+that one link's query string on purpose, because the destination is a
+site the same person owns and controls, and both sites benefit from a
+visitor not having to unlock twice. `rel="noreferrer"` still applies to
+this link too (it still blocks the automatic `Referer` header regardless
+of what's in the URL) — the two mechanisms aren't in tension, they just
+solve different problems.
+
+Implementation stayed narrowly scoped to avoid this becoming a general
+"leak the key everywhere" footgun: the propagation only fires for a link
+whose `hostname` is exactly `resume.marwynn.net` (checked via `new
+URL(href).hostname`, not a substring/prefix match), so adding an unrelated
+link to `header.links` later can't accidentally start leaking the key to
+it too.
+
+## `resume.marwynn.net` is this site, not a separate portfolio — resolving it per environment
+
+The framing above — "the portfolio site, which happens to run the same
+encryption scheme" — turned out to be a misreading. `netlify.toml` (already
+in the repo, not new) redirects the old `marwynn.net`/`www.marwynn.net`
+domains to `resume.marwynn.net`: that's this site's own production domain,
+not a separate site the same person happens to also own. The `header.links`
+entry was, from the start, a self-link.
+
+That distinction matters once the same build can run in three different
+places — a local dev server, a staging deploy, and production — each with
+its own domain. A self-link hardcoded to `https://resume.marwynn.net` is
+simply wrong on the other two: on staging it'd send a visitor away from the
+build they're looking at and back to production instead, and in local dev
+it's not reachable at all in a way that demonstrates the feature.
+
+Fix: give the app one source of truth for "what domain is this build
+actually running on" and have the self-link resolve against it instead of
+a fixed string.
+
+- `gatsby-config.ts`'s `siteMetadata.siteUrl` now reads
+  `process.env.GATSBY_SITE_URL`, falling back to `http://localhost:8000` if
+  unset (keeps `tsc`/Vitest, which never go through Gatsby's own env
+  loading, from seeing `undefined`).
+- Two new root-level files, `.env.development` and `.env.production`, set
+  `GATSBY_SITE_URL` to `http://localhost:8000` and
+  `https://resume.marwynn.net` respectively — Gatsby's CLI loads
+  `.env.${NODE_ENV}` automatically (`gatsby develop` sets `NODE_ENV=development`,
+  `gatsby build` sets `NODE_ENV=production`, both unprompted), and `dotenv`
+  never overwrites a `process.env` value that's already set going in.
+- `netlify.toml` gained `[context.production.environment]` and
+  `[context.staging.environment]` blocks. Netlify injects context-specific
+  env vars into the build's process _before_ `npm run build` runs, so they
+  win over `.env.production`'s file-based default per the same
+  never-overwrite rule above — `[context.staging.environment]` overrides
+  `GATSBY_SITE_URL` to `https://staging.resume.marwynn.net` specifically for
+  deploys of the `staging` branch (Netlify supports a branch name directly
+  as a context key, not just the built-in `production`/`deploy-preview`/
+  `branch-deploy`), while `[context.production.environment]` just restates
+  `.env.production`'s value explicitly for symmetry.
+- `Header/index.tsx`: the old `KEY_PROPAGATION_HOSTNAME`/`withDecryptKey`
+  pair (matched a link's hostname, and only ever mutated `href`) became
+  `OWN_DOMAIN_HOSTNAME`/`resolveLink`. Same hostname match against the
+  literal `resume.marwynn.net` stored in `resumeData` — that string is now
+  purely a _marker_ for "this is the self-link", not the value that actually
+  renders — but the matched link's `label` and `href` are both rewritten
+  from `getSiteUrl()` (`process.env.GATSBY_SITE_URL`, same fallback as
+  `gatsby-config.ts`), with `?k=` appended when a decrypt key is present.
+  `getSiteUrl()` reads the env var fresh on every call rather than caching
+  it at module scope specifically so `Header/index.test.tsx` can exercise
+  more than one environment value per test run via `vi.stubEnv` — a
+  module-scope constant would have been fixed at import time and unable to
+  vary between test cases.
+- Every other `links` entry (LinkedIn, GitHub, ...) is untouched by
+  `resolveLink` — the hostname check still gates the whole rewrite, so
+  unrelated links can't accidentally start resolving against `GATSBY_SITE_URL`
+  too.
+- `Header/index.test.tsx`: the two existing key-propagation cases now
+  `vi.stubEnv('GATSBY_SITE_URL', 'https://resume.marwynn.net')` before
+  rendering, so their assertions stay meaningful instead of silently
+  falling back to the `localhost:8000` default. Two new cases cover the
+  behavior this change actually exists for: resolving to
+  `staging.resume.marwynn.net` when that env var is set, and falling back
+  to `localhost:8000` when it's unset entirely (the local-dev case, and
+  also what `tsc`/plain Vitest runs see with no Gatsby env loading at all).
+  `afterEach` now also calls `vi.unstubAllEnvs()` alongside the pre-existing
+  `window.history.pushState` reset, so a stubbed env var from one test can't
+  leak into the next.

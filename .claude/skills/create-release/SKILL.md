@@ -1,6 +1,6 @@
 ---
 name: create-release
-description: Use when the user asks to cut/start a new release (e.g. "create a release branch", "cut a release", "/create-release"). Asks major/minor/patch (default patch), computes the next version from the latest git tag, creates `release/<version>` off staging plus a `v<version>` tag, and opens a PR into `main` summarizing every merged-to-staging PR (and its author) included in the release.
+description: Use when the user asks to cut/start a new release (e.g. "create a release branch", "cut a release", "/create-release"). Diffs staging against main and summarizes what's shipping, asks major/minor/patch (default patch), computes the next version from the latest git tag, creates `release/<version>` off staging plus a `v<version>` tag carrying that summary, and opens a PR into `main` summarizing every merged-to-staging PR (and its author) included in the release.
 ---
 
 # create-release
@@ -22,34 +22,40 @@ Cut a new Gitflow release: compute the next semver version, branch off the lates
    - `git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -1` — the highest existing `vMAJOR.MINOR.PATCH` tag.
    - If none exist, treat the baseline as `v0.0.0` (this repo's first release).
 
-5. **Ask which part to bump.**
+5. **Diff `staging` against `main` and summarize what's shipping.**
+   - `git log origin/main..origin/staging --oneline` and `git diff origin/main...origin/staging` (triple-dot: changes on `staging` since it diverged from `main`) — if both are empty, tell the user there's nothing to release and stop before asking anything else.
+   - **Find which merged PRs are actually in scope**, so the summary (and later the PR body) can credit real authors instead of guessing from commit messages: `gh pr list --base staging --state merged --limit 200 --json number,title,author,mergedAt,url,mergeCommit`. Squash/rebase merges don't leave merge commits, so don't rely on `git log --merges` to find them — instead, for each PR in that list check `git merge-base --is-ancestor <mergeCommit.oid> origin/staging` (in scope) and NOT `git merge-base --is-ancestor <mergeCommit.oid> origin/main` (not already shipped) to decide whether it's part of this release. Sort the matches by `mergedAt`. The release branch is about to be cut from `origin/staging` with no intervening commits, so this list stays valid once it exists in step 8 — no need to re-query in step 11.
+   - Draft a short prose summary (a few sentences to a short paragraph) of what's shipping, from the commit log/diff/matched PR titles. If the PR lookup came back empty despite commits in range (e.g. someone pushed straight to `staging`), base the summary on the commit log instead rather than inventing PRs.
+   - Show this summary to the user so they have context before picking a version bump. Keep both the summary text and the matched PR list around — reused verbatim in the tag message (step 9) and the PR body (step 11) rather than recomputed there.
+
+6. **Ask which part to bump.**
    - Use AskUserQuestion with three options — **Patch (Recommended)**, **Minor**, **Major** — each described in standard semver terms (patch: backwards-compatible fixes; minor: backwards-compatible features; major: breaking changes). Default/recommended is Patch.
 
-6. **Compute the new version.**
+7. **Compute the new version.**
    - Major → `(X+1).0.0`; Minor → `X.(Y+1).0`; Patch → `X.Y.(Z+1)`, from the baseline in step 4.
    - This gives two names: branch `release/<version>` (no `v` prefix, e.g. `release/1.2.3`) and tag `v<version>` (e.g. `v1.2.3`).
 
-7. **Check for collisions.**
+8. **Check for collisions.**
    - `git rev-parse --verify --quiet refs/heads/release/<version>`, `git ls-remote --exit-code --heads origin release/<version>`, and `git tag --list v<version>` (local; already fetched remote tags in step 3). Any hit means version computation is out of sync with reality — stop and tell the user rather than guessing.
 
-8. **Create the release branch off the latest `staging`.**
+9. **Create the release branch off the latest `staging`.**
    - `git checkout -b release/<version> origin/staging`.
 
-9. **Tag the cut point.**
-   - `git tag -a v<version> -m "Release <version>"` — annotated, on the branch's current HEAD (i.e. the `staging` commit it was cut from).
+10. **Tag the cut point.**
+    - `git tag -a v<version> -m "Release <version>
 
-10. **Push the branch and the tag.**
+<summary>"` — annotated, on the branch's current HEAD (i.e. the `staging` commit it was cut from), where `<summary>` is the prose drafted in step 5.
+
+11. **Push the branch and the tag.**
     - `git push -u origin release/<version>` and `git push origin v<version>`. Unlike `/create-feature`/`/create-hotfix` (which leave pushing to `/create-pr`), a release branch and its tag are the point of this skill — push both directly.
 
-11. **Open the PR into `main`, if there's anything to release.**
-    - `git log origin/main..release/<version> --oneline` — if empty, `staging`/`main` are already level; skip PR creation and say so, but still report the branch/tag created (step 12).
-    - Otherwise gather `git diff origin/main...release/<version>` and `git log origin/main..release/<version>` (same triple-dot/double-dot distinction as `/create-pr` step 6) for overall context.
-    - **Find which merged PRs are actually in this release**, so the body can credit real authors instead of guessing from commit messages: `gh pr list --base staging --state merged --limit 200 --json number,title,author,mergedAt,url,mergeCommit`. Squash/rebase merges don't leave merge commits, so don't rely on `git log --merges` to find them — instead, for each PR in that list check `git merge-base --is-ancestor <mergeCommit.oid> release/<version>` (in the release) and NOT `git merge-base --is-ancestor <mergeCommit.oid> origin/main` (not already shipped) to decide whether it's part of this release. Sort the matches by `mergedAt`.
-    - Draft the PR the same way `/create-pr` steps 7-8 do, plus one more section: title `Release <version>`; body has `## Summary` (what's shipping, in prose — pulled from the commit log, not a restatement of every commit), an `## Included PRs` section listing every matched PR as `- [#<number>](<url>) <title> — @<author.login>` (one line per PR, so each is attributed to whoever actually authored it), and `## Test plan`. Pass the body via HEREDOC to `gh pr create --base main --head release/<version> --title "..." --body "..."`.
-    - If the merged-PR lookup comes back empty despite there being commits in range (e.g. someone pushed straight to `staging` without a PR), just omit the `## Included PRs` section rather than inventing entries — the `## Summary` prose still covers those commits.
+12. **Open the PR into `main`, if there's anything to release.**
+    - `git log origin/main..release/<version> --oneline` — if empty (shouldn't happen given step 5 already confirmed commits in range, but guards against a race), skip PR creation and say so, but still report the branch/tag created (step 13).
+    - Draft the PR the same way `/create-pr` steps 7-8 do, plus one more section: title `Release <version>`; body has `## Summary` (the prose drafted in step 5, not regenerated), an `## Included PRs` section listing every PR matched in step 5 as `- [#<number>](<url>) <title> — @<author.login>` (one line per PR, so each is attributed to whoever actually authored it), and `## Test plan`. Pass the body via HEREDOC to `gh pr create --base main --head release/<version> --title "..." --body "..."`.
+    - If step 5's merged-PR lookup came back empty, omit the `## Included PRs` section rather than inventing entries — the `## Summary` prose still covers those commits.
 
-12. **Report the result.**
-    - New version, the branch and tag names, and the PR URL (or the "nothing to release yet" note from step 11). Mention `/create-hotfix` can target this release branch if a fix is needed before it ships, and that further changes land on it via ordinary PRs (`staging`/`hotfix/*` are its only Gitflow-valid sources).
+13. **Report the result.**
+    - New version, the branch and tag names, and the PR URL (or the "nothing to release yet" note from step 12). Mention `/create-hotfix` can target this release branch if a fix is needed before it ships, and that further changes land on it via ordinary PRs (`staging`/`hotfix/*` are its only Gitflow-valid sources).
 
 ## Notes
 
