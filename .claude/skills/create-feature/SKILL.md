@@ -33,6 +33,7 @@ Start a new Gitflow feature branch off the latest `staging`, asking what to call
 
 ## Notes
 
+- Step 2 asks in plain chat rather than via `AskUserQuestion` — `AskUserQuestion` requires ≥2 explicit options for the name field, which is exactly the "other options" the user has said not to offer. `PushNotification` alone gets the same attention-getting side effect without forcing a choice.
 - Never pushes the new branch — `/create-pr` handles pushing once there's work to send.
 - Never force-pushes or deletes anything; this skill only ever creates a branch.
 - If `git fetch origin staging` fails (no network, no remote), stop and report the error rather than branching off a possibly-stale local `staging`.
