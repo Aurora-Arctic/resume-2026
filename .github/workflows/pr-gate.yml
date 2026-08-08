@@ -209,7 +209,9 @@ jobs:
 
   # Deliberately ungated — runs on every push regardless of what changed, and
   # doesn't need build-image since it never touches the testing container.
-  # Not called from merge-queue.yml — see .github/workflows/gitflow.yml.
+  # merge-queue.yml also calls gitflow.yml, but with should-run: false — see
+  # that file for why the actual check only makes sense here, against a
+  # PR's real source branch.
   gitflow:
     concurrency:
       group: pr-gate-gitflow-${{ github.event.pull_request.number }}
