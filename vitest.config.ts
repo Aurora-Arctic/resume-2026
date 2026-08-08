@@ -13,6 +13,7 @@ export default defineConfig({
       // map (and counts against the threshold) instead of being invisible
       // until a test happens to import it.
       include: ['src/**/*.{ts,tsx}'],
+      exclude: ['*.d.ts'],
       reporter: ['text', 'json-summary', 'json', 'html', 'lcov'],
       reportsDirectory: './coverage',
       thresholds: { lines: 80, branches: 80, functions: 80, statements: 80 },
