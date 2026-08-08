@@ -547,3 +547,131 @@ promotion path description), `README.md` (CI section), and `CLAUDE.md`
 (fixed a pre-existing stale line that still said `pull_request` → `main`
 only — missed by the earlier staging-branch commit, caught while updating
 the same section for this change).
+
+## Gitflow-aware branch/PR skills, and requiring precise `release/MAJOR.MINOR.PATCH` naming
+
+Once the `gitflow` check above was live, the existing `.claude/skills/create-pr/SKILL.md`
+was still unaware of it — step 3 always defaulted to proposing `main` as the
+PR target regardless of the current branch's prefix, which is a guaranteed
+`gitflow` failure for e.g. a `feature/*` branch. There was also no skill for
+_creating_ correctly-prefixed branches in the first place, only `create-pr`
+and `prune-branches`.
+
+**`create-pr` step 3 rewritten** to classify the current branch by Gitflow
+prefix and compute its actual valid targets from the same rules table the
+check enforces, instead of hardcoding `main`:
+
+- `feature/*` → `staging`, plus any other existing `feature/*` branch — a
+  mid-conversation user correction ("feature branches should be able to
+  merge into other features") caught that `gitflow.yml`'s `case` statement
+  only gates `main`/`staging`/`release/*` targets; any other target
+  (including another feature branch) has no source restriction at all, so
+  feature-into-feature stacking was already allowed by the check and just
+  needed surfacing as a real option.
+- `release/*` → `main`, `staging`. `hotfix/*` → `main`, `staging`, and any
+  existing `release/*` branch. `staging` itself → existing `release/*`
+  branches only. Anything else → no valid target; the skill now says so
+  explicitly and asks whether to proceed anyway (accepting the check will
+  fail) or stop, rather than silently defaulting to `main`.
+
+**Three new skills**, all following the existing `.claude/skills/<name>/SKILL.md`
+convention (two-field frontmatter, numbered `## Steps`, trailing `## Notes`):
+
+- **`create-feature`** / **`create-hotfix`**: ask a free-text name (plain
+  conversational question, not AskUserQuestion — no sensible fixed option
+  set for a name), slugify it, and branch off the latest `origin/staging`
+  (`feature/*`) or `origin/main` (`hotfix/*`) as `<prefix>/<slug>`. Neither
+  pushes — that's left to `create-pr`, matching how those two skills only
+  ever create local state until the user is ready for review.
+- **`create-release`** ended up substantially more involved after two rounds
+  of follow-up requests during the same conversation:
+  1. First cut: same shape as `create-feature`/`create-hotfix` — free-text
+     name, branch off `staging` as `release/<slug>`.
+  2. User asked for version bumps instead of free text: AskUserQuestion with
+     **Patch (Recommended)** / Minor / Major, computed against the highest
+     existing `vMAJOR.MINOR.PATCH` git tag (`git tag --list 'v[0-9]*.[0-9]*.[0-9]*'
+--sort=-v:refname`), falling back to `v0.0.0` if none exist yet (true
+     for this repo — no tags existed at the time). The skill creates both
+     the branch (`release/<version>`, no `v` prefix) and an annotated tag
+     (`v<version>`, at the branch's cut point) and — unlike `create-feature`/
+     `create-hotfix` — pushes both directly rather than deferring to
+     `create-pr`, since a real shared release artifact is the entire point
+     of running this skill.
+  3. User then asked for it to also open the PR into `main`, and finally to
+     have that PR summarize every PR actually merged into `staging` as part
+     of the release, with author attribution. Implemented by having the
+     skill call `gh pr list --base staging --state merged --json
+number,title,author,mergedAt,url,mergeCommit` and, for each, checking
+     `git merge-base --is-ancestor <mergeCommit.oid> release/<version>` (in
+     the release) and _not_ an ancestor of `origin/main` (not already
+     shipped) — deliberately not `git log --merges`, which only sees
+     merge-commit-producing PRs and would silently miss anything merged via
+     squash or rebase (this repo's ruleset allows all three methods). Each
+     matched PR renders as `- [#<number>](<url>) <title> — @<author.login>`
+     under a `## Included PRs` section in the generated body, alongside the
+     usual `## Summary`/`## Test plan`. If `staging`/`main` are already
+     level, PR creation is skipped (nothing to release) but the branch/tag
+     are still reported as created.
+
+**`gitflow.yml` tightened** to require the precise naming `create-release`
+now always produces: the source-side regex for `release/*` (wherever it's
+an allowed source into `main`/`staging`) changed from the loose
+`release/.+` to `release/[0-9]+\.[0-9]+\.[0-9]+` — a `release/*` branch not
+named exactly `release/MAJOR.MINOR.PATCH` can no longer PR into either. The
+target-side `release/*)` case-glob branch (matching _any_ `release/*` name
+as a PR target, to decide which check applies) was deliberately left loose
+— tightening classification of the target doesn't add safety, only the
+source-side check that gates what's allowed to merge does. No ruleset JSON
+changes were needed for this — it's a logic change inside the same
+`gitflow`/`gitflow` required check, not a new/renamed check.
+
+## `create-pr` on a `hotfix/*` branch opens PRs into both `main` and `staging`
+
+User: "When using /create-pr on a hotfix branch it should create a PR for
+both main and staging."
+
+Before this, `create-pr` step 3 treated `hotfix/*` the same as any other
+prefix with multiple valid Gitflow targets (`main`, `staging`, and any
+existing `release/*` branch) — it would ask via AskUserQuestion and open
+exactly one PR, whichever the user picked. That undersells what a hotfix
+actually is: standard Gitflow has a hotfix land in production _and_ get
+folded back into the mainline development branch, so a single PR always
+left one of the two out of date until someone remembered to open a second
+one by hand.
+
+Before implementing, asked the user whether the existing `release/*`
+option (offered for hotfixes because `gitflow.yml` also allows `hotfix/*`
+into `release/*`) should survive alongside the new automatic main+staging
+pair, or be dropped now that hotfix PR creation is non-interactive. User
+chose to drop it — a hotfix branch now always produces exactly two PRs
+(`main`, `staging`), no question asked, no third option. If a release branch
+in flight also needs the fix, that's outside this skill's flow now (open
+one by hand, or reconsider whether it should really be a `hotfix/*` in the
+first place).
+
+Implementation: step 3 special-cases `hotfix/*` up front — skips
+AskUserQuestion, sets targets to the pair `main`+`staging`, and notes the
+rest of the skill (steps 5-8) now iterates "per target" wherever it
+previously assumed a single one:
+
+- Step 2's existing-PR lookup gained `baseRefName` to the `gh pr list`
+  `--json` fields, so step 8 can match an existing open PR to the correct
+  target instead of assuming there's at most one open PR for the branch.
+- Step 5 (push) stayed a single action — pushing is about the source
+  branch's own commits, not per-target — but its "anything to push" check
+  now explicitly reasons about using `main` as the representative
+  comparison for the hotfix case (a hotfix always branches off `main`, so
+  "ahead of `main`" is a reliable stand-in for "has any work at all"),
+  leaving the real per-target diffing to step 6.
+- Step 6 (gather context) now runs its diff/log once per target — for a
+  hotfix that's once against `main` and once against `staging`, since the
+  two frequently differ (`staging` may already contain commits `main`
+  doesn't). If a target's diff comes back empty the skill skips opening a
+  PR for that target and says why, rather than opening an empty one; the
+  other target still proceeds independently.
+- Steps 7-8 (draft, create/update) run once per target, each summarized
+  from its own diff, each checked/created/updated independently.
+
+No `gitflow.yml` changes were needed — the check itself already allowed
+`hotfix/*` into both `main` and `staging` individually; this was purely a
+`create-pr` skill-level change to stop making the user choose one.
