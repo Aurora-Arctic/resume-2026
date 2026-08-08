@@ -1,29 +1,37 @@
 name: PR Gate
 
-# Runs on every pull request targeting `main`. Fans out to the blocking
-# checks (lint, format, typecheck, vitest, build, Playwright) plus a
-# non-blocking npm audit, gating the PR before it can be merged. format
-# always runs; the rest are path-filtered by the `changes` job below so a
-# PR only pays for the checks its changed files could actually affect.
+# Runs on every pull request targeting `main`, `staging`, or `release/*`. Fans
+# out to the blocking checks (lint, format, typecheck, vitest, build,
+# Playwright, gitflow) plus a non-blocking npm audit, gating the PR before it
+# can be merged. format and gitflow always run; the rest are path-filtered by
+# the `changes` job below so a PR only pays for the checks its changed files
+# could actually affect.
 #
-# lint/typecheck/vitest/build/playwright/build-image/format are all required
-# status checks in branch protection (as "<job> / <job>", the name GitHub
-# gives a job inside a called reusable workflow) and required for the merge
-# queue too — audit is deliberately not among them; it's PR-only and never
-# gates a merge (see the audit job below). Filtering must therefore never
-# skip the calling job itself for those six — a job-level `if:` makes
-# GitHub report the check under a different, bare name ("lint" instead of
-# "lint / lint") instead of not reporting it at all, and that bare name
+# lint/typecheck/vitest/build/playwright/build-image/format/gitflow are all
+# required status checks in branch protection (as "<job> / <job>", the name
+# GitHub gives a job inside a called reusable workflow) and required for the
+# merge queue too — audit is deliberately not among them; it's PR-only and
+# never gates a merge (see the audit job below). Filtering must therefore
+# never skip the calling job itself for those seven — a job-level `if:`
+# makes GitHub report the check under a different, bare name ("lint" instead
+# of "lint / lint") instead of not reporting it at all, and that bare name
 # never satisfies the "lint / lint" required check, permanently blocking
 # the PR. So those jobs (audit included, for the same consistent-naming
 # reason even though it isn't required) always run and instead pass their
 # filter result through as a `should-run` workflow_call input — see e.g.
 # lint.yml — which skips the actual work internally but keeps the job (and
 # its check name) the same either way.
+#
+# `edited` (in addition to the default opened/synchronize/reopened) is
+# included so retargeting a PR's base branch re-triggers gitflow's
+# source->target validation even without a new push.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
     branches:
       - main
+      - staging
+      - 'release/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -198,6 +206,19 @@ jobs:
       pr-number: ${{ github.event.pull_request.number }}
       # No job-level `if:` here on purpose — see playwright.yml's should-run input for why.
       should-run: ${{ needs.changes.outputs.playwright == 'true' }}
+
+  # Deliberately ungated — runs on every push regardless of what changed, and
+  # doesn't need build-image since it never touches the testing container.
+  # merge-queue.yml also calls gitflow.yml, but with should-run: false — see
+  # that file for why the actual check only makes sense here, against a
+  # PR's real source branch.
+  gitflow:
+    concurrency:
+      group: pr-gate-gitflow-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    uses: ./.github/workflows/gitflow.yml
+    with:
+      pr-number: ${{ github.event.pull_request.number }}
 
   # Non-blocking and PR-only — not a required status check, and not called from
   # merge-queue.yml — see .github/workflows/audit.yml.

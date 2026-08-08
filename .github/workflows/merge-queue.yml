@@ -1,8 +1,11 @@
 name: Merge Queue
 
 # Requires "Require merge queue" to be enabled in branch protection for `main`
-# (Settings -> Branches) — that setting is what activates merge_group events;
-# this workflow file alone does not turn the merge queue itself on.
+# and `staging` (Settings -> Branches, or each branch's repo ruleset) — that
+# setting is what activates merge_group events; this workflow file alone does
+# not turn the merge queue itself on. Applies to both branches unconditionally
+# since merge_group carries the target branch itself, with no `branches:`
+# filter to update here.
 on:
   merge_group:
 
@@ -30,6 +33,17 @@ jobs:
           ref="${{ github.event.merge_group.head_ref }}"
           number=$(echo "$ref" | grep -oP 'pr-\K[0-9]+')
           echo "number=$number" >> "$GITHUB_OUTPUT"
+
+  # No real validation happens here — merge_group only exposes a synthetic
+  # head ref, not the PR's actual source branch (see gitflow.yml). This job
+  # exists purely so the "gitflow / gitflow" required status check (the same
+  # repo ruleset requires it for both PR merges and the merge queue) reports
+  # success instead of never posting, which would leave a queued merge stuck
+  # waiting on a check that can never complete.
+  gitflow:
+    uses: ./.github/workflows/gitflow.yml
+    with:
+      should-run: false
 
   lint:
     needs: [build-image, pr-number]

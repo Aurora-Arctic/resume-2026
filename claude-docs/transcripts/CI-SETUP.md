@@ -393,3 +393,336 @@ Not added to `.actrc`/documented as a repeatable command because it requires edi
 - **`build-image.yml`**: pushes to GHCR, which has no reason to happen from a laptop — the local `docker build --target testing` above replaces it for local testing.
 - **`pr-gate.yml` / `merge-queue.yml` as whole graphs**: both start with a `needs: build-image` job that every other job depends on for its `image` input, so running either wholesale would require either running `build-image` (out of scope, see above) or fully faking its output — the individual `-W .github/workflows/<file>.yml -j <job>` invocations above already give equivalent per-check signal without either problem. `merge-queue.yml` additionally triggers on `merge_group`, which has no real local equivalent.
 - **PR-comment steps**: never exercised for real (see `pr-number` note above) — nothing real to comment on. `audit.yml`'s non-comment logic was validated once manually — see above.
+
+## Adding a `staging` branch with parity to `main`
+
+The user wanted a `staging` branch: deployed to a staging subdomain by an
+external, dashboard-connected platform (confirmed no in-repo deploy config
+exists — no `vercel.json`/`netlify.toml`/GitHub Pages — so that wiring
+happens outside this repo entirely), taking day-to-day PRs, and getting the
+same CI/branch-protection treatment `main` has today. Branch flow: `staging`
+takes feature PRs, periodically promotes to `main` (production) via an
+ordinary `staging` → `main` PR.
+
+Two decisions came from directly asking the user rather than assuming:
+
+- **`main` stays the GitHub default branch**, `staging` is an opt-in PR base.
+  The alternative (making `staging` default) would've made PR creation
+  frictionless — no manually picking a base — but at the cost of the repo
+  looking like it's showing "production" when browsed on GitHub while
+  actually showing in-progress `staging` code. The user chose to keep `main`
+  as default and pick `staging` manually per PR.
+- **Dependabot was pointed at `staging` too** (`target-branch: staging` added
+  to all three `.github/dependabot.yml` ecosystem entries). Initial plan
+  left dependabot alone (targeting `main`, the default, since GitHub's
+  default `target-branch` behavior follows the default branch) reasoning the
+  user only asked about the human PR flow — the user corrected this
+  explicitly during plan review: dependency-bump PRs should flow through
+  `staging` first like everything else, not merge straight to production.
+
+**Branch protection**: `main`'s existing repo ruleset ("Main", id
+`20490347`) targets the dynamic `~DEFAULT_BRANCH` ref-name condition, not a
+literal `main` string — since `main` stays default, that ruleset needed no
+edit and will keep applying only to it. A **second** ruleset ("Staging"),
+targeting `refs/heads/staging` explicitly, mirrors "Main"'s rules exactly
+(deletion, non-fast-forward, 0-approval pull_request, merge_queue with the
+same ALLGREEN/MERGE parameters, and the same 7 required status checks:
+`build / build`, `build-image / build-image`, `format / format`,
+`lint / lint`, `playwright / playwright`, `typecheck / typecheck`,
+`vitest / vitest`) plus the same always-bypass actor. Attempted via
+`gh api repos/Aurora-Arctic/resume-2026/rulesets -X POST` with the mirrored
+JSON body — failed with `403 Resource not accessible by personal access
+token`: the fine-grained PAT `gh` is authenticated with (visible via
+`gh auth status`) lacks repo Administration write, the same permission gap
+that made reading `main`'s classic branch-protection endpoint 403 earlier
+too (rulesets _listing_, a read, worked fine — only the write failed). Left
+as a manual follow-up for the user (either create the ruleset by hand in
+Settings → Rules, or grant the token Administration write and re-run the
+same `gh api` call).
+
+`pr-gate.yml`'s `pull_request.branches` list gained `staging` alongside
+`main` (a plain trigger-list edit, unlike the ruleset — GitHub Actions
+`branches:` filters don't have a `~DEFAULT_BRANCH`-style dynamic target).
+`merge-queue.yml` needed no trigger change — `on: merge_group` already fires
+for whichever branch has "Require merge queue" active, regardless of branch
+name — just a comment update.
+
+## Adding Gitflow branch-source enforcement (`feature`/`release`/`hotfix` → `staging`/`main`)
+
+The user asked for a branch-protection flow modeled on [this article's
+Gitflow-enforcement pattern](https://medium.com/@ariifischbein/automate-gitflow-branching-rules-with-github-actions-d672f80d335b),
+with this repo's `staging` branch standing in for the article's `develop`.
+The article's own gap is exactly what motivated this: GitHub branch
+protection/rulesets can gate a _target_ branch (required checks, no
+force-push, etc.) but can't express "only branch X may merge into target
+Y" — nothing already in this repo enforced that, so e.g. a PR from any
+random branch straight into `main` was previously unrestricted.
+
+Two decisions came from directly asking the user rather than assuming, since
+they change the shape of the whole feature:
+
+- **Full Gitflow (`feature/*`/`release/*`/`hotfix/*`), not a simplified
+  staging-only flow.** The repo's existing convention (documented in the
+  "Adding a `staging` branch" section above) was `main` promoted via direct
+  `staging` → `main` PRs, no release branch, and free-form branch names like
+  `mjoynes/<description>` for day-to-day work. The user chose the article's
+  full three-branch-type model instead, explicitly accepting that this
+  **replaces** the direct `staging → main` promotion path with a
+  `release/*` → `main` one, and that existing free-form branch names (e.g.
+  `mjoynes/staging-branch-setup`, the very branch this change was made on)
+  will fail the new check once it's wired into a ruleset as required — going
+  forward, branches feeding `staging`/`main`/`release/*` need Gitflow-style
+  prefixes.
+- **Blocking, not a warning.** Matches every other required check in this
+  repo (lint/format/typecheck/vitest/build/playwright) rather than the
+  non-blocking pattern `audit.yml` uses — the user picked blocking
+  specifically because it matches the article's own intent (`exit 1` on
+  violation) and this repo's existing house style of failing required
+  checks rather than just commenting.
+
+Rules enforced (`develop` → `staging` substitution applied to the article's
+three rules):
+
+| Target      | Allowed source                       |
+| ----------- | ------------------------------------ |
+| `main`      | `release/*`, `hotfix/*`              |
+| `staging`   | `feature/*`, `release/*`, `hotfix/*` |
+| `release/*` | `staging`, `hotfix/*`                |
+
+**Implementation**: a new reusable check, `.github/workflows/gitflow.yml`,
+modeled on `format.yml` (the repo's existing "always runs, no path-filter"
+pattern) rather than `lint`/`typecheck`/etc., since branch-name validation
+has nothing to do with which files changed. Unlike every other check, it
+doesn't use the `testing` container or `checkout-to-app` — it only reads
+`github.event.pull_request.head.ref`/`base.ref`, no npm/build tooling
+involved, so a plain `actions/checkout` (needed only so the job's local
+`./.github/actions/...` references resolve) on a bare `ubuntu-latest`
+runner is enough. Core logic is a bash `case` over `base.ref` selecting an
+allowed-source regex, `exit 1` with a `::error::` annotation on mismatch —
+matching the article's own `exit 1`-on-violation approach. Reuses
+`job-summary`/`pr-comment` (`success-mode: minimize`) like every other
+check, so a violation shows up the same way a lint/format failure does.
+
+Wired into `pr-gate.yml` as an always-run `gitflow` job (job id `gitflow`,
+giving the required-check name `gitflow / gitflow` per this repo's
+`<job> / <job>` convention). Two other `pr-gate.yml` changes rode along:
+
+- `on.pull_request.branches` gained `'release/**'` (glob, not a literal
+  branch name) alongside `main`/`staging`, so `release/*` branches get the
+  same full CI (lint/format/typecheck/vitest/build/playwright/audit) plus
+  the new gitflow check — they had no CI coverage at all before this.
+- `on.pull_request.types` was made explicit (`[opened, synchronize,
+reopened, edited]`) — previously left at GitHub's implicit default
+  (`opened`/`synchronize`/`reopened`), which doesn't include `edited`. Added
+  specifically so retargeting a PR's base branch (the one way a PR's
+  gitflow source/target relationship can change without a new push)
+  re-triggers this check rather than leaving a stale result in place.
+
+**Deliberately not wired into `merge-queue.yml`.** `merge_group` events only
+expose a synthetic head ref
+(`refs/heads/gh-readonly-queue/<base>/pr-<n>-<sha>`), not the PR's real
+source branch — revalidating there would need an extra API call to resolve
+the original PR (the way `merge-queue.yml`'s existing `pr-number` job
+already extracts a PR _number_ from that ref, but one step further, an
+actual `gh api`/octokit lookup). Skipped as a deliberate simplification:
+the `edited` trigger type above already prevents the one scenario
+(post-approval retargeting) where the merge queue could otherwise see a
+stale gitflow result, so the extra API call would guard against a case that
+can no longer happen.
+
+**Manual follow-up left for the user** (same reason as the still-outstanding
+"Staging" ruleset above — this session's token can't write repo
+Administration settings):
+
+1. Add `gitflow / gitflow` to the existing "Main" ruleset's required status
+   checks (only selectable once the check has reported at least once).
+2. When creating the still-pending "Staging" ruleset, include
+   `gitflow / gitflow` alongside the original 7 required checks.
+3. Create a new "Release Branches" ruleset (`refs/heads/release/**`,
+   mirroring "Main"/"Staging") — `release/*` had no ruleset of any kind
+   before this change.
+
+Docs updated to match: `claude-docs/CI-SETUP.md` (gitflow bullet, `main`
+promotion path description), `README.md` (CI section), and `CLAUDE.md`
+(fixed a pre-existing stale line that still said `pull_request` → `main`
+only — missed by the earlier staging-branch commit, caught while updating
+the same section for this change).
+
+## Gitflow-aware branch/PR skills, and requiring precise `release/MAJOR.MINOR.PATCH` naming
+
+Once the `gitflow` check above was live, the existing `.claude/skills/create-pr/SKILL.md`
+was still unaware of it — step 3 always defaulted to proposing `main` as the
+PR target regardless of the current branch's prefix, which is a guaranteed
+`gitflow` failure for e.g. a `feature/*` branch. There was also no skill for
+_creating_ correctly-prefixed branches in the first place, only `create-pr`
+and `prune-branches`.
+
+**`create-pr` step 3 rewritten** to classify the current branch by Gitflow
+prefix and compute its actual valid targets from the same rules table the
+check enforces, instead of hardcoding `main`:
+
+- `feature/*` → `staging`, plus any other existing `feature/*` branch — a
+  mid-conversation user correction ("feature branches should be able to
+  merge into other features") caught that `gitflow.yml`'s `case` statement
+  only gates `main`/`staging`/`release/*` targets; any other target
+  (including another feature branch) has no source restriction at all, so
+  feature-into-feature stacking was already allowed by the check and just
+  needed surfacing as a real option.
+- `release/*` → `main`, `staging`. `hotfix/*` → `main`, `staging`, and any
+  existing `release/*` branch. `staging` itself → existing `release/*`
+  branches only. Anything else → no valid target; the skill now says so
+  explicitly and asks whether to proceed anyway (accepting the check will
+  fail) or stop, rather than silently defaulting to `main`.
+
+**Three new skills**, all following the existing `.claude/skills/<name>/SKILL.md`
+convention (two-field frontmatter, numbered `## Steps`, trailing `## Notes`):
+
+- **`create-feature`** / **`create-hotfix`**: ask a free-text name (plain
+  conversational question, not AskUserQuestion — no sensible fixed option
+  set for a name), slugify it, and branch off the latest `origin/staging`
+  (`feature/*`) or `origin/main` (`hotfix/*`) as `<prefix>/<slug>`. Neither
+  pushes — that's left to `create-pr`, matching how those two skills only
+  ever create local state until the user is ready for review.
+- **`create-release`** ended up substantially more involved after two rounds
+  of follow-up requests during the same conversation:
+  1. First cut: same shape as `create-feature`/`create-hotfix` — free-text
+     name, branch off `staging` as `release/<slug>`.
+  2. User asked for version bumps instead of free text: AskUserQuestion with
+     **Patch (Recommended)** / Minor / Major, computed against the highest
+     existing `vMAJOR.MINOR.PATCH` git tag (`git tag --list 'v[0-9]*.[0-9]*.[0-9]*'
+--sort=-v:refname`), falling back to `v0.0.0` if none exist yet (true
+     for this repo — no tags existed at the time). The skill creates both
+     the branch (`release/<version>`, no `v` prefix) and an annotated tag
+     (`v<version>`, at the branch's cut point) and — unlike `create-feature`/
+     `create-hotfix` — pushes both directly rather than deferring to
+     `create-pr`, since a real shared release artifact is the entire point
+     of running this skill.
+  3. User then asked for it to also open the PR into `main`, and finally to
+     have that PR summarize every PR actually merged into `staging` as part
+     of the release, with author attribution. Implemented by having the
+     skill call `gh pr list --base staging --state merged --json
+number,title,author,mergedAt,url,mergeCommit` and, for each, checking
+     `git merge-base --is-ancestor <mergeCommit.oid> release/<version>` (in
+     the release) and _not_ an ancestor of `origin/main` (not already
+     shipped) — deliberately not `git log --merges`, which only sees
+     merge-commit-producing PRs and would silently miss anything merged via
+     squash or rebase (this repo's ruleset allows all three methods). Each
+     matched PR renders as `- [#<number>](<url>) <title> — @<author.login>`
+     under a `## Included PRs` section in the generated body, alongside the
+     usual `## Summary`/`## Test plan`. If `staging`/`main` are already
+     level, PR creation is skipped (nothing to release) but the branch/tag
+     are still reported as created.
+
+**`gitflow.yml` tightened** to require the precise naming `create-release`
+now always produces: the source-side regex for `release/*` (wherever it's
+an allowed source into `main`/`staging`) changed from the loose
+`release/.+` to `release/[0-9]+\.[0-9]+\.[0-9]+` — a `release/*` branch not
+named exactly `release/MAJOR.MINOR.PATCH` can no longer PR into either. The
+target-side `release/*)` case-glob branch (matching _any_ `release/*` name
+as a PR target, to decide which check applies) was deliberately left loose
+— tightening classification of the target doesn't add safety, only the
+source-side check that gates what's allowed to merge does. No ruleset JSON
+changes were needed for this — it's a logic change inside the same
+`gitflow`/`gitflow` required check, not a new/renamed check.
+
+## `create-pr` on a `hotfix/*` branch opens PRs into both `main` and `staging`
+
+User: "When using /create-pr on a hotfix branch it should create a PR for
+both main and staging."
+
+Before this, `create-pr` step 3 treated `hotfix/*` the same as any other
+prefix with multiple valid Gitflow targets (`main`, `staging`, and any
+existing `release/*` branch) — it would ask via AskUserQuestion and open
+exactly one PR, whichever the user picked. That undersells what a hotfix
+actually is: standard Gitflow has a hotfix land in production _and_ get
+folded back into the mainline development branch, so a single PR always
+left one of the two out of date until someone remembered to open a second
+one by hand.
+
+Before implementing, asked the user whether the existing `release/*`
+option (offered for hotfixes because `gitflow.yml` also allows `hotfix/*`
+into `release/*`) should survive alongside the new automatic main+staging
+pair, or be dropped now that hotfix PR creation is non-interactive. User
+chose to drop it — a hotfix branch now always produces exactly two PRs
+(`main`, `staging`), no question asked, no third option. If a release branch
+in flight also needs the fix, that's outside this skill's flow now (open
+one by hand, or reconsider whether it should really be a `hotfix/*` in the
+first place).
+
+Implementation: step 3 special-cases `hotfix/*` up front — skips
+AskUserQuestion, sets targets to the pair `main`+`staging`, and notes the
+rest of the skill (steps 5-8) now iterates "per target" wherever it
+previously assumed a single one:
+
+- Step 2's existing-PR lookup gained `baseRefName` to the `gh pr list`
+  `--json` fields, so step 8 can match an existing open PR to the correct
+  target instead of assuming there's at most one open PR for the branch.
+- Step 5 (push) stayed a single action — pushing is about the source
+  branch's own commits, not per-target — but its "anything to push" check
+  now explicitly reasons about using `main` as the representative
+  comparison for the hotfix case (a hotfix always branches off `main`, so
+  "ahead of `main`" is a reliable stand-in for "has any work at all"),
+  leaving the real per-target diffing to step 6.
+- Step 6 (gather context) now runs its diff/log once per target — for a
+  hotfix that's once against `main` and once against `staging`, since the
+  two frequently differ (`staging` may already contain commits `main`
+  doesn't). If a target's diff comes back empty the skill skips opening a
+  PR for that target and says why, rather than opening an empty one; the
+  other target still proceeds independently.
+- Steps 7-8 (draft, create/update) run once per target, each summarized
+  from its own diff, each checked/created/updated independently.
+
+No `gitflow.yml` changes were needed — the check itself already allowed
+`hotfix/*` into both `main` and `staging` individually; this was purely a
+`create-pr` skill-level change to stop making the user choose one.
+
+## Fix: `gitflow` never running on the merge queue permanently stalled queued merges
+
+The original "Adding Gitflow branch-source enforcement" section above
+deliberately left `gitflow` out of `merge-queue.yml`, reasoning that
+`merge_group` events only expose a synthetic head ref, so there's nothing
+real to validate there — and that the `edited` PR trigger already prevents
+the one case (post-approval retargeting) where a stale gitflow result could
+otherwise reach the queue. That reasoning was sound in isolation, but it
+predated the ruleset follow-up two sections later ("Manual follow-up left
+for the user"), which added `gitflow / gitflow` as a **required status
+check** to the same "Main"/"Staging" rulesets that also gate the merge
+queue. Once that landed, the two decisions contradicted each other: a
+required check that `merge-queue.yml` never runs at all never posts a
+status for `merge_group` runs, and GitHub leaves a required check that
+never reports stuck pending forever — any PR reaching the merge queue would
+sit blocked indefinitely, unable to merge.
+
+The user caught this by observing the ruleset directly (a single ruleset's
+required-checks list applies to both plain PR merges and merge-queue merges
+— there's no separate list for each).
+
+**Fix**: rather than skip calling `gitflow.yml` from `merge-queue.yml`
+entirely, it's now called there too, but with a new `should-run: false`
+input that no-ops the actual validation while still completing the job
+under its normal name — the same pattern already used for `lint`/
+`typecheck`/`vitest`/`build`/`playwright`'s path-filtered skips in
+`pr-gate.yml` (see "Follow-up: DRY out the repeated step logic" and
+`pr-gate.yml`'s own comment on why a job-level `if:` doesn't work for a
+required check: it renames the check run instead of just skipping its
+work, which never satisfies the original required-check name either).
+
+- `gitflow.yml` gained the `should-run` boolean input (default `true`),
+  guarding every step (`Checkout`, `Start timer`, `Validate source ->
+target branch`, `Compute duration`, `Write job summary`, `Comment on PR`)
+  with `if: inputs.should-run` (or `if: always() && inputs.should-run` for
+  the `always()` steps) — mirroring `lint.yml`'s existing `should-run`
+  guard style exactly.
+- `merge-queue.yml` gained a `gitflow` job calling `gitflow.yml` with
+  `should-run: false` — no `pr-number`/`merge-queue` inputs passed, since
+  every step that would use them is already skipped.
+- `pr-gate.yml`'s `gitflow` job comment ("Not called from merge-queue.yml")
+  and `gitflow.yml`'s own header comment were updated to describe the
+  no-op call instead of an absent one.
+- `claude-docs/CI-SETUP.md` and `CLAUDE.md`'s CI section updated to match.
+
+The `edited`-trigger reasoning from the original section still holds for
+_why the validation itself_ doesn't need to re-run in the queue — that
+part wasn't wrong. The bug was narrower: a required check still has to
+exist and report success even when there's deliberately nothing for it to
+check.
