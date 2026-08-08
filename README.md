@@ -17,6 +17,7 @@ A personal resume site built with [Gatsby 5](https://www.gatsbyjs.com/), React 1
   - [Docker](#docker)
   - [Local CI testing](#local-ci-testing)
 - [Continuous integration](#continuous-integration)
+- [Gitflow workflow](#gitflow-workflow)
 - [Documentation for contributors](#documentation-for-contributors)
 
 ## Prerequisites
@@ -147,6 +148,22 @@ Every pull request against `main`, `staging`, or `release/*` runs **PR gate**: l
 If a check fails, the bot posts (or updates) a single PR comment for that check with the failure output, rather than spamming a new comment per run — a later passing run resolves or removes it. A merge-queue failure is labeled `(merge queue)` and posted as its own comment, separate from any PR-gate comment for the same check, so you can tell which phase actually failed.
 
 For the full breakdown — job/workflow structure, the Docker image checks run inside, and the composite actions the check workflows share — see the "Continuous Integration" section of [CLAUDE.md](CLAUDE.md#continuous-integration). For the history of how it was designed and why (including follow-up changes after the initial setup), see [CI-SETUP.md](claude-docs/CI-SETUP.md).
+
+## Gitflow workflow
+
+This repo follows a Gitflow-style branching model — see [Continuous integration](#continuous-integration) above for the branch rules the required `gitflow` check enforces. A set of Claude Code skills automate the everyday parts of it, so branches and PRs always land with Gitflow-valid names/targets:
+
+| Command           | What it does                                                                                                                                                                                                                                                                                                                |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/create-feature` | Asks for a feature name, then branches off the latest `staging` as `feature/<slug>`.                                                                                                                                                                                                                                        |
+| `/create-hotfix`  | Asks for a hotfix name, then branches off the latest `main` as `hotfix/<slug>`.                                                                                                                                                                                                                                             |
+| `/create-pr`      | Commits (after asking) and pushes the current branch's work, then opens a PR with a generated summary. Proposes a Gitflow-valid target based on the current branch's prefix (`feature/*` → `staging`, `release/*` → `main`/`staging`, etc.); `hotfix/*` branches automatically get two PRs, into both `main` and `staging`. |
+| `/create-release` | Asks which part of the version to bump (major/minor/patch, default patch), computes the next version from the latest `v*` git tag, creates `release/<version>` off `staging` plus a matching `v<version>` tag, and opens a PR into `main` summarizing every merged-to-staging PR (and its author) included in the release.  |
+| `/prune-branches` | Deletes local branches whose remote counterpart was removed automatically; for local branches that were never pushed, asks which ones to delete and shows what commits each has that the default branch doesn't.                                                                                                            |
+
+A typical flow: `/create-feature` to start work, then `/create-pr` once it's ready for review (targeting `staging`); periodically `/create-release` cuts `staging` into a `release/*` branch and opens the promotion PR into `main`; urgent fixes go through `/create-hotfix` off `main` and also use `/create-pr`, which opens PRs into both `main` and `staging` for you. Run `/prune-branches` any time to clear out local branches left behind by merged/closed PRs.
+
+These are only available in Claude Code — each is a skill under `.claude/skills/`, invoked either by name (e.g. `/create-feature`) or by asking in plain language (e.g. "start a new feature branch").
 
 ## Documentation for contributors
 
