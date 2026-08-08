@@ -1,5 +1,6 @@
 import React, { type ReactElement, type ReactNode } from 'react';
 import BackgroundCredit from '../BackgroundCredit';
+import RestoreTooltips from '../RestoreTooltips';
 import ThemeToggle from '../ThemeToggle';
 import './index.scss';
 
@@ -14,6 +15,7 @@ const Layout = ({ children }: LayoutProps): ReactElement => (
       {children}
       <BackgroundCredit />
     </div>
+    <RestoreTooltips />
   </main>
 );
 

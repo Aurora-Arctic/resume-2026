@@ -94,10 +94,10 @@ const ThemeToggle = (): ReactElement => {
       content={
         <>
           <span className="theme-toggle-tooltip__label theme-toggle-tooltip__label--to-light">
-            Change to light mode
+            Change to light mode.
           </span>
           <span className="theme-toggle-tooltip__label theme-toggle-tooltip__label--to-dark">
-            Change to dark mode
+            Change to dark mode.
           </span>
         </>
       }
