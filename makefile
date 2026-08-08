@@ -115,6 +115,6 @@ act-build: act-image act-cache-checkout
 	act -W .github/workflows/build.yml -j build --input image=$(ACT_IMAGE) -s GITHUB_TOKEN=dummy-token --action-offline-mode
 
 act-playwright: act-image act-cache-checkout act-cache-artifact
-	act -W .github/workflows/playwright.yml -j playwright --input image=$(ACT_IMAGE) -s GITHUB_TOKEN=dummy-token --action-offline-mode --env PORT=8001
+	act -W .github/workflows/playwright.yml -j playwright --input image=$(ACT_IMAGE) -s GITHUB_TOKEN=dummy-token --action-offline-mode
 
 act-test: act-lint act-format act-typecheck act-vitest act-build act-playwright

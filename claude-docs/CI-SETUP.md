@@ -8,5 +8,6 @@ Full implementation history: [claude-docs/transcripts/CI-SETUP.md](transcripts/C
 - Path filtering (`dorny/paths-filter`, PR-gate only) skips irrelevant checks on a docs-only or scoped diff. Each job is gated via a `should-run` workflow_call input evaluated inside the job (not a job-level `if:` on the caller) — a job-level `if:` would report the check under a different name and permanently stall required-status checks.
 - PR comments and job summaries are built from shared local composite actions: `.github/actions/pr-comment/`, `job-summary/`, `timer-start/`, `timer-elapsed/`.
 - Local testing via [`act`](https://github.com/nektos/act): `make act-lint|format|typecheck|vitest|build|playwright|test`. `audit.yml` and `build-image.yml` are excluded.
+- Both `npm run test:e2e` and `test:e2e:coverage` build-and-serve on port 8001 by default (`playwright.config.ts`, overridable via `PORT`) — deliberately not Gatsby's usual `:8000` (`npm run develop`/`serve`), so e2e never collides with, or silently reuses, a dev server already running there, in CI or locally alike.
 - Enabling the merge queue requires a manual, one-time "Require merge queue" setting in GitHub branch protection — `merge-queue.yml` never triggers without it.
 - `.github/dependabot.yml` — weekly PRs for npm deps, GitHub Actions versions, and the Docker base image pin.

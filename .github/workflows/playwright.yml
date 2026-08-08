@@ -65,7 +65,8 @@ jobs:
         shell: bash
     env:
       # playwright.config.ts's webServer.reuseExistingServer reads this to decide
-      # whether to always start a fresh server rather than reusing one on :8000.
+      # whether to always start a fresh server rather than reusing one already
+      # on its port (8001 by default — see playwright.config.ts).
       CI: true
       # Path the json reporter writes to — read by summarize-playwright.mjs.
       PLAYWRIGHT_JSON_OUTPUT_NAME: /app/playwright-results.json
