@@ -39,14 +39,17 @@ jobs:
   # exists purely so the "gitflow / gitflow" required status check (the same
   # repo ruleset requires it for both PR merges and the merge queue) reports
   # success instead of never posting, which would leave a queued merge stuck
-  # waiting on a check that can never complete.
+  # waiting on a check that can never complete. Every other job below
+  # `needs: gitflow` too (mirroring pr-gate.yml) — harmless here since
+  # should-run: false always makes this job succeed trivially, but it keeps
+  # the dependency graph identical between pr-gate and the merge queue.
   gitflow:
     uses: ./.github/workflows/gitflow.yml
     with:
       should-run: false
 
   lint:
-    needs: [build-image, pr-number]
+    needs: [build-image, pr-number, gitflow]
     uses: ./.github/workflows/lint.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
@@ -54,7 +57,7 @@ jobs:
       merge-queue: true
 
   format:
-    needs: [build-image, pr-number]
+    needs: [build-image, pr-number, gitflow]
     uses: ./.github/workflows/format.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
@@ -62,7 +65,7 @@ jobs:
       merge-queue: true
 
   typecheck:
-    needs: [build-image, pr-number]
+    needs: [build-image, pr-number, gitflow]
     uses: ./.github/workflows/typecheck.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
@@ -70,7 +73,7 @@ jobs:
       merge-queue: true
 
   vitest:
-    needs: [build-image, pr-number]
+    needs: [build-image, pr-number, gitflow]
     uses: ./.github/workflows/vitest.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
@@ -78,13 +81,13 @@ jobs:
       merge-queue: true
 
   build:
-    needs: build-image
+    needs: [build-image, gitflow]
     uses: ./.github/workflows/build.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
 
   playwright:
-    needs: [build-image, pr-number]
+    needs: [build-image, pr-number, gitflow]
     uses: ./.github/workflows/playwright.yml
     with:
       image: ${{ needs.build-image.outputs.image }}
