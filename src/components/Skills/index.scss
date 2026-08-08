@@ -1,6 +1,4 @@
 .resume-skills {
-  margin: 2rem 0;
-
   dl {
     margin: 0;
   }
@@ -9,11 +7,30 @@
     margin: 0 0 0.5rem;
   }
 
+  // Dark mode (the default) gets a lighter category-label weight than light
+  // mode, same as body copy/headings in _typography.scss — 500 is already
+  // the heaviest weight loaded (see gatsby-ssr.ts), so `bold` (700) was
+  // actually rendering as 500 in both themes; this reserves 500 for light
+  // mode and steps dark mode down from it instead. letter-spacing
+  // compensates for 400's narrower glyphs, measured the same way as
+  // _typography.scss's — see that file's comment for the general approach.
   dt {
-    font-weight: bold;
+    font-weight: 400;
+    letter-spacing: 0.013em;
   }
 
   dd {
     margin: 0;
+    letter-spacing: 0.034em;
+  }
+}
+
+html[data-theme='light'] .resume-skills {
+  dt {
+    font-weight: 500;
+    letter-spacing: normal;
+  }
+  dd {
+    letter-spacing: normal;
   }
 }
