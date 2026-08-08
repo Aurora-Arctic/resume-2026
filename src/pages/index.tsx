@@ -1,5 +1,6 @@
 import React, { type ReactElement } from 'react';
 import Layout from '../components/Layout';
+import Seo from '../components/Seo';
 
 const IndexPage = (): ReactElement => (
   <Layout>
@@ -10,3 +11,5 @@ const IndexPage = (): ReactElement => (
 );
 
 export default IndexPage;
+
+export const Head = (): ReactElement => <Seo />;

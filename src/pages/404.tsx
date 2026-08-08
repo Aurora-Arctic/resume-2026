@@ -1,6 +1,7 @@
 import React, { type ReactElement } from 'react';
 import { Link } from 'gatsby';
 import Layout from '../components/Layout';
+import Seo from '../components/Seo';
 
 const NotFoundPage = (): ReactElement => (
   <Layout>
@@ -11,3 +12,5 @@ const NotFoundPage = (): ReactElement => (
 );
 
 export default NotFoundPage;
+
+export const Head = (): ReactElement => <Seo />;
