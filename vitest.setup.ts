@@ -1,3 +1,4 @@
+import { webcrypto } from 'node:crypto';
 import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -52,6 +53,19 @@ if (typeof window !== 'undefined') {
 
   Object.defineProperty(window, 'localStorage', {
     value: new MemoryStorage(),
+    writable: true,
+    configurable: true,
+  });
+}
+
+// jsdom implements `crypto.getRandomValues` but explicitly leaves
+// `crypto.subtle` unimplemented (by design — see jsdom's docs), which breaks
+// src/utils/crypto.ts's AES-GCM calls under test only. Swap in Node's own
+// Web Crypto implementation, which has both and matches the real-browser
+// shape used everywhere else (Node 19+, and this repo's Header component).
+if (typeof window !== 'undefined' && !window.crypto.subtle) {
+  Object.defineProperty(window, 'crypto', {
+    value: webcrypto,
     writable: true,
     configurable: true,
   });

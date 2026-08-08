@@ -9,6 +9,7 @@ A personal resume site built with [Gatsby 5](https://www.gatsbyjs.com/), React 1
 - [Prerequisites](#prerequisites)
 - [Getting started](#getting-started)
 - [Debugging](#debugging)
+- [Contact info encryption](#contact-info-encryption)
 - [Linting & formatting](#linting--formatting)
 - [Available commands](#available-commands)
   - [App](#app)
@@ -51,6 +52,27 @@ Both services bind-mount the repo into the container, so edits made on the host 
 3. Set breakpoints directly in your `.tsx`/`.ts` source files under `src/` — `webRoot` and the `webpack://resume-2026/*` source-map path overrides let Chrome map compiled output back to those files.
 
 This attaches to an already-running dev server rather than launching one itself, so it works the same way whether the server was started via `make docker-up`, the `development` service directly, or `npm run develop` inside the `devcontainer` service.
+
+## Contact info encryption
+
+The site has no backend, so `src/data/resume.ts`'s `location`/`email`/`phone` fields are stored as AES-256-GCM ciphertext instead of plaintext, and only decrypt in the browser when the page is loaded with the right key as a `?k=` URL parameter — this deters casual scrapers from harvesting the plaintext out of the static HTML/JS, though it's not real confidentiality (see the caveat below). All commands here run inside the `devcontainer` service, same as any other `npm` command (see [Getting started](#getting-started)).
+
+1. Generate a key:
+   ```sh
+   npm run generate:key
+   ```
+2. Encrypt each value you want to protect with that same key:
+   ```sh
+   npm run encrypt:value -- "Your City, ST" "<key>"
+   npm run encrypt:value -- "you@example.com" "<key>"
+   npm run encrypt:value -- "555-123-4567" "<key>"
+   ```
+   Paste the printed ciphertext into `HeaderData.location`/`.email`/`.phone` in `src/data/resume.ts`, replacing the placeholder values.
+3. Share your resume link with the key appended, e.g. `https://your-resume-domain/?k=<key>` — visitors without it see the page with location/email/phone omitted; the correct key reveals them.
+
+The key is symmetric — the same value both encrypts (step 2) and decrypts (step 3); there's no separate key to keep track of. Keep it out of the repo and out of version control entirely (store it in a password manager) once it's protecting real data — this repo is public, so a key committed anywhere in it (a source file, a test fixture, anything `git`-tracked) is just as exposed as if the contact info were plaintext. Running `npm run encrypt:value` with no key generates and prints a fresh one for you.
+
+**This is scraper deterrence, not real security.** The ciphertext and the decryption code both ship in the public JS bundle — anyone who obtains a valid `?k=` link, or brute-forces the key, can recover the plaintext. Don't rely on this to protect anything more sensitive than "keep it off the easiest scraper lists." See [claude-docs/CONTACT-ENCRYPTION.md](claude-docs/CONTACT-ENCRYPTION.md) for the full design rationale.
 
 ## Linting & formatting
 
