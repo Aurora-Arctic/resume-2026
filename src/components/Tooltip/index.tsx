@@ -1,4 +1,5 @@
 import React, { type ReactElement, type ReactNode, cloneElement } from 'react';
+import './index.scss';
 
 interface TooltipProps {
   id: string;

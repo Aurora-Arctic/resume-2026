@@ -97,3 +97,7 @@ Chasing both suites up to 100% coverage (from the 80% threshold each enforces) s
 ## Hover/focus tooltip
 
 A visible tooltip explaining the button's action was added later — see [TOOLTIP.md](TOOLTIP.md) for the full writeup. In short: `title` was removed (superseded), and the button is now wrapped in the new generic `Tooltip` component with copy that flips between "Change to light mode" and "Change to dark mode" depending on the live theme.
+
+## Moved into its own folder, with colocated SCSS
+
+`src/components/ThemeToggle.tsx` moved to `src/components/ThemeToggle/index.tsx`, with `.theme-toggle`/`.theme-toggle__facets`/`.theme-toggle__facet` (+ its `--out`/`--pre-enter` modifiers) and `.theme-toggle-tooltip`/`.theme-toggle-tooltip__label--to-light`/`--to-dark` pulled out of the old shared `src/scss/layout.scss` into a colocated `src/components/ThemeToggle/index.scss`. `ThemeToggle.test.tsx` moved to `index.test.tsx` alongside it. See [../LAYOUT-SETUP.md](../LAYOUT-SETUP.md)'s "Splitting component SCSS out of `layout.scss`, per component" section for the full rationale (including why `.theme-toggle-tooltip`'s placement CSS lives here rather than in `Tooltip`'s own folder, and why every folder's component file is named `index.tsx`/`index.scss`).

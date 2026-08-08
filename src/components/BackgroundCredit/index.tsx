@@ -1,4 +1,5 @@
 import React, { type ReactElement } from 'react';
+import './index.scss';
 
 const BackgroundCredit = (): ReactElement => (
   <p className="background-credit">

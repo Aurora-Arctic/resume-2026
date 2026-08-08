@@ -1,7 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500&family=Bitter:wght@400;500&display=swap');
+@use './variables' as *;
 
-$font-body: 'Lexend', Arial, Helvetica, sans-serif;
-$font-heading: 'Bitter', Georgia, serif;
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500&family=Bitter:wght@400;500&display=swap');
 
 body {
   font-family: $font-body;

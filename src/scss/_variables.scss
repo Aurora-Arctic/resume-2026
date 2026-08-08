@@ -21,3 +21,11 @@ $theme-toggle-icon-arc: 130deg;
 // there's only one background/text pair.
 $print-bg: #fff;
 $print-text: $silver-oxide;
+
+// Font stacks — kept as plain variables (rather than only inside
+// _typography.scss) so components that just need a font-family, like
+// Tooltip, can `@use` them without also pulling in _typography.scss's
+// global body/heading CSS rules and duplicating that output into their own
+// compiled stylesheet.
+$font-body: 'Lexend', Arial, Helvetica, sans-serif;
+$font-heading: 'Bitter', Georgia, serif;

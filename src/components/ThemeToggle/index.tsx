@@ -1,5 +1,6 @@
 import React, { type ReactElement, useEffect, useRef } from 'react';
-import Tooltip from './Tooltip';
+import Tooltip from '../Tooltip';
+import './index.scss';
 
 const STORAGE_KEY = 'theme'; // keep in sync with gatsby-ssr.ts's STORAGE_KEY
 
