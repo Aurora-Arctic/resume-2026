@@ -5,13 +5,21 @@ name: Gitflow Rules
 # with this repo's `staging` branch standing in for the article's `develop`:
 #
 #   target `main`        <- `release/MAJOR.MINOR.PATCH` or `hotfix/*`
-#   target `staging`     <- `feature/*`, `release/MAJOR.MINOR.PATCH`, or `hotfix/*`
+#   target `staging`     <- `feature/*`, `release/MAJOR.MINOR.PATCH`, `hotfix/*`,
+#                           or any branch when the PR author is `dependabot[bot]`
 #   target `release/*`   <- `staging` or `hotfix/*`
 #
 # `release/*` branches must follow the precise `release/MAJOR.MINOR.PATCH`
 # semver naming (e.g. `release/1.2.3`) to be accepted as a source into
 # `main`/`staging` — see .claude/skills/create-release, which is the intended
 # way to cut one and always produces a name matching this pattern.
+#
+# Dependabot is a standing exception to the `staging` rule above: its
+# branches (e.g. `dependabot/npm_and_yarn/foo`) never match the
+# `feature`/`release`/`hotfix` patterns, but `.github/dependabot.yml` targets
+# `staging` on every ecosystem, same as human PRs. Checked by PR author
+# (`dependabot[bot]`) rather than by branch name, since a naming exception
+# would let anyone bypass the rule just by naming a branch `dependabot/...`.
 #
 # Branch protection/rulesets can gate a target branch (required checks, no
 # force-push, etc.) but can't express "only branch X may merge into target
@@ -78,6 +86,7 @@ jobs:
         run: |
           HEAD_REF="${{ github.event.pull_request.head.ref }}"
           BASE_REF="${{ github.event.pull_request.base.ref }}"
+          ACTOR="${{ github.event.pull_request.user.login }}"
 
           case "$BASE_REF" in
             main)      pattern='^(release/[0-9]+\.[0-9]+\.[0-9]+|hotfix/.+)$' ;;
@@ -91,12 +100,14 @@ jobs:
             echo "Target branch: $BASE_REF"
           } | tee output.log
 
-          if [ -n "$pattern" ] && ! [[ "$HEAD_REF" =~ $pattern ]]; then
+          if [ "$BASE_REF" = "staging" ] && [ "$ACTOR" = "dependabot[bot]" ]; then
+            echo "Dependabot exception: allowing '$HEAD_REF' -> '$BASE_REF'." | tee -a output.log
+          elif [ -n "$pattern" ] && ! [[ "$HEAD_REF" =~ $pattern ]]; then
             echo "::error::PRs into '$BASE_REF' must come from a branch matching /$pattern/ (got '$HEAD_REF')." | tee -a output.log
             exit 1
+          else
+            echo "No Gitflow violation for '$HEAD_REF' -> '$BASE_REF'." | tee -a output.log
           fi
-
-          echo "No Gitflow violation for '$HEAD_REF' -> '$BASE_REF'." | tee -a output.log
 
       - name: Compute duration
         id: timer

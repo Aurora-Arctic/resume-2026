@@ -726,3 +726,37 @@ _why the validation itself_ doesn't need to re-run in the queue — that
 part wasn't wrong. The bug was narrower: a required check still has to
 exist and report success even when there's deliberately nothing for it to
 check.
+
+## Fix: Dependabot exception for the `staging` Gitflow rule
+
+Dependabot (`.github/dependabot.yml`) targets `staging` on all three
+ecosystems, set up back in "Adding a `staging` branch" above. Separately,
+"Adding Gitflow branch-source enforcement" made `staging` only accept
+`feature/*`/`release/MAJOR.MINOR.PATCH`/`hotfix/*` source branches. Neither
+change accounted for the other: Dependabot's branch names (e.g.
+`dependabot/npm_and_yarn/foo`, `dependabot/docker/Docker/staging/node-26.6.0`
+— the latter a real open branch on `origin` at the time this was found)
+never match any of those three patterns, so every Dependabot PR into
+`staging` was failing the required `gitflow / gitflow` check with no way to
+merge. Caught by re-reading `dependabot.yml` and `gitflow.yml` side by side
+against the live branch list, not by a failing run being reported directly.
+
+**Fix considered and rejected**: adding `dependabot` as a fourth allowed
+prefix in the `staging` pattern (`^(feature/.+|release/...|hotfix/.+|dependabot/.+)$`),
+consistent with how the rest of the check already works — pure branch-name
+matching. Rejected because it's gameable: any human could name a branch
+`dependabot/whatever` and bypass the Gitflow restriction the same way
+Dependabot does, which a naming convention has no way to prevent.
+
+**Fix applied**: check the PR author instead. `gitflow.yml`'s validation
+step now reads `github.event.pull_request.user.login` into `$ACTOR`
+alongside the existing `$HEAD_REF`/`$BASE_REF`, and short-circuits to a pass
+when `$BASE_REF = staging` and `$ACTOR = dependabot[bot]`, before falling
+through to the existing pattern check for everyone else. Scoped to
+`staging` only (not `main`/`release/*`) since `dependabot.yml` never targets
+anything else. The header comment's target/source table and the surrounding
+prose were both updated to note the exception so they don't go stale the
+way the `dependabot.yml`/`gitflow.yml` mismatch itself did.
+
+Docs updated to match: `claude-docs/CI-SETUP.md` (Gitflow bullet, and the
+`staging`/Dependabot bullet above it) and `README.md`'s CI section.
