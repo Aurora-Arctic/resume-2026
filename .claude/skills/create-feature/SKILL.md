@@ -26,7 +26,7 @@ Start a new Gitflow feature branch off the latest `staging`, asking what to call
    - `git fetch origin staging`.
 
 6. **Create and switch to the new branch.**
-   - `git switch -c feature/<slug> origin/staging` — branches off the fetched remote ref directly, not a possibly-stale local `staging`.
+   - `git checkout -b feature/<slug> origin/staging` — branches off the fetched remote ref directly, not a possibly-stale local `staging`.
 
 7. **Report the result.**
    - Confirm the new branch name and that it's based on current `origin/staging`. Mention that `/create-pr` will propose `staging` as the target when it's ready for review.

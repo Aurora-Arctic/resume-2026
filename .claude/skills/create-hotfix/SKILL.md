@@ -26,7 +26,7 @@ Start a new Gitflow hotfix branch off the latest `main`, asking what to call it 
    - `git fetch origin main`.
 
 6. **Create and switch to the new branch.**
-   - `git switch -c hotfix/<slug> origin/main` — branches off the fetched remote ref directly, not a possibly-stale local `main`.
+   - `git checkout -b hotfix/<slug> origin/main` — branches off the fetched remote ref directly, not a possibly-stale local `main`.
 
 7. **Report the result.**
    - Confirm the new branch name and that it's based on current `origin/main`. Note it can later target `main`, `staging`, or an existing `release/*` branch — `/create-pr` will ask which one, since all three are Gitflow-valid for a hotfix.
