@@ -10,6 +10,10 @@ $wine: #6a2854; // accent color
 // same color family just punchier, not a different hue/lightness. Uses the
 // modern sass:color module, not the deprecated global saturate().
 $grape-press: color.adjust(color.adjust($wine, $saturation: 15%), $lightness: -10%);
+// $wine lightened for dark-mode links — $wine itself doesn't have enough
+// contrast against the dark card background.
+$wine-stained: color.adjust($wine, $lightness: 20%);
+$wine-drenched: color.adjust($wine, $lightness: 10%);
 $text: #e6ddf4;
 $shadow: rgba(8, 7, 9, 0.8);
 

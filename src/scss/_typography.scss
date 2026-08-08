@@ -51,6 +51,31 @@ p {
   font-weight: 200;
 }
 
+a {
+  color: $wine-stained;
+  transition: color 200ms $theme-transition-easing;
+
+  &:visited {
+    color: $text;
+  }
+
+  &:hover {
+    color: $wine-drenched;
+  }
+}
+
+html[data-theme='light'] a {
+  color: $wine;
+
+  &:visited {
+    color: $silver-oxide;
+  }
+
+  &:hover {
+    color: $grape-press;
+  }
+}
+
 // Dark mode (the default) uses the lighter weights above — thin text reads
 // heavier against a dark background than the same weight does on light, so
 // light mode compensates back up to the fonts' regular/medium instances and
@@ -67,4 +92,10 @@ header {
 
 section {
   margin: 1rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a {
+    transition: none;
+  }
 }
