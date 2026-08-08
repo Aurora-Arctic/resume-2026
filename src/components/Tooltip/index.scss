@@ -64,13 +64,27 @@ $tooltip-long-hover-delay: 1s;
 }
 
 // Rendered as a plain sibling of its trigger (see index.tsx), so it fades
-// via a sibling selector rather than a nested one. :hover/:focus-within on
-// the bubble itself (not just the trigger) keeps it open once the pointer
+// via a sibling selector rather than a nested one. :hover/:has(:focus-visible)
+// on the bubble itself (not just the trigger) keeps it open once the pointer
 // crosses into it, or once Tab moves focus onto the dismiss button inside.
+//
+// :focus-visible, not :focus — dismiss (index.tsx) returns real DOM focus to
+// the trigger so keyboard users don't lose their place, but that leaves the
+// trigger sitting in a plain :focus state indefinitely afterwards (nothing
+// ever blurs it). :focus alone would keep these rules matching forever once
+// that's happened, even for a since-unrelated, purely mouse-driven visit —
+// e.g. dismiss via mouse, then later hover long enough to force a reshow (see
+// the tooltip--cleared rule below), then move the pointer away: hover stops
+// matching, but the stale :focus from the earlier dismiss still would, so the
+// bubble would stay stuck open. :focus-visible reflects the browser's own
+// input-modality heuristic instead of raw DOM focus state — false for a
+// focus() call made from a mouse click handler (exactly dismiss's case),
+// true for real Tab navigation — so it tracks "should this actually still
+// read as open" rather than "is .focus() ever been called on this element".
 .tooltip-trigger:hover + .tooltip:not(.tooltip--cleared),
-.tooltip-trigger:focus + .tooltip:not(.tooltip--cleared),
+.tooltip-trigger:focus-visible + .tooltip:not(.tooltip--cleared),
 .tooltip:hover:not(.tooltip--cleared),
-.tooltip:focus-within:not(.tooltip--cleared) {
+.tooltip:has(:focus-visible):not(.tooltip--cleared) {
   opacity: 1;
   visibility: visible;
 }
@@ -78,15 +92,15 @@ $tooltip-long-hover-delay: 1s;
 // A cleared tooltip only reveals after a sustained ~1s hover/focus, via
 // transition-delay — no JS timer involved. A hover shorter than the delay
 // never starts the opacity/visibility transition at all (the value simply
-// reverts to its start point when :hover/:focus-within stop matching), so
-// nothing shows and nothing needs cancelling. Leaving always falls back to
+// reverts to its start point when :hover/:has(:focus-visible) stop matching),
+// so nothing shows and nothing needs cancelling. Leaving always falls back to
 // the base (unmatched) rule above, which has no delay, so hiding is always
 // instant — matching "temporary reshow only": the cleared flag itself is
 // never touched by hovering, only by the dismiss button.
 .tooltip-trigger:hover + .tooltip.tooltip--cleared,
-.tooltip-trigger:focus + .tooltip.tooltip--cleared,
+.tooltip-trigger:focus-visible + .tooltip.tooltip--cleared,
 .tooltip.tooltip--cleared:hover,
-.tooltip.tooltip--cleared:focus-within {
+.tooltip.tooltip--cleared:has(:focus-visible) {
   transition-delay: $tooltip-long-hover-delay;
   opacity: 1;
   visibility: visible;

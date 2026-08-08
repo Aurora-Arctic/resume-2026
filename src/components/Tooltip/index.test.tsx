@@ -71,7 +71,7 @@ describe('Tooltip', () => {
 
     const stored: unknown = JSON.parse(window.localStorage.getItem(TOOLTIP_STORAGE_KEY) ?? '[]');
     expect(stored).toEqual(['dismiss-tooltip']);
-    expect(screen.getByRole('tooltip')).toHaveClass('tooltip--cleared');
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveClass('tooltip--cleared');
   });
 
   it('dismissing a second, unrelated tooltip adds to the list rather than replacing it', () => {
@@ -157,7 +157,7 @@ describe('Tooltip', () => {
     // The refocus-to-trigger side effect of dismiss fires the trigger's own
     // onFocus synchronously; this only stays hidden if that doesn't
     // immediately undo the force-hide (see suppressNextTriggerFocusRef).
-    expect(screen.getByRole('tooltip')).toHaveStyle({
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveStyle({
       opacity: 0,
       visibility: 'hidden',
       transition: 'none',
@@ -182,7 +182,7 @@ describe('Tooltip', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss tooltip' }));
 
-    expect(screen.getByRole('tooltip')).toHaveStyle({ transition: 'none' });
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveStyle({ transition: 'none' });
   });
 
   it('clears the force-hide once the trigger is hovered again', () => {
@@ -194,11 +194,14 @@ describe('Tooltip', () => {
     const trigger = screen.getByRole('button', { name: 'Trigger' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss tooltip' }));
-    expect(screen.getByRole('tooltip')).toHaveStyle({ opacity: 0, visibility: 'hidden' });
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveStyle({
+      opacity: 0,
+      visibility: 'hidden',
+    });
 
     fireEvent.mouseEnter(trigger);
 
-    expect(screen.getByRole('tooltip')).not.toHaveAttribute('style');
+    expect(screen.getByRole('tooltip')).toHaveAttribute('style', '');
   });
 
   it('clears the force-hide once the trigger is genuinely refocused (not the dismiss-triggered one)', () => {
@@ -210,12 +213,15 @@ describe('Tooltip', () => {
     const trigger = screen.getByRole('button', { name: 'Trigger' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss tooltip' }));
-    expect(screen.getByRole('tooltip')).toHaveStyle({ opacity: 0, visibility: 'hidden' });
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveStyle({
+      opacity: 0,
+      visibility: 'hidden',
+    });
 
     fireEvent.blur(trigger);
     fireEvent.focus(trigger);
 
-    expect(screen.getByRole('tooltip')).not.toHaveAttribute('style');
+    expect(screen.getByRole('tooltip')).toHaveAttribute('style', '');
   });
 
   it('clears the force-hide when the restore event fires', () => {
@@ -226,10 +232,13 @@ describe('Tooltip', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss tooltip' }));
-    expect(screen.getByRole('tooltip')).toHaveStyle({ opacity: 0, visibility: 'hidden' });
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveStyle({
+      opacity: 0,
+      visibility: 'hidden',
+    });
 
     fireEvent(window, new Event(TOOLTIP_RESTORE_EVENT));
 
-    expect(screen.getByRole('tooltip')).not.toHaveAttribute('style');
+    expect(screen.getByRole('tooltip')).toHaveAttribute('style', '');
   });
 });
