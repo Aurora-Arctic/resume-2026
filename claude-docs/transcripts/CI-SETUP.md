@@ -675,3 +675,54 @@ previously assumed a single one:
 No `gitflow.yml` changes were needed — the check itself already allowed
 `hotfix/*` into both `main` and `staging` individually; this was purely a
 `create-pr` skill-level change to stop making the user choose one.
+
+## Fix: `gitflow` never running on the merge queue permanently stalled queued merges
+
+The original "Adding Gitflow branch-source enforcement" section above
+deliberately left `gitflow` out of `merge-queue.yml`, reasoning that
+`merge_group` events only expose a synthetic head ref, so there's nothing
+real to validate there — and that the `edited` PR trigger already prevents
+the one case (post-approval retargeting) where a stale gitflow result could
+otherwise reach the queue. That reasoning was sound in isolation, but it
+predated the ruleset follow-up two sections later ("Manual follow-up left
+for the user"), which added `gitflow / gitflow` as a **required status
+check** to the same "Main"/"Staging" rulesets that also gate the merge
+queue. Once that landed, the two decisions contradicted each other: a
+required check that `merge-queue.yml` never runs at all never posts a
+status for `merge_group` runs, and GitHub leaves a required check that
+never reports stuck pending forever — any PR reaching the merge queue would
+sit blocked indefinitely, unable to merge.
+
+The user caught this by observing the ruleset directly (a single ruleset's
+required-checks list applies to both plain PR merges and merge-queue merges
+— there's no separate list for each).
+
+**Fix**: rather than skip calling `gitflow.yml` from `merge-queue.yml`
+entirely, it's now called there too, but with a new `should-run: false`
+input that no-ops the actual validation while still completing the job
+under its normal name — the same pattern already used for `lint`/
+`typecheck`/`vitest`/`build`/`playwright`'s path-filtered skips in
+`pr-gate.yml` (see "Follow-up: DRY out the repeated step logic" and
+`pr-gate.yml`'s own comment on why a job-level `if:` doesn't work for a
+required check: it renames the check run instead of just skipping its
+work, which never satisfies the original required-check name either).
+
+- `gitflow.yml` gained the `should-run` boolean input (default `true`),
+  guarding every step (`Checkout`, `Start timer`, `Validate source ->
+target branch`, `Compute duration`, `Write job summary`, `Comment on PR`)
+  with `if: inputs.should-run` (or `if: always() && inputs.should-run` for
+  the `always()` steps) — mirroring `lint.yml`'s existing `should-run`
+  guard style exactly.
+- `merge-queue.yml` gained a `gitflow` job calling `gitflow.yml` with
+  `should-run: false` — no `pr-number`/`merge-queue` inputs passed, since
+  every step that would use them is already skipped.
+- `pr-gate.yml`'s `gitflow` job comment ("Not called from merge-queue.yml")
+  and `gitflow.yml`'s own header comment were updated to describe the
+  no-op call instead of an absent one.
+- `claude-docs/CI-SETUP.md` and `CLAUDE.md`'s CI section updated to match.
+
+The `edited`-trigger reasoning from the original section still holds for
+_why the validation itself_ doesn't need to re-run in the queue — that
+part wasn't wrong. The bug was narrower: a required check still has to
+exist and report success even when there's deliberately nothing for it to
+check.
