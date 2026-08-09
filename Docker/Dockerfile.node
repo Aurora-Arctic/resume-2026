@@ -4,15 +4,22 @@ WORKDIR /app
 
 RUN chown node:node /app
 
-# /gatsby-cache (outside /app, so the bind mount never shadows it) backs the
-# `.cache` symlink that Docker/link-cache.js maintains — see docker-compose.yaml
-# and CLAUDE.md's Docker section for why `.cache` itself can't be the volume
-# mount point. Pre-created and chowned here for the same reason as node_modules
-# above: a freshly-created named volume is populated from the image's existing
-# content at that path on first mount, ownership included, so without this the
-# mount point defaults to root ownership and Gatsby (running as node) hits
-# EACCES writing into it.
-RUN mkdir -p /gatsby-cache && chown node:node /gatsby-cache
+# `.cache` itself is the volume mount point (see docker-compose.yaml and
+# CLAUDE.md's Docker section) — `Docker/clean.js` replaces `gatsby clean`'s
+# own rmdir-based cleanup when running in Docker, so a real mount point at
+# `.cache` no longer breaks `npm run clean` the way it used to (Linux refuses
+# to `rmdir` a mount point). Pre-created and chowned here for the same reason
+# as node_modules above: a freshly-created named volume is populated from the
+# image's existing content at that path on first mount, ownership included,
+# so without this the mount point defaults to root ownership and Gatsby
+# (running as node) hits EACCES writing into it.
+RUN mkdir -p /app/.cache && chown node:node /app/.cache
+
+# /gatsby-public (outside /app, same reasoning as /app/.cache above) backs
+# the `public` symlink Docker/link-public.js maintains — see
+# docker-compose.yaml and CLAUDE.md's Docker section for why `public` can't
+# be the volume mount point directly.
+RUN mkdir -p /gatsby-public && chown node:node /gatsby-public
 
 COPY --chown=node:node ./package.json ./package-lock.json /app/
 
