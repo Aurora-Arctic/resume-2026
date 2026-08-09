@@ -43,7 +43,7 @@ A personal resume site (`resume-2026`) built with Gatsby 5, React 18, and TypeSc
 
 - `makefile` wraps Docker Compose (`make docker-build|up|down|rebuild|logs`, targeting `Docker/docker-compose.yaml`) and mirrors the npm scripts one-to-one (`make npm-install|develop|build`, etc.).
 - Two Compose services build from `Docker/Dockerfile.node` (multi-stage): `development` (dev server) and `devcontainer` (VS Code Dev Containers). A `testing` stage in between bakes in headless-Playwright/Chromium deps for CI and local e2e.
-- Both services bind-mount the repo root to `/app` and use named volumes for `node_modules` and Gatsby's LMDB cache, to work around native-dep and file-locking issues on the bind mount — see [claude-docs/DOCKER-SETUP.md](claude-docs/DOCKER-SETUP.md) for what's mounted where and why, including the `EACCES`/stale-volume recovery steps.
+- Both services bind-mount the repo root to `/app` and use named volumes for `node_modules`, Gatsby's LMDB cache, and Gatsby's `public` output directory, to work around native-dep, file-locking, and shared-output issues on the bind mount — see [claude-docs/DOCKER-SETUP.md](claude-docs/DOCKER-SETUP.md) for what's mounted where and why, including the `EACCES`/stale-volume recovery steps.
 
 ## Continuous Integration
 
