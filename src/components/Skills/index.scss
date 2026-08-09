@@ -31,31 +31,13 @@
 
   dd {
     margin: 0.125rem 0;
-
-    ul {
-      margin: 0;
-      padding-left: 1.25rem;
-      list-style: none;
-    }
-
-    li {
-      position: relative;
-      margin: 0.25rem 0;
-
-      &::before {
-        content: '◆';
-        position: absolute;
-        left: -1.25rem;
-        top: -0.125rem;
-        color: $wine;
-      }
-    }
   }
 
   // Compound class (not just `&__skill--expandable` alone) so this beats
-  // `dd li::before` above on specificity — that base rule's `dd li::before`
-  // chain (1 class + 3 elements) otherwise outranks a single-class override,
-  // silently losing the `content: none` suppression below.
+  // `.bullet-list li::before` (see src/scss/_lists.scss) on specificity —
+  // that base rule's `li::before` chain (1 class + 2 elements) otherwise
+  // outranks a single-class override, silently losing the `content: none`
+  // suppression below.
   &__skill.resume-skills__skill--expandable {
     // The arrow lives on the toggle button itself (see &__skill-toggle),
     // not the li — it needs to sit inside the button's own box so clicking
@@ -125,20 +107,27 @@
       }
     }
   }
-
-  &__sub-list {
-    margin: 0.25rem 0 0;
-    padding-left: 1.25rem;
-    list-style: none;
-
-    li {
-      margin: 0.125rem 0;
-    }
-  }
 }
 
-html[data-theme='light'] .resume-skills dd li::before {
-  color: $grape-press;
+// Compound with `.bullet-list` (both classes live on the same <ul>, see
+// index.tsx) rather than `.resume-skills__sub-list` alone — matches this
+// file's existing specificity-safety convention (see the compound-class
+// comment above) even though nothing currently fights over these specific
+// properties, so a future addition here doesn't have to relearn the lesson.
+.bullet-list.resume-skills__sub-list {
+  margin: 0.25rem 0 0;
+
+  li {
+    margin: 0.125rem 0;
+  }
+
+  // Explicit, rather than inheriting this li's own (slightly smaller)
+  // font-size, so the sub-item diamond reads at the same size as the
+  // top-level diamonds above it, not scaled down with the text.
+  li::before {
+    font-size: 1rem;
+    transition: color $theme-transition-duration $theme-transition-easing;
+  }
 }
 
 html[data-theme='light'] .resume-skills__skill-toggle:hover,
@@ -153,26 +142,12 @@ html[data-theme='light'] .resume-skills__skill-toggle::before {
   color: $wine-drenched;
 }
 
-// Fully-qualified (3 classes) rather than nested under &__sub-list alone —
-// needs to outrank both `.resume-skills dd li::before` above (1 class + 3
-// elements) and the light-theme override right above this comment (2
-// classes + 4 elements); a single-class selector loses both fights on
-// element count even though it's more specific-looking by BEM convention.
-// One rule for both themes, deliberately not theme-split like the diamond
-// bullet — same $wine-drenched/$wine-stained pair either way.
-.resume-skills .resume-skills__group .resume-skills__sub-list li::before {
-  // Explicit, rather than inheriting this li's own (slightly smaller)
-  // font-size, so the sub-item diamond reads at the same size as the
-  // top-level diamonds above it, not scaled down with the text.
-  font-size: 1rem;
-  transition: color $theme-transition-duration $theme-transition-easing;
-}
-
 // Placement is per-instance, not part of the shared .tooltip look (see
 // Tooltip/index.scss). Mobile-first, like every other breakpoint in this
 // file: base styles sit the tooltip above the item, left-aligned with the
 // li's own left edge (the trigger's own li is the positioned ancestor,
-// already position: relative, see `dd li` above) with a downward arrow —
+// already position: relative via `.bullet-list li`, see
+// src/scss/_lists.scss) with a downward arrow —
 // there isn't reliably enough room beside a skill item on a narrow
 // viewport for a side placement. At desktop width it moves beside the
 // item instead: to its left, vertically centered on its text line, arrow
