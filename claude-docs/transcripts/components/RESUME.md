@@ -16,9 +16,29 @@ Content is driven by one central typed data file, `src/data/resume.ts`, rather t
 
 Explicit requirement: keep the print layout a single simple column (standard ATS advice — no tables/text-boxes/multi-column for the parseable form), but leave room for a richer multi-column/sidebar layout on the web view later. `Resume/index.scss` is deliberately minimal right now — `display: flex; flex-direction: column` — so a later task can turn it into a `grid` (e.g. a sidebar for Header/Skills/Education, main column for Summary/Experience/Projects) at a wider breakpoint without reshuffling which components render where. This also keeps print single-column for free: there's no grid/columns in the base styles to override inside `@media print`.
 
+## Reaffirmed: print is always single-column, web is not (2026-08-09)
+
+Restated as a standing design rule rather than a one-time requirement: print output must always display sections top to bottom in a single column — no exceptions, regardless of what the web layout does. The web layout is explicitly allowed to use multiple columns. Today this holds "for free" because `Resume/index.scss` has no grid/columns to override. That will stop being automatic once the future sidebar/multi-column web layout (see above) is built — at that point the web grid must be paired with an explicit `@media print` rule that collapses it back to a single column, rather than assuming the base styles still print correctly unmodified. Noted in `index.scss` as a comment so this isn't lost when that work happens.
+
 ## Current state
 
 - `index.tsx`: takes `data: ResumeData`, renders `<Header>`, `<Summary>`, `<Skills>`, `<Experience>`, `<Projects>`, `<Education>` in that order inside a `<div className="resume">`.
 - `index.scss`: single-column flex stack, with a comment explaining the future-grid intent.
 - `index.test.tsx`: renders with full sample data, asserts every section's heading is present.
 - Rendered from `src/pages/index.tsx` as `<Resume data={resumeData} />` inside `Layout`, replacing the old placeholder `<h1>Resume 2026</h1>`/`<p>` copy.
+
+## The future grid landed: Header/Summary two-column layout (2026-08-09)
+
+The sidebar-style web layout anticipated in the "Layout-flexibility decision" section above was built: `Header` becomes a narrow 1/3-width column on the right, `Summary` a wider 2/3-width column on the left, at a new `$breakpoint-desktop` (`src/scss/_variables.scss`, 1024px). Below that breakpoint both stay full-width, stacked in DOM order exactly as before.
+
+Explicit requirement from the user: the visual position of `Header` and `Summary` swaps (Header right, Summary left) but the DOM/content order must NOT change — Header still renders before Summary. This ruled out reordering the JSX in `index.tsx`. Considered `order` (flexbox/grid) vs. explicit `grid-column`/`grid-row` placement — settled on explicit grid placement, not because it differs meaningfully from `order` for accessibility (neither changes DOM/accessibility-tree order; both are purely painting-order changes), but because avoiding `order` sidesteps a known class of browser/AT bugs where focus order gets (incorrectly) derived from visual `order` in flex layouts. `Summary` has no focusable elements, so this was ultimately not a live risk here — noted for the record rather than treated as the deciding factor.
+
+`.resume` stays `display: flex; flex-direction: column` as the mobile-first base. At `$breakpoint-desktop` it switches to `display: grid; grid-template-columns: 2fr 1fr` with a `column-gap`; `.resume-summary` is placed at `grid-column: 1`, `.resume-header` at `grid-column: 2` (both `grid-row: 1`), and `.resume-skills`/`.resume-experience`/`.resume-projects`/`.resume-education` all get `grid-column: 1 / -1` to stay full-width below the two-column row. This is the first width-based (`min-width`) media query in the whole project — every other `@media` rule anywhere in `src/` was `print` or `prefers-reduced-motion` before this.
+
+**Breakpoint value came from measuring the actual container, not a guess.** `.paper-card` (`Layout/index.scss`) caps at `width: min(100%, 960px)` with `4rem` padding, itself inside `.paper-chrome`'s `4rem 2rem` padding. At a narrower candidate like 768px, the card's available content width is only ~576px, which would leave the 1fr (1/3) header column at ~180px — too tight for a right-aligned name/title/contact block even with a shrunk `h1`. 1024px puts the card at its full 960px cap (~832px content width after padding), giving the header column ~267px, which is workable. Chosen as a reasoned starting point rather than a guaranteed-forever value.
+
+**Print was never automatically safe once a real grid landed.** The "for free" single-column print behavior described above only held because there was no grid to override. `index.scss` now has an explicit `@media print { .resume { display: flex; flex-direction: column; } }` block. Resetting `grid-column`/`grid-row` back to `auto` on the six child section classes inside that block turned out to be unnecessary and was left out — those properties have no effect once the parent (`.resume`) stops being a grid in print.
+
+**Also fixed as a prerequisite: the site had no `<meta name="viewport">` tag at all** (checked `gatsby-ssr.ts`'s `onRenderBody` and confirmed no `html.tsx` exists to set one elsewhere). Without it, mobile browsers report a virtual ~980px layout viewport to CSS regardless of physical screen size, so the new `min-width: $breakpoint-desktop` query — and any future one — would have matched on essentially all phones, silently breaking "full width on mobile." Added `<meta name="viewport" content="width=device-width, initial-scale=1" />` to `onRenderBody`'s `setHeadComponents` alongside the existing theme-init script.
+
+See [HEADER.md](HEADER.md) for the `Header`-internal changes (contact-list split, right-align, `h1` sizing) that shipped alongside this.

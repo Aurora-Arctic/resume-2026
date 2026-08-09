@@ -39,3 +39,10 @@ $print-text: $silver-oxide;
 // compiled stylesheet.
 $font-body: 'Lexend', Arial, Helvetica, sans-serif;
 $font-heading: 'Syne', Arial, Helvetica, sans-serif;
+
+// First width-based breakpoint in the project — everywhere else uses
+// `print`/`prefers-reduced-motion`. Matches where `.paper-card` (see
+// Layout/index.scss) reaches its own 960px width cap, so the resume's
+// two-column layout only kicks in once there's actually enough room for a
+// narrow 1/3-width column to be legible.
+$breakpoint-desktop: 1024px;

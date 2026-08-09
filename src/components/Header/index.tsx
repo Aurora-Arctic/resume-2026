@@ -72,15 +72,26 @@ const Header = ({ data }: HeaderProps): ReactElement => {
   return (
     <header className="resume-header">
       <h1>{data.name}</h1>
-      <p className="resume-header__title">{data.title}</p>
-      <ul className="resume-header__contact">
-        {contact.location && <li>{contact.location}</li>}
-        {contact.email && (
-          <li>
-            <a href={`mailto:${contact.email}`}>{contact.email}</a>
-          </li>
-        )}
-        {contact.phone && <li>{contact.phone}</li>}
+      <p className="resume-header__title">
+        {data.title.split(' | ').map((line, index, lines) => (
+          <React.Fragment key={line}>
+            {line}
+            {index < lines.length - 1 && <br />}
+          </React.Fragment>
+        ))}
+      </p>
+      {(contact.email || contact.phone) && (
+        <ul className="resume-header__contact" aria-label="Contact details">
+          {contact.email && (
+            <li>
+              <a href={`mailto:${contact.email}`}>{contact.email}</a>
+            </li>
+          )}
+          {contact.phone && <li>{contact.phone}</li>}
+        </ul>
+      )}
+      {contact.location && <p className="resume-header__location">{contact.location}</p>}
+      <ul className="resume-header__links" aria-label="Links">
         {data.links.map((link) => {
           const resolved = resolveLink(link, decryptKey);
           return (

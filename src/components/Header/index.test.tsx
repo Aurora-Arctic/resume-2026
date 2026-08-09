@@ -38,6 +38,8 @@ describe('Header', () => {
       'rel',
       'noreferrer',
     );
+    expect(screen.getByRole('list', { name: 'Links' })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Contact details' })).not.toBeInTheDocument();
   });
 
   it('keeps location/email/phone hidden when no ?k= key is present', async () => {
@@ -79,6 +81,7 @@ describe('Header', () => {
       'mailto:jane@example.com',
     );
     expect(screen.getByText('555-0100')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Contact details' })).toBeInTheDocument();
   });
 
   it('keeps location/email/phone hidden when the ?k= key is wrong', async () => {

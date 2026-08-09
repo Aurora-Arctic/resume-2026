@@ -45,6 +45,11 @@ export const onRenderBody: GatsbySSR['onRenderBody'] = ({
   setHtmlAttributes({ lang: 'en' });
 
   setHeadComponents([
+    React.createElement('meta', {
+      key: 'viewport',
+      name: 'viewport',
+      content: 'width=device-width, initial-scale=1',
+    }),
     // Fonts are self-hosted via @fontsource (see gatsby-browser.ts) — no
     // Google Fonts <link>s needed here anymore.
     React.createElement('script', {

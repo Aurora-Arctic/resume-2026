@@ -1,8 +1,47 @@
-// Single column now — a future sidebar/multi-column web layout can turn
-// this into a grid at a wider breakpoint without moving the section
-// components themselves. Plain block stacking also keeps print
-// single-column for free, since there's no grid/columns here to override.
+@use '../../scss/variables' as *;
+
+// Mobile-first: single column, section components in DOM order. At
+// $breakpoint-desktop this becomes a two-column grid — Header (1/3, right)
+// and Summary (2/3, left) share the first row via explicit grid-column
+// placement (not `order`), so the DOM/reading order stays Header before
+// Summary even though the visual position swaps. Everything else stays
+// full-width below.
+// Rule: print must ALWAYS stay a single top-to-bottom column, regardless of
+// web layout — see the `@media print` override below.
 .resume {
   display: flex;
   flex-direction: column;
+
+  @media (min-width: $breakpoint-desktop) {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    column-gap: 4rem;
+  }
+}
+
+@media (min-width: $breakpoint-desktop) {
+  .resume-summary {
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: 3rem;
+  }
+
+  .resume-header {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .resume-skills,
+  .resume-experience,
+  .resume-projects,
+  .resume-education {
+    grid-column: 1 / -1;
+  }
+}
+
+@media print {
+  .resume {
+    display: flex;
+    flex-direction: column;
+  }
 }
