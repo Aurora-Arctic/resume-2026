@@ -18,7 +18,6 @@ test('location/email/phone stay hidden without a ?k= key', async ({ page }) => {
   await page.goto('/');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Marwynn Joynes' })).toBeVisible();
-  await expect(page.locator('.resume-header__location')).toHaveCount(0);
   await expect(page.locator('.resume-header__contact li')).toHaveCount(0);
   await expect(page.locator('.resume-header__links li')).toHaveCount(3);
   await expect(page.locator('.resume-header__contact a[href^="mailto:"]')).toHaveCount(0);
@@ -28,7 +27,6 @@ test('a wrong ?k= key leaves location/email/phone hidden', async ({ page }) => {
   await page.goto('/?k=wrong-key');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Marwynn Joynes' })).toBeVisible();
-  await expect(page.locator('.resume-header__location')).toHaveCount(0);
   await expect(page.locator('.resume-header__contact li')).toHaveCount(0);
   await expect(page.locator('.resume-header__links li')).toHaveCount(3);
   await expect(page.locator('.resume-header__contact a[href^="mailto:"]')).toHaveCount(0);
@@ -44,11 +42,10 @@ test('a wrong ?k= key leaves location/email/phone hidden', async ({ page }) => {
   async ({ page }) => {
     await page.goto(`/?k=${REAL_KEY}`);
 
-    // Real PII, so assert shape rather than exact values: location renders
-    // separately, email+phone in &__contact, and the three static `links`
-    // entries in &__links.
-    await expect(page.locator('.resume-header__location')).toBeVisible();
-    await expect(page.locator('.resume-header__contact li')).toHaveCount(2);
+    // Real PII, so assert shape rather than exact values: email, phone, and
+    // location together in &__contact, and the three static `links` entries
+    // in &__links.
+    await expect(page.locator('.resume-header__contact li')).toHaveCount(3);
     await expect(page.locator('.resume-header__links li')).toHaveCount(3);
     await expect(page.locator('.resume-header__contact a[href^="mailto:"]')).toBeVisible();
   },

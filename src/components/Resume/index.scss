@@ -14,7 +14,7 @@
 
   @media (min-width: $breakpoint-desktop) {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 5fr 3fr;
     column-gap: 4rem;
   }
 }
@@ -23,7 +23,7 @@
   .resume-summary {
     grid-column: 1;
     grid-row: 1;
-    margin-top: 3rem;
+    margin-top: 0;
   }
 
   .resume-header {

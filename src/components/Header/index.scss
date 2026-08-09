@@ -13,14 +13,11 @@
       // that point even though the column itself doesn't get any wider.
       font-size: 1.75rem;
     }
+    margin-bottom: 1.25rem;
   }
 
   &__title {
-    margin: 0.25rem 0 1rem;
-  }
-
-  &__location {
-    margin: 0 0 0.5rem;
+    margin: 0.75rem 0;
   }
 
   // Email then phone, each its own line — unlike &__links, these don't wrap
@@ -30,8 +27,16 @@
     flex-direction: column;
     gap: 0.25rem;
     list-style: none;
-    margin: 0 0 0.5rem;
+    margin: 0.75rem 0;
     padding: 0;
+
+    &__item {
+      margin: 0.035rem 0;
+
+      &--phone {
+        margin-top: 0.125rem;
+      }
+    }
   }
 
   &__links {
@@ -39,7 +44,7 @@
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
     list-style: none;
-    margin: 0;
+    margin: 0.75rem 0 0;
     padding: 0;
 
     @media (min-width: $breakpoint-desktop) {

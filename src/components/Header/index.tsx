@@ -83,14 +83,19 @@ const Header = ({ data }: HeaderProps): ReactElement => {
       {(contact.email || contact.phone) && (
         <ul className="resume-header__contact" aria-label="Contact details">
           {contact.email && (
-            <li>
+            <li className="resume-header__contact__item">
               <a href={`mailto:${contact.email}`}>{contact.email}</a>
             </li>
           )}
-          {contact.phone && <li>{contact.phone}</li>}
+          {contact.phone && (
+            <li className="resume-header__contact__item resume-header__contact__item--phone">
+              {contact.phone}
+            </li>
+          )}
+          {contact.location && <li className="resume-header__contact__item">{contact.location}</li>}
         </ul>
       )}
-      {contact.location && <p className="resume-header__location">{contact.location}</p>}
+
       <ul className="resume-header__links" aria-label="Links">
         {data.links.map((link) => {
           const resolved = resolveLink(link, decryptKey);
