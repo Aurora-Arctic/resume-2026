@@ -29,7 +29,7 @@ Start a new Gitflow hotfix branch off the latest `main`, asking what to call it 
    - `git checkout -b hotfix/<slug> origin/main` — branches off the fetched remote ref directly, not a possibly-stale local `main`.
 
 7. **Report the result.**
-   - Confirm the new branch name and that it's based on current `origin/main`. Note it can later target `main`, `staging`, or an existing `release/*` branch — `/create-pr` will ask which one, since all three are Gitflow-valid for a hotfix.
+   - Confirm the new branch name and that it's based on current `origin/main`. Note that `/create-pr` will always open PRs into both `main` and `staging` for it, and — if a `release/*` branch is in flight — will ask whether to also back-port the fix into it as a third PR.
 
 ## Notes
 
