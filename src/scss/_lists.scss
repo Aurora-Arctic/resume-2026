@@ -1,0 +1,27 @@
+@use './variables' as *;
+
+// Opt-in (a class, not a bare `li`/`ul` selector) — some lists in the app
+// (Header's contact/links rows) are deliberately markerless flex rows and
+// must never pick this up implicitly.
+.bullet-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style: none;
+
+  li {
+    position: relative;
+    margin: 0.25rem 0;
+
+    &::before {
+      content: '◆';
+      position: absolute;
+      left: -1.25rem;
+      top: -0.125rem;
+      color: $wine;
+    }
+  }
+}
+
+html[data-theme='light'] .bullet-list li::before {
+  color: $grape-press;
+}

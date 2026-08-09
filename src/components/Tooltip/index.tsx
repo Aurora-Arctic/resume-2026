@@ -16,6 +16,10 @@ export const TOOLTIP_STORAGE_KEY = 'tooltip-cleared';
 // Broadcast by RestoreTooltips so any currently-mounted tooltip updates its
 // already-loaded React state immediately, without needing a page reload.
 export const TOOLTIP_RESTORE_EVENT = 'tooltips:restore';
+// Broadcast by dismissTooltips so a group of related, already-mounted
+// tooltips (e.g. every tooltip in one resume section) can be dismissed
+// together from a single ×, without each needing its own click.
+export const TOOLTIP_DISMISS_EVENT = 'tooltips:dismiss';
 
 const readClearedIds = (): string[] => {
   const raw = window.localStorage.getItem(TOOLTIP_STORAGE_KEY);
@@ -24,6 +28,21 @@ const readClearedIds = (): string[] => {
   return Array.isArray(parsed)
     ? parsed.filter((entry): entry is string => typeof entry === 'string')
     : [];
+};
+
+// Persists every id in `ids` as dismissed (merged with whatever's already
+// cleared) and broadcasts them in one event, rather than a `group` prop on
+// Tooltip itself — the caller already knows exactly which ids it owns, so no
+// extra abstraction is needed on the component.
+export const dismissTooltips = (ids: string[]): void => {
+  try {
+    const clearedIds = readClearedIds();
+    const merged = [...new Set([...clearedIds, ...ids])];
+    window.localStorage.setItem(TOOLTIP_STORAGE_KEY, JSON.stringify(merged));
+  } catch {
+    // localStorage unavailable — dismissal only lasts this page view
+  }
+  window.dispatchEvent(new CustomEvent(TOOLTIP_DISMISS_EVENT, { detail: { ids } }));
 };
 
 // Merges our own handler onto whatever the trigger already has, rather than
@@ -46,9 +65,13 @@ interface TooltipProps {
   // per-instance placement CSS onto the tooltip bubble.
   className?: string;
   children: ReactElement<React.HTMLAttributes<HTMLElement>>;
+  // Fires after this instance's own dismiss persists/hides — lets a caller
+  // (e.g. Skills) fan a single dismissal out to a whole group of related
+  // tooltips via dismissTooltips, without Tooltip itself knowing about them.
+  onDismiss?: () => void;
 }
 
-const Tooltip = ({ id, content, className, children }: TooltipProps): ReactElement => {
+const Tooltip = ({ id, content, className, children, onDismiss }: TooltipProps): ReactElement => {
   const [cleared, setCleared] = useState(false);
   // CSS alone can't hide the bubble the instant × is clicked while it's
   // still being hovered/focused — the cleared+hover/focus rule (index.scss)
@@ -92,6 +115,18 @@ const Tooltip = ({ id, content, className, children }: TooltipProps): ReactEleme
     return () => window.removeEventListener(TOOLTIP_RESTORE_EVENT, handleRestore);
   }, []);
 
+  useEffect(() => {
+    const handleDismissEvent = (event: Event): void => {
+      const ids = (event as CustomEvent<{ ids: string[] }>).detail?.ids ?? [];
+      if (ids.includes(id)) {
+        setCleared(true);
+        setForceHidden(true);
+      }
+    };
+    window.addEventListener(TOOLTIP_DISMISS_EVENT, handleDismissEvent);
+    return () => window.removeEventListener(TOOLTIP_DISMISS_EVENT, handleDismissEvent);
+  }, [id]);
+
   const handleDismiss = (event: React.MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
     setCleared(true);
@@ -114,6 +149,7 @@ const Tooltip = ({ id, content, className, children }: TooltipProps): ReactEleme
       suppressNextTriggerFocusRef.current = true;
       triggerEl.focus();
     }
+    onDismiss?.();
   };
 
   // A fresh hover/focus on the trigger is what "trying again" looks like —

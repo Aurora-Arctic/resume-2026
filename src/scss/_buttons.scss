@@ -5,16 +5,17 @@
 // every other color transition in the app, background-color included).
 $button-push-scale: 0.98;
 
-// .tooltip__dismiss (Tooltip/index.scss) is the one button in the app that
-// stays exempt from everything below — see TOOLTIP.md. :not(:where(...))
-// keeps this exclusion at zero added specificity (:not()'s specificity
-// normally equals its argument's, but :where()'s own specificity is always
-// zero), so every rule below stays exactly as specific as a bare
-// button/button::before selector — no more. A plain :not(.tooltip__dismiss)
-// (no :where) would add its own specificity point and incorrectly outrank
-// single-class overrides like .theme-toggle's own position: absolute, or
-// stomp .tooltip__dismiss's load-bearing translateY(-50%) centering with the
-// :active push transform below.
+// .tooltip__dismiss (Tooltip/index.scss) and .resume-skills__skill-toggle
+// (Skills/index.scss — reads as plain expandable label text, not a keycap)
+// are the buttons in the app that stay exempt from everything below — see
+// TOOLTIP.md/SKILLS.md. :not(:where(...)) keeps this exclusion at zero added
+// specificity (:not()'s specificity normally equals its argument's, but
+// :where()'s own specificity is always zero), so every rule below stays
+// exactly as specific as a bare button/button::before selector — no more. A
+// plain :not(...) (no :where) would add its own specificity point and
+// incorrectly outrank single-class overrides like .theme-toggle's own
+// position: absolute, or stomp .tooltip__dismiss's load-bearing
+// translateY(-50%) centering with the :active push transform below.
 button {
   // The one declaration safe to also apply to the exempt dismiss button.
   cursor: pointer;
@@ -22,7 +23,7 @@ button {
   -moz-osx-font-smoothing: grayscale;
 }
 
-button:not(:where(.tooltip__dismiss)) {
+button:not(:where(.tooltip__dismiss, .resume-skills__skill-toggle)) {
   // Own stacking context so ::before's z-index: -1 below resolves locally
   // (behind this button's own content) instead of escaping to compare
   // against the nearest ancestor stacking context — same reasoning as
