@@ -4,7 +4,8 @@ import { test, expect } from './fixtures';
 // is deliberately never committed here (or anywhere in the repo) — see
 // claude-docs/CONTACT-ENCRYPTION.md. The "hidden" cases below don't need it:
 // with no key, or the wrong key, none of the three fields render at all, so
-// the contact list should only ever contain the one non-secret `links` entry.
+// the contact list should only ever contain the non-secret `links` entries
+// (LinkedIn, resume.marwynn.net, GitHub).
 //
 // To also exercise the successful-decrypt path locally, set
 // RESUME_CONTACT_KEY (e.g. in a gitignored .env you source yourself) to the
@@ -16,16 +17,16 @@ const REAL_KEY = process.env.RESUME_CONTACT_KEY;
 test('location/email/phone stay hidden without a ?k= key', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Placeholder Name' })).toBeVisible();
-  await expect(page.locator('.resume-header__contact li')).toHaveCount(1);
+  await expect(page.getByRole('heading', { level: 1, name: 'Marwynn Joynes' })).toBeVisible();
+  await expect(page.locator('.resume-header__contact li')).toHaveCount(3);
   await expect(page.locator('.resume-header__contact a[href^="mailto:"]')).toHaveCount(0);
 });
 
 test('a wrong ?k= key leaves location/email/phone hidden', async ({ page }) => {
   await page.goto('/?k=wrong-key');
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Placeholder Name' })).toBeVisible();
-  await expect(page.locator('.resume-header__contact li')).toHaveCount(1);
+  await expect(page.getByRole('heading', { level: 1, name: 'Marwynn Joynes' })).toBeVisible();
+  await expect(page.locator('.resume-header__contact li')).toHaveCount(3);
   await expect(page.locator('.resume-header__contact a[href^="mailto:"]')).toHaveCount(0);
 });
 
@@ -40,8 +41,8 @@ test('a wrong ?k= key leaves location/email/phone hidden', async ({ page }) => {
     await page.goto(`/?k=${REAL_KEY}`);
 
     // Real PII, so assert shape rather than exact values: the three decrypted
-    // fields plus the one static `links` entry.
-    await expect(page.locator('.resume-header__contact li')).toHaveCount(4);
+    // fields plus the three static `links` entries.
+    await expect(page.locator('.resume-header__contact li')).toHaveCount(6);
     await expect(page.locator('.resume-header__contact a[href^="mailto:"]')).toBeVisible();
   },
 );

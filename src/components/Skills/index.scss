@@ -4,14 +4,15 @@
   }
 
   &__group {
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.75rem;
   }
 
   dt {
-    font-weight: 400;
+    font-weight: 300;
+    margin-bottom: 0.25rem 0;
   }
 
   dd {
-    margin: 0;
+    margin: 0.125rem 0;
   }
 }

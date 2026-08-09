@@ -9,3 +9,16 @@
   to = "https://resume.marwynn.net/:splat"
   status = 302
   force = true
+
+# .env.production defaults GATSBY_SITE_URL to https://resume.marwynn.net,
+# which is correct for the production context (main) already — declared here
+# too anyway for symmetry with staging below, and so it doesn't silently rely
+# on the .env fallback if that file ever changes.
+[context.production.environment]
+  GATSBY_SITE_URL = "https://resume.marwynn.net"
+
+# Overrides .env.production's default for the staging branch specifically,
+# so Header's self-link/key-propagation (see claude-docs/CONTACT-ENCRYPTION.md)
+# points at staging's own subdomain instead of the production domain.
+[context.staging.environment]
+  GATSBY_SITE_URL = "https://staging.resume.marwynn.net"
