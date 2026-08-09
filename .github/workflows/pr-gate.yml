@@ -219,6 +219,8 @@ jobs:
       pr-number: ${{ github.event.pull_request.number }}
       # No job-level `if:` here on purpose — see playwright.yml's should-run input for why.
       should-run: ${{ needs.changes.outputs.playwright == 'true' }}
+    secrets:
+      RESUME_CONTACT_KEY: ${{ secrets.RESUME_CONTACT_KEY }}
 
   # Deliberately ungated — runs on every push regardless of what changed, and
   # doesn't need build-image since it never touches the testing container.

@@ -1,14 +1,54 @@
+@use '../../scss/variables' as *;
+
 .resume-header {
-  &__title {
-    margin: 0.25rem 0 1rem;
+  @media (min-width: $breakpoint-desktop) {
+    text-align: right;
   }
 
+  h1 {
+    @media (min-width: $breakpoint-desktop) {
+      // Fixed, not clamp() — .paper-card caps at 960px wide, so the header
+      // column's available width stops growing past $breakpoint-desktop
+      // too. A vw-based clamp would keep tracking raw viewport width past
+      // that point even though the column itself doesn't get any wider.
+      font-size: 1.75rem;
+    }
+    margin-bottom: 1.25rem;
+  }
+
+  &__title {
+    margin: 0.75rem 0;
+  }
+
+  // Email then phone, each its own line — unlike &__links, these don't wrap
+  // as a shared row, so no %resume-header-list here.
   &__contact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    list-style: none;
+    margin: 0.75rem 0;
+    padding: 0;
+
+    &__item {
+      margin: 0.035rem 0;
+
+      &--phone {
+        margin-top: 0.125rem;
+      }
+    }
+  }
+
+  &__links {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
     list-style: none;
-    margin: 0;
+    margin: 0.75rem 0 0;
     padding: 0;
+
+    @media (min-width: $breakpoint-desktop) {
+      justify-content: flex-end;
+    }
   }
 }

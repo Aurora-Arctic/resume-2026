@@ -19,7 +19,8 @@
         "vitest.config.ts",
         "playwright.config.ts",
         "e2e/**/*.ts",
-        "Docker/link-cache.js",
+        "Docker/clean.js",
+        "Docker/link-public.js",
         "scripts/**/*.ts"
       ],
       "env": {

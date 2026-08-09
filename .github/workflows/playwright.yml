@@ -31,6 +31,10 @@ on:
         required: false
         type: boolean
         default: true
+    secrets:
+      RESUME_CONTACT_KEY:
+        description: Real symmetric key that decrypts resumeData.header's contact fields; optional — the real-decrypt e2e test skips itself when unset.
+        required: false
 
 permissions:
   contents: read
@@ -70,6 +74,9 @@ jobs:
       CI: true
       # Path the json reporter writes to — read by summarize-playwright.mjs.
       PLAYWRIGHT_JSON_OUTPUT_NAME: /app/playwright-results.json
+      # Read by e2e/contact-encryption.spec.ts; the real-decrypt test skips
+      # itself (rather than failing) when this secret isn't set.
+      RESUME_CONTACT_KEY: ${{ secrets.RESUME_CONTACT_KEY }}
     steps:
       - name: Checkout into /app
         if: inputs.should-run

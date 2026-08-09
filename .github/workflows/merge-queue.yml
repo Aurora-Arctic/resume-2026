@@ -93,3 +93,5 @@ jobs:
       image: ${{ needs.build-image.outputs.image }}
       pr-number: ${{ needs.pr-number.outputs.number }}
       merge-queue: true
+    secrets:
+      RESUME_CONTACT_KEY: ${{ secrets.RESUME_CONTACT_KEY }}

@@ -57,7 +57,7 @@ export interface ResumeData {
 export const resumeData: ResumeData = {
   header: {
     name: 'Marwynn Joynes',
-    title: 'Senior Engineer | Technical Lead for Developer Experience',
+    title: 'Senior Full Stack Engineer | Technical Lead',
     // location/email/phone below are ciphertext, produced via `npm run
     // encrypt:value` — see the HeaderData field comments above. Don't leave
     // a plaintext hint next to these when swapping in real values; that
