@@ -16,9 +16,9 @@ const Resume = ({ data }: ResumeProps): ReactElement => (
   <div className="resume">
     <Header data={data.header} />
     <Summary summary={data.summary} />
-    <Skills skills={data.skills} />
     <Experience experience={data.experience} />
     <Projects projects={data.projects} />
+    <Skills skills={data.skills} />
     <Education education={data.education} />
   </div>
 );

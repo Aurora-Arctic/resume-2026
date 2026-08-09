@@ -1,18 +1,58 @@
+@use '../../scss/variables' as *;
+
 .resume-skills {
-  dl {
+  &__groups {
     margin: 0;
+
+    @media (min-width: $breakpoint-desktop) {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem 2rem;
+    }
+
+    @media print {
+      display: block;
+    }
   }
 
   &__group {
     margin: 0 0 0.75rem;
+
+    @media (min-width: $breakpoint-desktop) {
+      margin-bottom: 0;
+    }
   }
 
   dt {
-    font-weight: 300;
-    margin-bottom: 0.25rem 0;
+    font-weight: 500;
+    font-size: 1.125rem;
+    margin: 0 0 0.5rem;
   }
 
   dd {
     margin: 0.125rem 0;
+
+    ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      list-style: none;
+    }
+
+    li {
+      position: relative;
+      margin: 0.25rem 0;
+
+      &::before {
+        content: '◆';
+        position: absolute;
+        left: -1.25rem;
+        top: -0.125rem;
+        color: $wine-stained;
+      }
+    }
   }
+}
+
+html[data-theme='light'] .resume-skills dd li::before {
+  color: $wine;
 }
