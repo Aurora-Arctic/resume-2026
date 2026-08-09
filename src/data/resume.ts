@@ -15,9 +15,15 @@ export interface HeaderData {
   links: ContactLink[];
 }
 
+export interface SkillEntry {
+  label: string;
+  /** Sub-technologies rendered as an expandable list below the skill when present. */
+  subItems?: string[];
+}
+
 export interface SkillCategory {
   category: string;
-  skills: string[];
+  skills: SkillEntry[];
 }
 
 export interface ExperienceEntry {
@@ -78,49 +84,70 @@ export const resumeData: ResumeData = {
     {
       category: 'Languages',
       skills: [
-        'Python',
-        'JavaScript (ES, jQuery, TypeScript)',
-        'PHP',
-        'Ruby',
-        'SQL',
-        'HTML',
-        'CSS',
+        { label: 'Python' },
+        { label: 'JavaScript', subItems: ['Node.JS', 'TypeScript', 'jQuery'] },
+        { label: 'PHP' },
+        { label: 'Ruby' },
+        { label: 'SQL' },
+        { label: 'HTML' },
+        { label: 'CSS', subItems: ['Sass', 'Tailwind', 'Foundation', 'Bootstrap'] },
       ],
     },
     {
-      category: 'Frameworks & Libraries',
+      category: 'Frameworks & Tools',
       skills: [
-        'Django',
-        'React (Next.js, Gatsby)',
-        'Express',
-        'Apollo GraphQL',
-        'Flask',
-        'Vue (Nuxt.js)',
-        'Ruby on Rails',
-        'And more...',
+        { label: 'Django' },
+        { label: 'React', subItems: ['Next.js', 'Gatsby'] },
+        { label: 'Express' },
+        { label: 'Apollo GraphQL' },
+        { label: 'Flask' },
+        { label: 'Vue', subItems: ['Nuxt.js'] },
+        { label: 'Ruby on Rails' },
+        { label: 'Git' },
+        {
+          label: 'Design Software',
+          subItems: ['Figma', 'Adobe Illustrator/Photoshop', 'Affinity Serif'],
+        },
       ],
     },
-    { category: 'Testing', skills: ['pytest', 'jest', 'playwright', 'vitest'] },
-    { category: 'Databases', skills: ['MySQL', 'DynamoDB', 'PostgreSQL', 'SQLite'] },
+    {
+      category: 'AI Tools',
+      skills: [
+        { label: 'Claude' },
+        { label: 'Co-Pilot' },
+        { label: 'Gemini' },
+        { label: 'Cursor' },
+      ],
+    },
+    {
+      category: 'Testing',
+      skills: [
+        { label: 'Pytest' },
+        { label: 'Jest' },
+        { label: 'Playwright' },
+        { label: 'Vitest' },
+      ],
+    },
+    {
+      category: 'Databases',
+      skills: [
+        { label: 'MySQL' },
+        { label: 'DynamoDB' },
+        { label: 'PostgreSQL' },
+        { label: 'SQLite' },
+        { label: 'Tonic Data Generator' },
+      ],
+    },
     {
       category: 'Cloud & Infrastructure',
       skills: [
-        'AWS (CloudFormation, Serverless, Load Balancing)',
-        'Docker',
-        'Terraform',
-        'Linux (Apache2, Nginx, PM2, Gunicorn)',
-      ],
-    },
-    {
-      category: 'Design & Tooling',
-      skills: [
-        'CSS3/Sass',
-        'HTML',
-        'Git',
-        'Figma',
-        'Adobe Illustrator/Photoshop',
-        'Affinity Serif',
-        'Tonic Data Generator',
+        {
+          label: 'AWS',
+          subItems: ['CloudFormation', 'Serverless', 'Load Balancing'],
+        },
+        { label: 'Docker' },
+        { label: 'Terraform' },
+        { label: 'Linux', subItems: ['Apache2', 'Nginx', 'PM2', 'Gunicorn'] },
       ],
     },
   ],

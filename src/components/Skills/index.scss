@@ -47,12 +47,197 @@
         position: absolute;
         left: -1.25rem;
         top: -0.125rem;
-        color: $wine-stained;
+        color: $wine;
       }
+    }
+  }
+
+  // Compound class (not just `&__skill--expandable` alone) so this beats
+  // `dd li::before` above on specificity — that base rule's `dd li::before`
+  // chain (1 class + 3 elements) otherwise outranks a single-class override,
+  // silently losing the `content: none` suppression below.
+  &__skill.resume-skills__skill--expandable {
+    // The arrow lives on the toggle button itself (see &__skill-toggle),
+    // not the li — it needs to sit inside the button's own box so clicking
+    // it is indistinguishable from clicking the label. Suppress the shared
+    // diamond marker here to avoid rendering both in the same spot.
+    &::before {
+      content: none;
+    }
+
+    @media print {
+      // No interaction on paper — restore the plain diamond every other
+      // skill uses (position/color still come from the base rule above,
+      // only `content` was suppressed). The button's own arrow is hidden
+      // separately, see &__skill-toggle's print override.
+      &::before {
+        content: '◆';
+      }
+    }
+  }
+
+  &__skill--expanded &__skill-toggle::before {
+    --skill-arrow-rotate: 90deg;
+  }
+
+  &__skill-toggle {
+    position: relative;
+    display: inline-block;
+    // Pulls the button's own box left into the list's bullet gutter and
+    // pads it back out by the same amount, so the arrow rendered at its
+    // left edge sits exactly where the diamond bullet would — but as part
+    // of this button's hit area, not a separate, unclickable li::before.
+    margin-left: -1.25rem;
+    padding-left: 1.25rem;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: color $theme-transition-duration $theme-transition-easing;
+
+    &::before {
+      content: '▶';
+      position: absolute;
+      left: 0.125rem;
+      top: 0.3125rem;
+      font-size: 0.625em;
+      color: $wine-stained;
+      transform: rotate(var(--skill-arrow-rotate, 0deg)) scale(var(--skill-arrow-scale, 1));
+      transition:
+        transform $theme-transition-duration $theme-transition-easing,
+        color $theme-transition-duration $theme-transition-easing;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: $wine-stained;
+
+      &::before {
+        --skill-arrow-scale: 1.2;
+      }
+    }
+
+    @media print {
+      &::before {
+        content: none;
+      }
+    }
+  }
+
+  &__sub-list {
+    margin: 0.25rem 0 0;
+    padding-left: 1.25rem;
+    list-style: none;
+
+    li {
+      margin: 0.125rem 0;
     }
   }
 }
 
 html[data-theme='light'] .resume-skills dd li::before {
-  color: $wine;
+  color: $grape-press;
+}
+
+html[data-theme='light'] .resume-skills__skill-toggle:hover,
+html[data-theme='light'] .resume-skills__skill-toggle:focus-visible {
+  color: $wine-drenched;
+}
+
+// The arrow's own color (set on &__skill-toggle::before, above) is
+// independent of the button's text color — it doesn't inherit, so it needs
+// its own light-theme override too, same as the diamond bullet.
+html[data-theme='light'] .resume-skills__skill-toggle::before {
+  color: $wine-drenched;
+}
+
+// Fully-qualified (3 classes) rather than nested under &__sub-list alone —
+// needs to outrank both `.resume-skills dd li::before` above (1 class + 3
+// elements) and the light-theme override right above this comment (2
+// classes + 4 elements); a single-class selector loses both fights on
+// element count even though it's more specific-looking by BEM convention.
+// One rule for both themes, deliberately not theme-split like the diamond
+// bullet — same $wine-drenched/$wine-stained pair either way.
+.resume-skills .resume-skills__group .resume-skills__sub-list li::before {
+  // Explicit, rather than inheriting this li's own (slightly smaller)
+  // font-size, so the sub-item diamond reads at the same size as the
+  // top-level diamonds above it, not scaled down with the text.
+  font-size: 1rem;
+  transition: color $theme-transition-duration $theme-transition-easing;
+}
+
+// Placement is per-instance, not part of the shared .tooltip look (see
+// Tooltip/index.scss). Mobile-first, like every other breakpoint in this
+// file: base styles sit the tooltip above the item, left-aligned with the
+// li's own left edge (the trigger's own li is the positioned ancestor,
+// already position: relative, see `dd li` above) with a downward arrow —
+// there isn't reliably enough room beside a skill item on a narrow
+// viewport for a side placement. At desktop width it moves beside the
+// item instead: to its left, vertically centered on its text line, arrow
+// on the tooltip's right edge pointing back at the trigger — the mirror
+// image of .theme-toggle-tooltip's above-with-downward-arrow arrangement.
+// Compound selectors throughout (.tooltip.resume-skills__skill-tooltip,
+// not just the bare class) beat the base .tooltip rules on the same
+// properties (width/height/position offsets) regardless of file/source
+// order, same reasoning as the specificity fixes above.
+.tooltip.resume-skills__skill-tooltip {
+  bottom: calc(100% + 0.5rem);
+  left: -1.125rem;
+  // Reach matches the 0.5rem visual gap above, so a diagonal mouse path
+  // from trigger to tooltip never crosses a truly hover-dead zone. The
+  // base bridge (Tooltip/index.scss, top: 100% + height) already extends
+  // downward from an above-placed tooltip toward its trigger — exactly
+  // what mobile needs, so no ::after override until the desktop block
+  // below repositions the tooltip beside (not above) the trigger.
+  --tooltip-bridge-reach: 0.5rem;
+
+  &::before {
+    bottom: -0.5rem;
+    left: 1.25rem;
+    width: 0.75rem;
+    height: 0.5rem;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+
+  @media (min-width: $breakpoint-desktop) {
+    top: 0.6175rem;
+    bottom: auto;
+    left: auto;
+    right: calc(100% + 2rem);
+    transform: translateY(-50%);
+    // Matches the 2rem gap on this side, so the hover bridge spans the
+    // whole gap instead of leaving a dead zone past 0.5rem into it.
+    --tooltip-bridge-reach: 2rem;
+
+    &::before {
+      top: 50%;
+      bottom: auto;
+      left: auto;
+      right: -0.5rem;
+      width: 0.5rem;
+      height: 0.75rem;
+      transform: translateY(-50%);
+      clip-path: polygon(0 0, 100% 50%, 0 100%);
+    }
+
+    // Now beside (not above) the trigger — bridge extends rightward from
+    // this tooltip's right edge across the gap to the trigger, instead of
+    // downward from the mobile base rule above.
+    &::after {
+      left: 100%;
+      right: auto;
+      top: 0;
+      bottom: 0;
+      height: auto;
+      width: var(--tooltip-bridge-reach, 0);
+    }
+  }
+}
+
+@media print {
+  .resume-skills__sub-list[hidden] {
+    display: block;
+  }
 }

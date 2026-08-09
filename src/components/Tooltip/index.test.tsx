@@ -1,7 +1,12 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import Tooltip, { TOOLTIP_STORAGE_KEY, TOOLTIP_RESTORE_EVENT } from '.';
+import Tooltip, {
+  TOOLTIP_STORAGE_KEY,
+  TOOLTIP_RESTORE_EVENT,
+  TOOLTIP_DISMISS_EVENT,
+  dismissTooltips,
+} from '.';
 
 describe('Tooltip', () => {
   beforeEach(() => {
@@ -289,5 +294,49 @@ describe('Tooltip', () => {
     fireEvent(window, new Event(TOOLTIP_RESTORE_EVENT));
 
     expect(screen.getByRole('tooltip')).toHaveAttribute('style', '');
+  });
+
+  it('invokes onDismiss when the × is clicked', () => {
+    const onDismiss = vi.fn();
+    render(
+      <Tooltip id="on-dismiss-tooltip" content="Info" onDismiss={onDismiss}>
+        <button type="button">Trigger</button>
+      </Tooltip>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss tooltip' }));
+
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('dismissTooltips persists every provided id and clears a mounted tooltip whose id is included', () => {
+    render(
+      <Tooltip id="group-tooltip-a" content="Info">
+        <button type="button">Trigger A</button>
+      </Tooltip>,
+    );
+
+    act(() => {
+      dismissTooltips(['group-tooltip-a', 'group-tooltip-b']);
+    });
+
+    const stored: unknown = JSON.parse(window.localStorage.getItem(TOOLTIP_STORAGE_KEY) ?? '[]');
+    expect(stored).toEqual(expect.arrayContaining(['group-tooltip-a', 'group-tooltip-b']));
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveClass('tooltip--cleared');
+  });
+
+  it('leaves a mounted tooltip unaffected when a dismiss event does not include its id', () => {
+    render(
+      <Tooltip id="unrelated-tooltip" content="Info">
+        <button type="button">Trigger</button>
+      </Tooltip>,
+    );
+
+    fireEvent(
+      window,
+      new CustomEvent(TOOLTIP_DISMISS_EVENT, { detail: { ids: ['some-other-tooltip'] } }),
+    );
+
+    expect(screen.getByRole('tooltip')).not.toHaveClass('tooltip--cleared');
   });
 });
