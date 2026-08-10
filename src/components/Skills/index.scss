@@ -79,6 +79,16 @@
 
   &__skill-toggle {
     position: relative;
+    // Above the tooltip (z-index: 1, see Tooltip/index.scss) so this
+    // button — including the arrow rendered into its left padding, past
+    // the li's own edge via the negative margin below — stays clickable
+    // even once hovering it has revealed the tooltip. At desktop width the
+    // tooltip's invisible hover-bridge (its ::after, closing the gap back
+    // to the trigger) extends rightward until it reaches the li's edge,
+    // which lands inside this button's own (wider than it looks) hit box
+    // and would otherwise sit on top of it and swallow clicks meant for
+    // the arrow.
+    z-index: 2;
     display: inline-block;
     // Pulls the button's own box left into the list's bullet gutter and
     // pads it back out by the same amount, so the arrow rendered at its
