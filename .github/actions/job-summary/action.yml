@@ -31,8 +31,15 @@ runs:
   steps:
     - name: Write job summary
       shell: bash
+      env:
+        OUTCOME: ${{ inputs.outcome }}
+        CHECK_NAME: ${{ inputs.check-name }}
+        SUMMARY: ${{ inputs.summary }}
+        DURATION: ${{ inputs.duration }}
+        DETAILS: ${{ inputs.details }}
+        LOG_FILE: ${{ inputs.log-file }}
       run: |
-        if [ "${{ inputs.outcome }}" = "success" ]; then
+        if [ "$OUTCOME" = "success" ]; then
           callout="[!NOTE]"
           emoji="✅"
           verb="passed"
@@ -43,32 +50,32 @@ runs:
         fi
 
         stat_line=""
-        if [ -n "${{ inputs.summary }}" ]; then
-          stat_line=" — ${{ inputs.summary }}"
+        if [ -n "$SUMMARY" ]; then
+          stat_line=" — $SUMMARY"
         fi
 
         meta=""
-        if [ -n "${{ inputs.duration }}" ]; then
-          meta=" · ${{ inputs.duration }}"
+        if [ -n "$DURATION" ]; then
+          meta=" · $DURATION"
         fi
 
         {
           echo "> $callout"
-          echo "> $emoji **${{ inputs.check-name }} $verb**$stat_line$meta"
+          echo "> $emoji **$CHECK_NAME $verb**$stat_line$meta"
         } >> "$GITHUB_STEP_SUMMARY"
 
-        if [ -n "${{ inputs.details }}" ]; then
+        if [ -n "$DETAILS" ]; then
           {
             echo ""
-            echo "${{ inputs.details }}"
+            echo "$DETAILS"
           } >> "$GITHUB_STEP_SUMMARY"
         fi
 
-        if [ "${{ inputs.outcome }}" != "success" ]; then
+        if [ "$OUTCOME" != "success" ]; then
           {
             echo ""
             echo '```'
-            tail -n 100 "${{ inputs.log-file }}"
+            tail -n 100 "$LOG_FILE"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
         fi

@@ -879,3 +879,20 @@ by a dedicated skill that also opens the PR itself rather than deferring to
 Docs updated to match: `claude-docs/CI-SETUP.md` (Gitflow bullet and the
 Gitflow-aware-skills bullet), `README.md`'s Gitflow workflow table, and
 `CLAUDE.md`'s Continuous Integration section.
+
+## Follow-up: fix job summary losing test file names to backtick command substitution
+
+Job summaries on GitHub Actions runs showed failing test file names as completely blank — but only _appeared_ to be a merge-queue-only bug because the PR comment step (which uses `actions/github-script`, piping inputs through `env:` vars) rendered correctly, while the Job Summary page (written to `$GITHUB_STEP_SUMMARY`) came out corrupted. Real evidence pulled from GitHub (`gh run view --log` on actual failed runs):
+
+- merge-queue run 31343749502, job 93321765230 (pr-67): `/__w/_temp/.../sh: line 26: print-options.spec.ts: command not found` (twice)
+- pr-gate run 31359420401, job 93365220358 (feature branch): **identical error**, same step
+
+The bug was universal (every failing Vitest/Playwright run), not merge-queue-specific. Root cause: `.github/actions/job-summary/action.yml`'s single bash step spliced `${{ inputs.details }}` (containing markdown-formatted failing tests, wrapped in backticks for inline-code rendering, e.g. ``- `print-options.spec.ts` › print options › Ctrl+P opens...``) directly as a raw `${{ }}` expression into the bash script text. GitHub Actions performs literal text substitution of `${{ }}` _before_ bash parses the script — so the backtick pair becomes literal in the bash source, and bash treats backticks as command substitution **even inside double quotes** (unlike `$VAR` expansion, quoting a literal backtick doesn't suppress it). Bash then tries to execute `print-options.spec.ts` as a command, fails ("command not found"), and the substitution's empty output silently replaces the file name in what got written to `$GITHUB_STEP_SUMMARY`.
+
+Fixed by rewriting `.github/actions/job-summary/action.yml` to mirror the safe pattern `.github/actions/pr-comment/action.yml` already uses: pass all six string/markdown inputs (`outcome`, `check-name`, `summary`, `duration`, `details`, `log-file`) through an `env:` block instead of raw `${{ inputs.* }}` interpolation, then reference them as `"$VAR"` in the bash body. Variable expansion is safe — bash does not re-interpret backticks/`$()`/other metacharacters that arrive through a variable's value, only ones written literally in the script text.
+
+The fix was validated locally by reproducing the exact scenario: a scratch bash script with `DETAILS` set to backtick-wrapped test names (old code via direct interpolation, new code via env var) confirmed the old code produces "command not found" errors and blanks the file name, while the new code preserves it intact.
+
+This single fix applies to all 6 reusable check workflows that use `job-summary/` (`lint`, `format`, `typecheck`, `gitflow`, `vitest`, `playwright`), so it also prevents the same latent backtick corruption in Vitest's output (which wraps file names the same way, in `summarize-vitest.mjs:44`) — not just Playwright.
+
+Docs updated: `claude-docs/CI-SETUP.md` gained a note on line 13 that both `pr-comment/` and `job-summary/` now pass markdown inputs through `env:` to safely handle backtick-wrapped content, and this transcript entry captures the investigation, root cause, and fix for future reference.
