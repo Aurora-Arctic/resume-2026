@@ -14,6 +14,17 @@
 
   &__entry {
     margin: 0 0 1.5rem;
+
+    > h3 {
+      margin-top: 1.5rem;
+    }
+  }
+
+  // The very first entry sits right below the section's h2 — its h3
+  // shouldn't stack an extra top margin on top of the h2's own bottom
+  // margin, only later entries need the added breathing room.
+  & > h2 + &__group &__entry:first-child > h3 {
+    margin-top: 0;
   }
 
   &__company {
