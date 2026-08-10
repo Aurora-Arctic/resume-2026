@@ -33,6 +33,10 @@
     &__item {
       margin: 0.035rem 0;
 
+      &::before {
+        content: '';
+      }
+
       &--phone {
         margin-top: 0.125rem;
       }
@@ -46,6 +50,12 @@
     list-style: none;
     margin: 0.75rem 0 0;
     padding: 0;
+
+    li {
+      &::before {
+        content: '';
+      }
+    }
 
     @media (min-width: $breakpoint-desktop) {
       justify-content: flex-end;

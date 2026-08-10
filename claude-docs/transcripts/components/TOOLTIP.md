@@ -152,6 +152,29 @@ The WAI-ARIA Authoring Practices reserve `role="tooltip"` for non-interactive, t
 - `npm run test:e2e` — all clean; 15 e2e tests passing (including the `:focus-visible` fix above, added as its own regression case at `e2e/tooltip.spec.ts:69`).
 - `npm run test:coverage` / `npm run test:e2e:coverage` — both above the 80% threshold (Tooltip's own branch coverage is 83–90%, short of 100% only on defensive `localStorage`-unavailable `catch` branches that aren't exercised by either suite).
 
+## Section-wide dismissal via `onDismiss`/`dismissTooltips` (2026-08-09)
+
+Requirement, from the Skills expandable-sub-items feature (see [SKILLS.md](SKILLS.md)): dismissing (×) any one of several related tooltips (every expandable skill's "Click for more info" hint) should dismiss all of them at once — narrower than `RestoreTooltips`' existing site-wide, unscoped restore (which also goes the opposite direction: it un-dismisses, this dismisses), and with no existing mechanism for a caller to dismiss an arbitrary subset.
+
+Rather than adding a `group`/section prop to `Tooltip` itself, extended it symmetrically with the same shape the restore flow already uses — an id array plus a broadcast event — since the caller (`Skills`) already knows exactly which ids it owns and needs no extra abstraction to express that:
+
+```ts
+export const TOOLTIP_DISMISS_EVENT = 'tooltips:dismiss';
+
+export const dismissTooltips = (ids: string[]): void => {
+  try {
+    const clearedIds = readClearedIds();
+    const merged = [...new Set([...clearedIds, ...ids])];
+    window.localStorage.setItem(TOOLTIP_STORAGE_KEY, JSON.stringify(merged));
+  } catch {
+    // localStorage unavailable — dismissal only lasts this page view
+  }
+  window.dispatchEvent(new CustomEvent(TOOLTIP_DISMISS_EVENT, { detail: { ids } }));
+};
+```
+
+A new optional `onDismiss?: () => void` prop fires at the end of the existing `handleDismiss` (after that instance's own persist/state logic), letting a caller run `dismissTooltips(allRelatedIds)` in response to any one tooltip's own dismiss. A second `useEffect`, alongside the existing restore listener, checks `event.detail.ids.includes(id)` before clearing itself — so only tooltips whose id was actually passed to `dismissTooltips` respond, unlike the restore event which every mounted `Tooltip` responds to unconditionally. `ThemeToggle`'s tooltip (and any future unrelated one) is untouched by a Skills-scoped dismissal, since its id is never in that array — covered by a regression test asserting exactly that. Both the new prop and event are optional/backward compatible: existing callers that don't pass `onDismiss` are unaffected, and `RestoreTooltips`' full wipe-and-restore still resets these tooltips along with everything else.
+
 ## Exempted from the shared button base (`_buttons.scss`)
 
 When a shared base look was added for every `<button>` in the app (see [../LAYOUT-SETUP.md](../LAYOUT-SETUP.md)'s "A third shared partial: `_buttons.scss`"), `.tooltip__dismiss` was deliberately left out — it stays transparent/icon-only, with no background box and no paper/off-paper fill, since it already sits on top of `.tooltip`'s own `$wine` background and a colored keycap behind the `×` would read as an odd two-tone patch. It's excluded via `:not(:where(.tooltip__dismiss))` in `_buttons.scss` rather than a plain `:not(.tooltip__dismiss)` specifically because this button has its own unconditional `transform: translateY(-50%);` for vertical centering — a plain `:not()` exclusion adds its own specificity point and would have let the shared file's `:active` pushed-effect transform (a `scaleY` shrink) outrank and overwrite that centering transform on every click; `:where()` keeps the exclusion at zero added specificity so that can't happen. No code in this file changed.

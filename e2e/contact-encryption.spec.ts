@@ -48,5 +48,6 @@ test('a wrong ?k= key leaves location/email/phone hidden', async ({ page }) => {
     await expect(page.locator('.resume-header__contact li')).toHaveCount(3);
     await expect(page.locator('.resume-header__links li')).toHaveCount(3);
     await expect(page.locator('.resume-header__contact a[href^="mailto:"]')).toBeVisible();
+    await expect(page.locator('.resume-header__contact a[href^="tel:"]')).toBeVisible();
   },
 );

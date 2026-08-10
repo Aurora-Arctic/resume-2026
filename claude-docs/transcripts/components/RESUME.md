@@ -46,3 +46,9 @@ See [HEADER.md](HEADER.md) for the `Header`-internal changes (contact-list split
 ## Column proportions and gap tuned after landing (2026-08-09)
 
 Follow-up adjustments to the two-column layout above, requested and made directly against the already-landed grid. Claude first doubled `column-gap` from `2rem` to `4rem` ("100% more space" between the header/summary columns) and added a desktop-only `margin-top: 3rem` to `.resume-summary` to line its top edge up against the taller (now multi-line) header block. The user then made further manual edits on top of that: reverted `.resume-summary`'s `margin-top` back to `0`, and changed `.resume`'s desktop `grid-template-columns` from `2fr 1fr` to `5fr 3fr` — a narrower ratio gap between the two columns than the original 2:1 split. The `4rem` `column-gap` itself was left as-is. See [HEADER.md](HEADER.md) for the accompanying `Header`-internal changes from the same round (title line-split, contact-list reorder/re-merge).
+
+## Skills moved later in the section order (2026-08-09)
+
+`Skills` moved from 3rd position (right after `Summary`) to 5th (after `Projects`, before `Education`) — new order: `Header`, `Summary`, `Experience`, `Projects`, `Skills`, `Education`. Requested directly by the user, alongside a broader reshaping of the `Skills` section itself (3-column grid, per-item lists, diamond bullets — see [SKILLS.md](SKILLS.md)) rather than as an isolated ordering change.
+
+No `Resume/index.scss` changes were needed to make the reorder take visual effect: none of `.resume-skills`/`.resume-experience`/`.resume-projects`/`.resume-education` set an explicit `grid-row`, so CSS Grid auto-placement already follows DOM order at the desktop breakpoint, and the mobile-first flex stack always follows DOM order — reordering the JSX in `index.tsx` alone was sufficient in both cases.

@@ -14,7 +14,7 @@ const data: ResumeData = {
     links: [],
   },
   summary: 'Backend engineer focused on serverless infra.',
-  skills: [{ category: 'Languages', skills: ['TypeScript'] }],
+  skills: [{ category: 'Languages', skills: [{ label: 'TypeScript' }] }],
   experience: [
     {
       company: 'Acme Corp',
