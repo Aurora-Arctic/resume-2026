@@ -159,4 +159,15 @@ test.describe('clearable tooltip', () => {
     const cleared = await page.evaluate(() => window.localStorage.getItem('tooltip-cleared'));
     expect(cleared).toBeNull();
   });
+
+  test('Escape dismisses the tooltip', async ({ page }) => {
+    await trigger(page).hover();
+    await expect(tooltip(page)).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(tooltip(page)).toBeHidden();
+
+    const cleared = await page.evaluate(() => window.localStorage.getItem('tooltip-cleared'));
+    expect(cleared).toContain('theme-toggle-tooltip');
+  });
 });

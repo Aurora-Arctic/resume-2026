@@ -128,6 +128,29 @@ const Tooltip = ({ id, content, className, children, onDismiss }: TooltipProps):
     return () => window.removeEventListener(TOOLTIP_DISMISS_EVENT, handleDismissEvent);
   }, [id]);
 
+  // Escape-to-dismiss, wired only while the tooltip is shown (not cleared).
+  // If the tooltip is already cleared, pressing Escape has no effect.
+  useEffect(() => {
+    if (cleared) return undefined;
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setCleared(true);
+        setForceHidden(true);
+        try {
+          const clearedIds = readClearedIds();
+          if (!clearedIds.includes(id)) {
+            window.localStorage.setItem(TOOLTIP_STORAGE_KEY, JSON.stringify([...clearedIds, id]));
+          }
+        } catch {
+          // localStorage unavailable — dismissal only lasts this page view
+        }
+        onDismiss?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [id, cleared, onDismiss]);
+
   const handleDismiss = (event: React.MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
     setCleared(true);

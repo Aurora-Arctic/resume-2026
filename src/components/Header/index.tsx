@@ -120,21 +120,19 @@ const Header = ({ data }: HeaderProps): ReactElement => {
           </React.Fragment>
         ))}
       </p>
-      {(contact.email || contact.phone) && (
-        <ul className="resume-header__contact" aria-label="Contact details">
-          {contact.email && (
-            <li className="resume-header__contact__item">
-              <a href={`mailto:${contact.email}`}>{contact.email}</a>
-            </li>
-          )}
-          {contact.phone && (
-            <li className="resume-header__contact__item resume-header__contact__item--phone">
-              <a href={`tel:${contact.phone.replace(/\D/g, '')}`}>{contact.phone}</a>
-            </li>
-          )}
-          {contact.location && <li className="resume-header__contact__item">{contact.location}</li>}
-        </ul>
-      )}
+      <ul className="resume-header__contact" aria-label="Contact details" aria-live="polite">
+        {contact.email && (
+          <li className="resume-header__contact__item">
+            <a href={`mailto:${contact.email}`}>{contact.email}</a>
+          </li>
+        )}
+        {contact.phone && (
+          <li className="resume-header__contact__item resume-header__contact__item--phone">
+            <a href={`tel:${contact.phone.replace(/\D/g, '')}`}>{contact.phone}</a>
+          </li>
+        )}
+        {contact.location && <li className="resume-header__contact__item">{contact.location}</li>}
+      </ul>
 
       <ul className="resume-header__links" aria-label="Links">
         {data.links.map((link, index) => {
