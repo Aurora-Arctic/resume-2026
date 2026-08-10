@@ -90,11 +90,11 @@ export const resumeData: ResumeData = {
       skills: [
         { label: 'Python' },
         { label: 'JavaScript', subItems: ['Node.JS', 'TypeScript', 'jQuery'] },
-        { label: 'PHP' },
-        { label: 'Ruby' },
         { label: 'SQL' },
         { label: 'HTML' },
         { label: 'CSS', subItems: ['Sass', 'Tailwind', 'Foundation', 'Bootstrap'] },
+        { label: 'PHP' },
+        { label: 'Ruby' },
       ],
     },
     {
@@ -102,12 +102,12 @@ export const resumeData: ResumeData = {
       skills: [
         { label: 'Django' },
         { label: 'React', subItems: ['Next.js', 'Gatsby'] },
+        { label: 'Git' },
         { label: 'Express' },
         { label: 'Apollo GraphQL' },
         { label: 'Flask' },
         { label: 'Vue', subItems: ['Nuxt.js'] },
         { label: 'Ruby on Rails' },
-        { label: 'Git' },
         {
           label: 'Design Software',
           subItems: ['Figma', 'Adobe Illustrator/Photoshop', 'Affinity Serif'],
@@ -137,9 +137,9 @@ export const resumeData: ResumeData = {
       skills: [
         { label: 'MySQL' },
         { label: 'DynamoDB' },
+        { label: 'Tonic Data Generator' },
         { label: 'PostgreSQL' },
         { label: 'SQLite' },
-        { label: 'Tonic Data Generator' },
       ],
     },
     {
