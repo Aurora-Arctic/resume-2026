@@ -17,16 +17,15 @@ test.describe('print options', () => {
   const trigger = (page: import('@playwright/test').Page) =>
     page.getByRole('button', { name: 'Choose what to print' });
   const dialog = (page: import('@playwright/test').Page) => page.getByRole('dialog');
+  const backdrop = (page: import('@playwright/test').Page) =>
+    page.locator('.print-options__backdrop');
   // Role-name matching is a case-insensitive substring by default — "Print"
   // alone also matches "Choose what to print" and "Close print options", so
-  // the confirm button needs an exact match. Each tier's radio now also
-  // carries a description in the same <label> (e.g. "Full details" + "All
-  // contents."), which becomes part of its accessible name — and the
-  // application tier's own description text ("Minimal details in a plain,
-  // linear layout.") happens to start with the same words as the minimal
-  // tier's label, so an exact/substring match on the label alone could still
-  // hit both. Anchoring the regex to the start of the name is exact enough
-  // to disambiguate without hardcoding each tier's full label+description text.
+  // the confirm button needs an exact match. Each tier's radio also carries
+  // a description in the same <label> (e.g. "Full" + "All contents."), which
+  // becomes part of its accessible name. Anchoring the regex to the start of
+  // the name is exact enough to disambiguate without hardcoding each tier's
+  // full label+description text.
   const printButton = (page: import('@playwright/test').Page) =>
     page.getByRole('button', { name: 'Print', exact: true });
   const tierRadio = (page: import('@playwright/test').Page, label: string) =>
@@ -78,9 +77,11 @@ test.describe('print options', () => {
 
   test('clicking the backdrop closes the modal without printing', async ({ page }) => {
     await trigger(page).click();
-    // The panel occupies the center of the backdrop — click near a corner so
-    // the click actually lands on the backdrop itself, not the panel.
-    await page.mouse.click(5, 5);
+    // The panel occupies the center of the backdrop — click near a corner
+    // (via a locator, not raw page coordinates, so Playwright waits for the
+    // backdrop to actually be visible/stable first) so the click lands on
+    // the backdrop itself, not the panel.
+    await backdrop(page).click({ position: { x: 5, y: 5 } });
 
     await expect(dialog(page)).toBeHidden();
     expect(await printCalls(page)).toBe(0);
@@ -88,7 +89,7 @@ test.describe('print options', () => {
 
   test('selecting a tier and confirming prints and stamps data-print-mode', async ({ page }) => {
     await trigger(page).click();
-    await tierRadio(page, 'Minimal details').click();
+    await tierRadio(page, 'Minimal').click();
     await printButton(page).click();
 
     await expect(dialog(page)).toBeHidden();
@@ -101,7 +102,7 @@ test.describe('print options', () => {
   }) => {
     await trigger(page).click();
 
-    await expect(tierRadio(page, 'Full details')).toBeChecked();
+    await expect(tierRadio(page, 'Full')).toBeChecked();
 
     await printButton(page).click();
 
@@ -112,7 +113,7 @@ test.describe('print options', () => {
     const before = await page.locator('.resume').boundingBox();
 
     await trigger(page).click();
-    await tierRadio(page, 'Minimal details').click();
+    await tierRadio(page, 'Minimal').click();
     await printButton(page).click();
 
     const after = await page.locator('.resume').boundingBox();

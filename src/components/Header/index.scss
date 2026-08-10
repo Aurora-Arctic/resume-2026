@@ -1,7 +1,12 @@
 @use '../../scss/variables' as *;
+@use '../../scss/print' as *;
 
 .resume-header {
   @media (min-width: $breakpoint-desktop) {
+    text-align: right;
+  }
+
+  @include grid-print-tiers {
     text-align: right;
   }
 
@@ -11,6 +16,14 @@
       // column's available width stops growing past $breakpoint-desktop
       // too. A vw-based clamp would keep tracking raw viewport width past
       // that point even though the column itself doesn't get any wider.
+      font-size: 1.75rem;
+    }
+
+    // Print media never matches $breakpoint-desktop (see grid-print-tiers),
+    // so Full/Summary/Minimal need the desktop size reasserted explicitly to
+    // match their on-screen desktop-grid print layout; Application prints
+    // linearly and keeps the base (mobile) size.
+    @include grid-print-tiers {
       font-size: 1.75rem;
     }
     margin-bottom: 1.25rem;
@@ -50,6 +63,10 @@
     list-style: none;
     margin: 0.75rem 0 0;
     padding: 0;
+
+    @include grid-print-tiers {
+      justify-content: flex-end;
+    }
 
     li {
       &::before {

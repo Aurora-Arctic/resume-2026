@@ -17,7 +17,7 @@ const experience: ExperienceEntry[] = [
 
 describe('Experience', () => {
   it('renders each entry with its title, company, meta, and bullets', () => {
-    render(<Experience experience={experience} />);
+    render(<Experience experience={experience} hasPersonalProjects={false} />);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Experience' })).toBeInTheDocument();
     expect(
@@ -25,5 +25,21 @@ describe('Experience', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Remote — Jan 2022 to Present')).toBeInTheDocument();
     expect(screen.getByText('Migrated the deploy pipeline to GitHub Actions.')).toBeInTheDocument();
+  });
+
+  it('renders a Personal Projects label when hasPersonalProjects is true', () => {
+    render(<Experience experience={experience} hasPersonalProjects />);
+
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'Personal Projects' }),
+    ).toBeInTheDocument();
+  });
+
+  it('omits the Personal Projects label when hasPersonalProjects is false', () => {
+    render(<Experience experience={experience} hasPersonalProjects={false} />);
+
+    expect(
+      screen.queryByRole('heading', { level: 3, name: 'Personal Projects' }),
+    ).not.toBeInTheDocument();
   });
 });

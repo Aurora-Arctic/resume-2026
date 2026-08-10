@@ -2,7 +2,8 @@
 
 Full implementation history: [claude-docs/transcripts/components/PROJECTS.md](../transcripts/components/PROJECTS.md)
 
-- Renders a `projects: ProjectEntry[]` prop — each entry: name, description, tech stack, optional link, and a bullet list.
+- Renders a `projects: ProjectEntry[]` prop plus a `companyOrder: string[]` prop (job company names in `Experience` display order) — each project entry: name, description, tech stack, optional link, a bullet list, and a required `company` (matches an `ExperienceEntry.company` verbatim, or the literal `'Personal'` for projects with no associated job).
 - Project name renders as a link (`<a href={project.link}>`) when `link` is set, otherwise plain text — both cases render inside the same `<h3>`.
-- Placed after `Experience` (not before) — appropriate for a candidate with a solid employment history rather than one leaning on projects to compensate for a thin one, per current resume-placement advice.
+- Projects are grouped by `company` and rendered in `companyOrder` order, one `.resume-projects__group` div per job (placed at `gridRow: index + 2`, computed via `companyOrder.map(...)` without compacting so a row index always matches its paired job's position in `Experience`), plus one more trailing group for `company: 'Personal'` projects (if any) after all job groups — see [RESUME.md](RESUME.md) for the subgrid mechanics that align each group's row with its job.
+- No sub-heading/label is rendered inside a group in the grid (side-by-side) layout — row alignment with `Experience` alone conveys which job a project belongs to. Each project instead carries a `.resume-projects__company` line showing its `company` that's hidden via CSS on desktop and in the grid-based print tiers, and only visible in the layouts that fall back to a single linear column: below `$breakpoint-desktop`, and the Application print tier.
 - Fifth section rendered by `Resume` — see [RESUME.md](RESUME.md) for the overall section-order/data-model/layout rationale shared across all six sections.

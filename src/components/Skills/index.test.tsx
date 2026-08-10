@@ -84,6 +84,15 @@ describe('Skills', () => {
     expect(screen.getByText('ES')).not.toBeVisible();
   });
 
+  it('opts sub-items out of the Summary and Minimal print tiers', () => {
+    render(<Skills skills={expandableSkills} />);
+
+    expect(screen.getByText('ES').closest('ul')).toHaveClass(
+      'print-hide-summary',
+      'print-hide-minimal',
+    );
+  });
+
   it('shows a "Click for more info" tooltip hint for expandable skills', () => {
     render(<Skills skills={expandableSkills} />);
 

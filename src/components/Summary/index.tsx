@@ -5,11 +5,24 @@ interface SummaryProps {
   summary: string;
 }
 
-const Summary = ({ summary }: SummaryProps): ReactElement => (
-  <section className="resume-summary" aria-labelledby="summary-heading">
-    <h2 id="summary-heading">Summary</h2>
-    <p>{summary}</p>
-  </section>
-);
+// Mirrors Header's own getSiteUrl fallback (see src/components/Header/index.tsx)
+// so this note points at the same domain the "this same site" contact link
+// resolves to, without depending on that component.
+const getSiteUrl = (): string => process.env.GATSBY_SITE_URL ?? 'http://localhost:8000';
+
+const Summary = ({ summary }: SummaryProps): ReactElement => {
+  const siteUrl = new URL(getSiteUrl());
+
+  return (
+    <section className="resume-summary" aria-labelledby="summary-heading">
+      <h2 id="summary-heading">Summary</h2>
+      <p>{summary}</p>
+      <h4 className="resume-summary__print-note">
+        When a section has <strong>&hellip;</strong> at the end of it, that indicates there is more
+        information available at <a href={siteUrl.toString()}>{siteUrl.host}</a>
+      </h4>
+    </section>
+  );
+};
 
 export default Summary;

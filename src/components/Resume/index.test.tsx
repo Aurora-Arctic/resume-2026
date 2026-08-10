@@ -31,6 +31,7 @@ const data: ResumeData = {
       description: 'Internal tool.',
       stack: ['TypeScript'],
       bullets: ['Did a thing.'],
+      company: 'Acme Corp',
     },
   ],
   education: [

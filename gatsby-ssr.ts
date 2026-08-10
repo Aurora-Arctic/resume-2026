@@ -14,18 +14,12 @@ const themeInitScript = `(function () {
       ? stored
       : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
-    if (theme === 'light') {
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
+    document.documentElement.setAttribute('data-theme', theme);
 
     if (!stored) {
       var mql = window.matchMedia('(prefers-color-scheme: dark)');
       var onChange = function (event) {
-        if (event.matches) {
-          document.documentElement.removeAttribute('data-theme');
-        } else {
-          document.documentElement.setAttribute('data-theme', 'light');
-        }
+        document.documentElement.setAttribute('data-theme', event.matches ? 'dark' : 'light');
       };
       if (typeof mql.addEventListener === 'function') {
         mql.addEventListener('change', onChange);
@@ -42,7 +36,18 @@ export const onRenderBody: GatsbySSR['onRenderBody'] = ({
   setHeadComponents,
   setHtmlAttributes,
 }) => {
-  setHtmlAttributes({ lang: 'en' });
+  // 'dark' is the static default baked into the server-rendered markup —
+  // the init script below overwrites it to 'light' before first paint when
+  // that's the resolved theme, but the attribute itself is never absent,
+  // including with JS disabled or if the script's try/catch falls through.
+  // React's HTMLAttributes type has no index signature for arbitrary
+  // data-* keys (that allowance is JSX-namespace-only), so the object is
+  // typed as a variable — rather than passed inline — to add just this one.
+  const htmlAttributes: React.DetailedHTMLProps<
+    React.HTMLAttributes<HTMLHtmlElement>,
+    HTMLHtmlElement
+  > & { 'data-theme': string } = { lang: 'en', 'data-theme': 'dark' };
+  setHtmlAttributes(htmlAttributes);
 
   setHeadComponents([
     React.createElement('meta', {
