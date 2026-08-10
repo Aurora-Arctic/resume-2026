@@ -33,6 +33,8 @@ export interface ExperienceEntry {
   startDate: string;
   endDate: string;
   bullets: string[];
+  /** Condensed prose shown in place of `bullets` on the Summary print tier only. */
+  summary?: string;
 }
 
 export interface ProjectEntry {
@@ -156,13 +158,20 @@ export const resumeData: ResumeData = {
   experience: [
     {
       company: 'Alma',
-      title: 'Senior Backend Engineer & Technical Lead for Developer Experience',
+      title: 'Senior Backend Engineer & Technical Lead',
       location: 'United States (Remote)',
       startDate: 'July 2022',
       endDate: 'Present',
       bullets: [
-        'Promoted from Backend Engineer III (2022) to Senior Backend Engineer and Technical Lead for Developer Experience (2023).',
+        'Drove improvements to CI/CD workflows and performance, reducing costs.',
+        'Reduced friction and risk through a new process for protecting private client information.',
+        'Technical lead and architect on partner integration initiatives that enabled growth.',
+        'Led developer experience improvements that improved developer confidence and reduced friction.',
+        'Helped developers with career growth and navigating challenges through mentorship.',
+        'Promoted from Backend Engineer III (2022) to Senior Backend Engineer and Technical Lead (2023).',
       ],
+      summary:
+        'Technical lead and architect driving CI/CD workflow and performance improvements that reduced costs, and a client data protection process that reduced friction and risk. Served as technical lead on partner integration initiatives that enabled company growth, while leading developer experience improvements that boosted developer confidence. Mentored developers through career growth and challenges along the way.',
     },
     {
       company: '14Four',
@@ -171,9 +180,12 @@ export const resumeData: ResumeData = {
       startDate: 'December 2020',
       endDate: 'July 2022',
       bullets: [
+        'Created infrastructure and a backend framework that reduced new site creation from 2 days to 2 hours, enabling self-service site creation.',
         'Development of high-traffic marketing campaign sites on AWS infrastructure.',
         'Technical mentor and advisor for both frontend and backend developers.',
       ],
+      summary:
+        'Built a self-service backend and infra site-creation framework that cut new site turnaround from two days to two hours. Developed high-traffic marketing campaign sites on AWS infrastructure. Served as a technical mentor and advisor for both frontend and backend developers.',
     },
     {
       company: 'Uxiliary',
@@ -181,7 +193,13 @@ export const resumeData: ResumeData = {
       location: 'Spokane, Washington',
       startDate: 'October 2018',
       endDate: 'December 2020',
-      bullets: ['Development of various websites from e-commerce to marketing sites.'],
+      bullets: [
+        'Adapted to new technologies with inherited projects on the fly, using a range of technologies like Drupal, Ruby on Rails, WordPress, custom PHP sites, and more.',
+        'Integrated with various customer systems, including custom inventory APIs and internal APIs.',
+        'Assisted with community building through meetups and competitions.',
+      ],
+      summary:
+        'Full-stack developer adapting on the fly to inherited projects across a variety of different tech stacks. Integrated with various customer systems, including custom inventory and internal APIs. Assisted with community building through meetups and competitions.',
     },
   ],
   projects: [
