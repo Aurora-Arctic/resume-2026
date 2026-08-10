@@ -109,6 +109,7 @@ const Skills = ({ skills }: SkillsProps): ReactElement => {
                     className={[
                       index >= MINIMAL_SKILL_LIMIT && 'print-hide-minimal',
                       index >= SUMMARY_SKILL_LIMIT && 'print-hide-summary',
+                      index >= SUMMARY_SKILL_LIMIT && 'print-hide-application',
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -118,6 +119,14 @@ const Skills = ({ skills }: SkillsProps): ReactElement => {
               {group.skills.length > SUMMARY_SKILL_LIMIT && (
                 <span
                   className="resume-skills__truncate-ellipsis resume-skills__truncate-ellipsis--summary"
+                  aria-hidden="true"
+                >
+                  &hellip;
+                </span>
+              )}
+              {group.skills.length > SUMMARY_SKILL_LIMIT && (
+                <span
+                  className="resume-skills__truncate-ellipsis resume-skills__truncate-ellipsis--application"
                   aria-hidden="true"
                 >
                   &hellip;

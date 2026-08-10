@@ -10,6 +10,8 @@ interface PrintModeOption {
   description?: string;
 }
 
+const SIMULATABLE_PRINT_MODES: PrintMode[] = ['full', 'summary', 'minimal', 'application'];
+
 const PRINT_MODES: PrintModeOption[] = [
   { value: 'full', label: 'Full', description: 'All contents.' },
   {
@@ -71,6 +73,19 @@ const PrintOptions = (): ReactElement => {
     };
     window.addEventListener('afterprint', handleAfterPrint);
     return () => window.removeEventListener('afterprint', handleAfterPrint);
+  }, []);
+
+  // Lets a query param simulate a tier's content directly on screen (the
+  // attribute alone now drives the tier-content rules — see
+  // claude-docs/components/PRINT-OPTIONS.md), without going through the modal
+  // or calling window.print().
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('printMode');
+    const isSimulatable = (value: string | null): value is PrintMode =>
+      SIMULATABLE_PRINT_MODES.includes(value as PrintMode);
+    if (!isSimulatable(requested)) return;
+    document.documentElement.setAttribute('data-print-mode', requested);
+    setSelectedMode(requested);
   }, []);
 
   useEffect(() => {

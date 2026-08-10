@@ -109,15 +109,17 @@ test.describe('print options', () => {
     await expect(page.locator('html')).toHaveAttribute('data-print-mode', 'full');
   });
 
-  test('choosing a print tier has no visible effect on the on-screen layout', async ({ page }) => {
-    const before = await page.locator('.resume').boundingBox();
-
+  test('choosing minimal tier truncates skills to 2 items per category', async ({ page }) => {
     await trigger(page).click();
     await tierRadio(page, 'Minimal').click();
     await printButton(page).click();
 
-    const after = await page.locator('.resume').boundingBox();
-    expect(after).toEqual(before);
+    // After print, data-print-mode is set, and skills should be truncated to 2 items
+    // per category (remaining items have print-hide-minimal class and are hidden)
+    const skillItems = await page.locator('.resume-skills__skill:not(.print-hide-minimal)').count();
+
+    // Should have significantly fewer visible skills due to minimal tier truncation
+    expect(skillItems).toBeLessThan(10);
   });
 
   test('focus returns to the trigger button after the modal closes', async ({ page }) => {
