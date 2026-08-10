@@ -12,12 +12,15 @@ const Education = ({ education }: EducationProps): ReactElement => (
     {education.map((entry) => (
       <article className="resume-education__entry" key={`${entry.institution}-${entry.degree}`}>
         <h3>{entry.degree}</h3>
-        <p className="resume-education__meta">
-          {entry.institution} &mdash; {entry.location}
+        <p className="resume-education__detail">
+          {entry.location ? `${entry.institution} — ${entry.location}` : entry.institution}
         </p>
         <p className="resume-education__meta">
           {entry.startDate} to {entry.endDate}
         </p>
+        {entry.honor && (
+          <p className="resume-education__honors print-hide-minimal">{entry.honor}</p>
+        )}
       </article>
     ))}
   </section>

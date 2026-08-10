@@ -53,6 +53,8 @@ export interface EducationEntry {
   location: string;
   startDate: string;
   endDate: string;
+  /** Rendered below the dates; hidden on the Minimal print tier. */
+  honor?: string;
 }
 
 export interface ResumeData {
@@ -274,10 +276,11 @@ export const resumeData: ResumeData = {
   education: [
     {
       institution: 'Full Sail University',
-      degree: 'Bachelor of Science (B.S.), Web Design and Development — Valedictorian',
+      degree: 'Web Design and Development B.S.',
       location: '',
       startDate: '2014',
-      endDate: 'August 2017',
+      endDate: '2017',
+      honor: 'Valedictorian',
     },
   ],
 };

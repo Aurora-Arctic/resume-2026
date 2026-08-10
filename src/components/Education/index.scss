@@ -3,7 +3,16 @@
     margin: 0 0 1rem;
   }
 
+  &__detail {
+    margin: 0 0 0.5rem;
+    font-size: 1.125rem;
+  }
+
   &__meta {
-    margin: 0.25rem 0;
+    margin: 0.375rem 0;
+  }
+
+  &__honors {
+    font-style: italic;
   }
 }
