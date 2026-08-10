@@ -42,6 +42,7 @@ export interface ProjectEntry {
   description: string;
   stack: string[];
   link?: string;
+  github?: string;
   bullets: string[];
   /** Condensed prose shown on the Summary/Minimal/Application print tiers. */
   summary?: string;
@@ -324,6 +325,7 @@ export const resumeData: ResumeData = {
         'Is it overkill to implement a full CI/CD pipeline and over 80% unit and e2e testing for a personal resume? Sure, but the point is to showcase my skills. ;)',
       stack: ['Github Actions', 'Vitest', 'Playwright', 'Gatsby', 'TypeScript'],
       link: 'https://resume.marwynn.net',
+      github: 'https://github.com/Aurora-Arctic/resume-2026',
       summary:
         'Is it overkill to implement a full CI/CD pipeline and over 80% unit and e2e testing for a personal resume? Sure, but the point is to showcase my skills. ;) This site showcase some of my skills with CI/CD, testing, breadth of frontend knowledge and my experience with AI tooling like Claude code.',
       bullets: [
