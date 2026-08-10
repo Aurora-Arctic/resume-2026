@@ -79,12 +79,20 @@
     display: none;
 
     html[data-print-mode='summary'] &,
-    html[data-print-mode='minimal'] &,
-    html[data-print-mode='application'] & {
+    html[data-print-mode='minimal'] & {
       display: block;
       color: $wine;
       font-size: 1.125rem;
       font-weight: 800;
+    }
+
+    @media print {
+      html[data-print-mode='application'] & {
+        display: block;
+        color: $print-text;
+        font-size: 1.125rem;
+        font-weight: 800;
+      }
     }
   }
 

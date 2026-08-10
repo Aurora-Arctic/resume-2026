@@ -23,6 +23,12 @@
 
   strong {
     color: $wine-drenched;
+
+    @media print {
+      html[data-print-mode='application'] & {
+        color: $print-text;
+      }
+    }
   }
 
   html[data-print-mode='summary'] &,
