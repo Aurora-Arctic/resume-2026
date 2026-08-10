@@ -296,3 +296,22 @@ html[data-theme='light'] .resume-skills__skill-toggle::before {
     color: $wine;
   }
 }
+
+// Stands in for the skills a category truncates on the Summary (first 5)
+// and Minimal (first 2) print tiers — index.tsx renders one span per tier,
+// each only when that tier's limit actually hides something, and applies
+// print-hide-summary/print-hide-minimal to the skills past each cutoff (see
+// src/scss/_print.scss). Placed after the <ul> rather than inline at the
+// cutoff: the hidden trailing <li>s collapse via display: none, so this
+// still reads as sitting right after the last visible skill.
+.resume-skills__truncate-ellipsis {
+  display: none;
+}
+
+@media print {
+  html[data-print-mode='summary'] .resume-skills__truncate-ellipsis--summary,
+  html[data-print-mode='minimal'] .resume-skills__truncate-ellipsis--minimal {
+    display: inline;
+    color: $wine;
+  }
+}
