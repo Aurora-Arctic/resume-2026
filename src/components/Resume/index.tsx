@@ -28,8 +28,8 @@ const Resume = ({ data }: ResumeProps): ReactElement => {
         <Experience experience={data.experience} hasPersonalProjects={hasPersonalProjects} />
         <Projects projects={data.projects} companyOrder={companyOrder} />
       </div>
-      <Skills skills={data.skills} />
       <Education education={data.education} />
+      <Skills skills={data.skills} />
     </div>
   );
 };
