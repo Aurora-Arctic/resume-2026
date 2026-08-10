@@ -96,9 +96,43 @@
     margin-top: 0;
   }
 
+  &__company {
+    margin: 0 0 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
   &__meta {
     margin: 0.25rem 0 0.5rem;
     font-style: italic;
+  }
+
+  &__summary {
+    display: none;
+
+    @media print {
+      html[data-print-mode='summary'] & {
+        display: block;
+      }
+    }
+  }
+
+  // Stands in for the bullets list wherever print-hide-summary/-minimal
+  // (see index.tsx and src/scss/_print.scss) removes it, mirroring
+  // Skills' resume-skills__sub-list-ellipsis pattern — a visible cue that
+  // more detail exists on screen rather than a silent gap. Summary also
+  // gets the &__summary paragraph above in its place; Minimal gets only
+  // this ellipsis, no replacement text.
+  &__bullets-ellipsis {
+    display: none;
+
+    @media print {
+      html[data-print-mode='summary'] &,
+      html[data-print-mode='minimal'] & {
+        display: block;
+        color: $wine;
+      }
+    }
   }
 
   &__personal-label {

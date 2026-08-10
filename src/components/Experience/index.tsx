@@ -17,17 +17,20 @@ const Experience = ({ experience, hasPersonalProjects }: ExperienceProps): React
         style={{ gridRow: index + 2 }}
       >
         <article className="resume-experience__entry">
-          <h3>
-            {entry.title} &middot; {entry.company}
-          </h3>
+          <h3>{entry.title}</h3>
+          <p className="resume-experience__company">{entry.company}</p>
           <p className="resume-experience__meta">
-            {entry.location} &mdash; {entry.startDate} to {entry.endDate}
+            {entry.startDate} to {entry.endDate} &mdash; {entry.location}
           </p>
-          <ul>
+          {entry.summary && <p className="resume-experience__summary">{entry.summary}</p>}
+          <ul className="print-hide-summary print-hide-minimal">
             {entry.bullets.map((bullet) => (
               <li key={bullet}>{bullet}</li>
             ))}
           </ul>
+          <span className="resume-experience__bullets-ellipsis" aria-hidden="true">
+            &hellip;
+          </span>
         </article>
       </div>
     ))}
