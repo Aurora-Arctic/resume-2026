@@ -1,0 +1,219 @@
+@use '../../scss/variables' as *;
+
+.print-options-trigger {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+
+  @media print {
+    display: none;
+  }
+}
+
+.print-options-trigger__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0.6rem;
+  color: $text;
+  box-shadow: 0 2px 8px $shadow;
+}
+
+.print-options-trigger__icon {
+  width: 100%;
+  height: 100%;
+}
+
+// Placement is per-instance, not part of the shared .tooltip look (see
+// Tooltip/index.scss) — mirrors that file's own convention. Sits below the
+// trigger (not above, like every other tooltip in the app) since the
+// trigger itself already sits at the very top of the viewport, so an
+// above-placed bubble would run off-screen. That flips which edge needs the
+// hit-area bridge (::after) too — see the "below its trigger" note in
+// Tooltip/index.scss.
+.print-options-tooltip {
+  top: calc(100% + 1rem);
+  right: 0;
+  --tooltip-bridge-reach: 1rem;
+
+  &::before {
+    top: -0.5rem;
+    right: 1rem;
+    width: 0.75rem;
+    height: 0.5rem;
+    clip-path: polygon(0 100%, 100% 100%, 50% 0);
+  }
+
+  &::after {
+    top: auto;
+    bottom: 100%;
+    height: var(--tooltip-bridge-reach, 0);
+  }
+}
+
+.print-options__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  // Same technique as Tooltip's own opacity/visibility pair (see
+  // Tooltip/index.scss): both properties share one transition, so
+  // `visibility` — not itself interpolable — flips at the *start* of the
+  // transition when the target is 'visible' (fading in shows content right
+  // away) but only at its *end* when the target is 'hidden' (fading out
+  // stays painted, and thus in the tab order, for the full fade rather than
+  // vanishing instantly). visibility:hidden also removes the backdrop from
+  // hit-testing while closed, same as Tooltip — no separate pointer-events
+  // override needed.
+  transition:
+    opacity $theme-transition-duration $theme-transition-easing,
+    visibility $theme-transition-duration $theme-transition-easing;
+
+  &--open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  @media print {
+    display: none;
+  }
+}
+
+.print-options__panel {
+  position: relative;
+  width: min(100%, 26rem);
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  padding: 2rem;
+  background-color: $silver-oxide;
+  color: $text;
+  box-shadow: 0 20px 45px $shadow;
+
+  &:focus-visible {
+    outline: 2px solid $text;
+    outline-offset: 2px;
+  }
+}
+
+html[data-theme='light'] .print-options__panel {
+  background-color: $lavender-oxide;
+  color: $silver-oxide;
+}
+
+.print-options__title {
+  margin: 0 1.5rem 1rem 0;
+}
+
+.print-options__fieldset {
+  margin: 0 0 1.5rem;
+  padding: 0;
+  border: none;
+}
+
+.print-options__legend {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  color: $wine-stained;
+  font-family: $font-body;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+html[data-theme='light'] .print-options__legend {
+  color: $wine-drenched;
+}
+
+.print-options__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0 0 0.75rem;
+  cursor: pointer;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.print-options__option-input {
+  margin-top: 0.2rem;
+}
+
+.print-options__option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.print-options__option-label {
+  font-family: $font-body;
+}
+
+.print-options__option-description {
+  font-family: $font-body;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.print-options__dismiss {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 0.75;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $text;
+    outline-offset: 2px;
+  }
+}
+
+.print-options__confirm {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  color: $text;
+  font-family: $font-body;
+
+  // The shared button base (_buttons.scss) fills ::before with $wine-dark
+  // only `.paper-card &` — its *on-paper* look — and $silver-oxide
+  // everywhere else. This button renders in the modal (a Layout-level
+  // sibling of .paper-card, not a page-content descendant), so it'd get the
+  // off-paper default; overridden here so "Print" still reads as one of the
+  // resume's own on-paper actions instead of page chrome. Hover/focus/active
+  // colors are already the same regardless of on/off-paper, so only the
+  // resting fill needs the override.
+  &::before {
+    background-color: $wine-dark;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .print-options__backdrop {
+    transition-duration: 0s;
+  }
+}
