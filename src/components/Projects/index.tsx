@@ -59,24 +59,18 @@ const Projects = ({ projects, companyOrder }: ProjectsProps): ReactElement => {
         </div>
       ))}
       {personalItems.length > 0 && (
-        <div
-          className="resume-projects__personal print-hide-application"
-          style={{ gridRow: companyOrder.length + 2 }}
-        >
-          <h3 className="resume-projects__personal-heading">Personal Projects</h3>
-          <div className="resume-projects__group">
-            {personalItems.map((project, itemIndex) => {
-              const classNames = [
-                itemIndex >= MINIMAL_PROJECT_LIMIT && 'print-hide-minimal',
-                itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-summary',
-                itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-application',
-              ]
-                .filter(Boolean)
-                .join(' ');
+        <div className="resume-projects__group">
+          {personalItems.map((project, itemIndex) => {
+            const classNames = [
+              itemIndex >= MINIMAL_PROJECT_LIMIT && 'print-hide-minimal',
+              itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-summary',
+              itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-application',
+            ]
+              .filter(Boolean)
+              .join(' ');
 
-              return renderProject(project, classNames || undefined);
-            })}
-          </div>
+            return renderProject(project, classNames || undefined);
+          })}
         </div>
       )}
     </section>
