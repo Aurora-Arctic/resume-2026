@@ -70,6 +70,39 @@ describe('Header', () => {
     }
   });
 
+  it('renders an icon inside each link, in place of visible label text', async () => {
+    const data = await buildData();
+    data.links = [
+      { label: 'github.com/janedoe', href: 'https://github.com/janedoe' },
+      { label: 'linkedin.com/in/janedoe', href: 'https://linkedin.com/in/janedoe' },
+    ];
+    render(<Header data={data} />);
+
+    for (const link of data.links) {
+      const anchor = screen.getByRole('link', { name: link.label });
+      expect(anchor).toHaveTextContent('');
+      expect(anchor.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
+    }
+  });
+
+  it('picks the matching icon per host: LinkedIn, GitHub, own-domain, and an unrecognized fallback', async () => {
+    const data = await buildData();
+    data.links = [
+      { label: 'LinkedIn', href: 'https://www.linkedin.com/in/janedoe' },
+      { label: 'GitHub', href: 'https://github.com/janedoe' },
+      { label: 'resume.marwynn.net', href: 'https://resume.marwynn.net' },
+      { label: 'Blog', href: 'https://example.com' },
+    ];
+    const { container } = render(<Header data={data} />);
+    const icons = container.querySelectorAll('.resume-header__links a svg');
+
+    expect(icons).toHaveLength(4);
+    expect(icons[0].getAttribute('viewBox')).toBe('0 0 448 512'); // LinkedIn (bare "in" mark)
+    expect(icons[1].getAttribute('viewBox')).toBe('0 0 512 512'); // GitHub
+    expect(icons[2].getAttribute('viewBox')).toBe('0 0 576 512'); // own-domain -> link icon
+    expect(icons[3].getAttribute('viewBox')).toBe('0 0 576 512'); // unrecognized host -> link icon fallback
+  });
+
   it('decrypts and renders location/email/phone when a valid ?k= key is present', async () => {
     window.history.pushState({}, '', `/?k=${KEY}`);
     const data = await buildData();

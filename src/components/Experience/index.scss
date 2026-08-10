@@ -1,10 +1,100 @@
+@use '../../scss/variables' as *;
+@use '../../scss/print' as *;
+
+// As a sticky entry gets pushed out by its own (taller) paired Projects
+// group, it's about to scroll toward wherever the next entry sits below —
+// fade it out over that same "exit" phase so it's fully transparent by the
+// time it would otherwise visually crowd the next entry, instead of an
+// abrupt handoff.
+//
+// `animation-timeline: view()` on the sticky entry itself doesn't work
+// here: view() measures the *subject's own* un-stuck box, which is only as
+// tall as the entry's content — not the full (often much taller) row it
+// shares with its paired Projects group — so its "exit" phase resolves far
+// too early/late relative to when the entry actually un-sticks. Instead,
+// `.resume-experience__row` (a plain, non-sticky wrapper stretched to the
+// full row height by the grid) names a view-timeline off its own, correctly
+// row-height box, and the sticky `.resume-experience__entry` inside it
+// reads progress from that named timeline instead of measuring itself.
+//
+// The named "exit" range isn't used either: for a row taller than the
+// viewport (the common case — a job with several bullets/projects), the
+// "contain" phase it's measured against — the row fully covering the
+// scrollport — spans most of the scroll-through, so "exit" starts as soon
+// as the row's bottom edge is merely approaching, well before it actually
+// reaches the sticky release point. An explicit percentage of the full
+// cover distance keeps the fade confined to just before that release,
+// regardless of how tall any given row is.
+//
+// Feature-detected: browsers without scroll-driven animations just keep
+// plain sticky behavior, opacity always 1.
+@mixin sticky-exit-fade {
+  @supports (animation-timeline: view()) {
+    animation-name: resume-experience-entry-fade;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: --resume-experience-row;
+    animation-range: cover calc(100% - 8rem) cover 100%;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+}
+
+@keyframes resume-experience-entry-fade {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
 .resume-experience {
+  > h2 {
+    @media (min-width: $breakpoint-desktop) {
+      grid-row: 1;
+    }
+
+    @include grid-print-tiers {
+      grid-row: 1;
+    }
+  }
+
+  // Stretches to the full (subgrid-shared) row height — see the comment on
+  // sticky-exit-fade above for why this non-sticky wrapper exists.
+  &__row {
+    @media (min-width: $breakpoint-desktop) {
+      @supports (animation-timeline: view()) {
+        view-timeline-name: --resume-experience-row;
+        view-timeline-axis: block;
+      }
+    }
+  }
+
   &__entry {
     margin: 0 0 1.5rem;
+
+    @media (min-width: $breakpoint-desktop) {
+      position: sticky;
+      top: 1.5rem;
+      @include sticky-exit-fade;
+    }
   }
 
   &__meta {
     margin: 0.25rem 0 0.5rem;
     font-style: italic;
+  }
+
+  &__personal-label {
+    @media (min-width: $breakpoint-desktop) {
+      position: sticky;
+      top: 1.5rem;
+      @include sticky-exit-fade;
+    }
   }
 }

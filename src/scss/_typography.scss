@@ -68,12 +68,12 @@ a {
   }
 
   &:hover {
-    color: $wine-drenched;
+    color: $wine-glow;
   }
 }
 
 html[data-theme='light'] a {
-  color: $wine;
+  color: $wine-deep;
 
   &:visited {
     color: $silver-oxide;
@@ -81,6 +81,31 @@ html[data-theme='light'] a {
 
   &:hover {
     color: $grape-press;
+  }
+}
+
+// Reuse the body-text colors (already ≥6:1) rather than pushing the wine
+// hue further with another derived token, and add an underline so links
+// don't depend on the color difference at all — WCAG's "don't rely on
+// color alone" guidance, for users who've explicitly asked for more
+// contrast than the baseline above already provides.
+@media (prefers-contrast: more) {
+  a {
+    color: $text;
+    text-decoration: underline;
+
+    &:hover {
+      color: $text;
+    }
+  }
+
+  html[data-theme='light'] a {
+    color: $silver-oxide;
+    text-decoration: underline;
+
+    &:hover {
+      color: $silver-oxide;
+    }
   }
 }
 

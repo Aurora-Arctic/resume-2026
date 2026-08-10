@@ -11,17 +11,17 @@ interface PrintModeOption {
 }
 
 const PRINT_MODES: PrintModeOption[] = [
-  { value: 'full', label: 'Full details', description: 'All contents.' },
+  { value: 'full', label: 'Full', description: 'All contents.' },
   {
     value: 'summary',
-    label: 'Summary details',
+    label: 'Summary',
     description: 'A condensed version, trimmed to the highlights.',
   },
-  { value: 'minimal', label: 'Minimal details', description: 'Just the essentials.' },
+  { value: 'minimal', label: 'Minimal', description: 'Just the essentials.' },
   {
     value: 'application',
-    label: 'Application details',
-    description: 'Minimal details in a plain, linear layout.',
+    label: 'Application',
+    description: 'Summary details in a plain, linear layout.',
   },
 ];
 

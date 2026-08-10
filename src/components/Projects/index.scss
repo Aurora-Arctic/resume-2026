@@ -1,6 +1,36 @@
+@use '../../scss/variables' as *;
+@use '../../scss/print' as *;
+
 .resume-projects {
+  > h2 {
+    @media (min-width: $breakpoint-desktop) {
+      grid-row: 1;
+    }
+
+    @include grid-print-tiers {
+      grid-row: 1;
+    }
+  }
+
   &__entry {
     margin: 0 0 1.5rem;
+  }
+
+  &__company {
+    margin: 0.25rem 0;
+    font-style: italic;
+
+    // Row alignment with Experience already conveys the job association
+    // once the side-by-side grid is active, so this label is only needed
+    // in the layouts that fall back to a single linear column: below the
+    // desktop breakpoint, and the Application print tier.
+    @media (min-width: $breakpoint-desktop) {
+      display: none;
+    }
+
+    @include grid-print-tiers {
+      display: none;
+    }
   }
 
   &__stack {

@@ -41,6 +41,8 @@ export interface ProjectEntry {
   stack: string[];
   link?: string;
   bullets: string[];
+  /** Matches an ExperienceEntry.company verbatim, or 'Personal' for projects with no associated job. */
+  company: string;
 }
 
 export interface EducationEntry {
@@ -189,6 +191,7 @@ export const resumeData: ResumeData = {
         'Designed and built FHIR-based APIs enabling secure data exchange with third-party insurance partners.',
       stack: ['FHIR', 'REST APIs'],
       bullets: [],
+      company: 'Alma',
     },
     {
       name: 'Nike Super Bowl Halftime VR Experience',
@@ -200,6 +203,7 @@ export const resumeData: ResumeData = {
         'Implemented multi-region fallbacks to protect against AWS regional incidents.',
         'Built monitoring and alerting to surface developing issues before they became outages.',
       ],
+      company: '14Four',
     },
     {
       name: 'Sanitized Data Pipeline',
@@ -210,6 +214,7 @@ export const resumeData: ResumeData = {
         'Used Tonic to generate sanitized data for lower environments and local development.',
         'Built a compressed local-development backup system using ECS, EFS, and S3 Transfer Acceleration to work around size/performance limitations.',
       ],
+      company: 'Alma',
     },
     {
       name: 'Automated CI/CD Pipeline',
@@ -219,6 +224,7 @@ export const resumeData: ResumeData = {
         'Implemented GitHub merge queues and required deploy checks to keep main always releasable.',
         'Built integration and end-to-end test suites gating every merge.',
       ],
+      company: 'Alma',
     },
     {
       name: 'EDMO.com',
@@ -227,6 +233,7 @@ export const resumeData: ResumeData = {
       stack: ['AWS Amplify', 'AWS AppSync', 'GraphQL', 'Craft CMS'],
       link: 'https://edmo.com',
       bullets: [],
+      company: 'Uxiliary',
     },
     {
       name: 'SumoLogic.com',
@@ -234,6 +241,7 @@ export const resumeData: ResumeData = {
       stack: ['AWS'],
       link: 'https://sumologic.com',
       bullets: [],
+      company: 'Uxiliary',
     },
     {
       name: 'Design Bright',
@@ -242,13 +250,7 @@ export const resumeData: ResumeData = {
       stack: ['React', 'Express', 'Node.js', 'MySQL'],
       link: 'https://github.com/mjoynes-wombat-web/design-bright-client',
       bullets: [],
-    },
-    {
-      name: 'Marwynn.net',
-      description: 'Personal portfolio site.',
-      stack: ['Gatsby', 'React', 'Node.js'],
-      link: 'https://marwynn.net',
-      bullets: [],
+      company: 'Personal',
     },
   ],
   education: [

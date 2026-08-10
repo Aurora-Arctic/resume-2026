@@ -1,85 +1,67 @@
 @use '../../scss/variables' as *;
 @use '../../scss/print' as *;
 
-// Mobile-first: single column, section components in DOM order. At
-// $breakpoint-desktop this becomes a two-column grid — Header (1/3, right)
-// and Summary (2/3, left) share the first row via explicit grid-column
-// placement (not `order`), so the DOM/reading order stays Header before
-// Summary even though the visual position swaps. Everything else stays
-// full-width below.
-// Print: only the Application tier collapses back to a single top-to-bottom
-// column — Full/Summary/Minimal reassert this same two-column grid instead,
-// matching the web version. It has to be reasserted explicitly (not just
-// left to the @media (min-width: $breakpoint-desktop) block below) because
-// browsers evaluate that min-width against the physical page's width during
-// a real print, not the screen viewport — Letter/A4 is well under
-// $breakpoint-desktop, so the desktop rule alone never fires on paper. See
-// PrintOptions (src/scss/_print.scss's grid-print-tiers/linear-print-tiers
-// mixins) for the data-print-mode attribute this reads.
+// Mobile-first single column, section components in DOM order, unchanged at
+// every breakpoint (including print) — Header then Summary stack top to
+// bottom rather than sharing a row. Experience/Projects still form their own
+// side-by-side grid below (see .resume-experience-projects); that wrapper
+// declares its own `display: grid` independent of this column, so it's
+// unaffected by .resume staying a plain flex stack.
 .resume {
   display: flex;
   flex-direction: column;
+}
+
+// Experience and Projects sit side by side, sharing row tracks via subgrid
+// so a job and its project group line up exactly — see
+// claude-docs/components/RESUME.md for why. Application print tier is left
+// untouched here (falls back to block stacking, see the defensive reset
+// below) since it's the one ATS-style tier that must stay linear.
+.resume-experience-projects {
+  margin-top: 1rem;
 
   @media (min-width: $breakpoint-desktop) {
     display: grid;
-    grid-template-columns: 5fr 3fr;
+    grid-template-columns: 1fr 1fr;
     column-gap: 4rem;
   }
 
   @include grid-print-tiers {
     display: grid;
-    grid-template-columns: 5fr 3fr;
+    grid-template-columns: 1fr 1fr;
     column-gap: 4rem;
   }
 
   @include linear-print-tiers {
-    display: flex;
-    flex-direction: column;
-  }
-}
-
-@media (min-width: $breakpoint-desktop) {
-  .resume-summary {
-    grid-column: 1;
-    grid-row: 1;
-    margin-top: 0;
-  }
-
-  .resume-header {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .resume-skills,
-  .resume-experience,
-  .resume-projects,
-  .resume-education {
-    grid-column: 1 / -1;
-  }
-}
-
-// Print-only mirror of the desktop placement rules above, for the same
-// reason the grid itself needs reasserting — see the comment on .resume.
-.resume-summary {
-  @include grid-print-tiers {
-    grid-column: 1;
-    grid-row: 1;
+    display: block;
     margin-top: 0;
   }
 }
 
-.resume-header {
-  @include grid-print-tiers {
-    grid-column: 2;
-    grid-row: 1;
-  }
-}
-
-.resume-skills,
 .resume-experience,
-.resume-projects,
-.resume-education {
-  @include grid-print-tiers {
-    grid-column: 1 / -1;
+.resume-projects {
+  @media (min-width: $breakpoint-desktop) {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: 1 / -1;
   }
+
+  @include grid-print-tiers {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: 1 / -1;
+  }
+
+  @include linear-print-tiers {
+    display: block;
+    grid-template-rows: none;
+  }
+}
+
+.resume-experience {
+  grid-column: 1;
+}
+
+.resume-projects {
+  grid-column: 2;
 }

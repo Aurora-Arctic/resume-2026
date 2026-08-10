@@ -5,12 +5,7 @@ import './index.scss';
 const STORAGE_KEY = 'theme'; // keep in sync with gatsby-ssr.ts's STORAGE_KEY
 
 const applyTheme = (theme: 'light' | 'dark'): void => {
-  const root = document.documentElement;
-  if (theme === 'light') {
-    root.setAttribute('data-theme', 'light');
-  } else {
-    root.removeAttribute('data-theme');
-  }
+  document.documentElement.setAttribute('data-theme', theme);
   try {
     window.localStorage.setItem(STORAGE_KEY, theme);
   } catch {

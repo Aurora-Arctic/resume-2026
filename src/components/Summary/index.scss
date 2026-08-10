@@ -1,0 +1,36 @@
+@use '../../scss/print' as *;
+@use '../../scss/variables' as *;
+
+// Bounds line length to roughly 69 characters for readability — the section
+// (heading + paragraph) is otherwise free to stretch to the full card width
+// now that it no longer shares a row with Header. `ch` needs no media query:
+// mobile viewports are already narrower than 69ch of this font.
+.resume-summary {
+  max-width: 69ch;
+}
+
+// Explains the "…" truncation convention used elsewhere on the page (e.g.
+// Skills' collapsed sub-lists) — only meaningful once content has actually
+// been trimmed for a tier, so it's print-only and skipped for Full (nothing
+// is trimmed there) same as it is on screen.
+.resume-summary__print-note {
+  display: none;
+  margin: 2rem 0 0;
+
+  strong {
+    color: $wine-drenched;
+  }
+
+  @media print {
+    html[data-print-mode='summary'] &,
+    html[data-print-mode='minimal'] &,
+    html[data-print-mode='application'] & {
+      display: block;
+    }
+  }
+
+  a[href]:not([href^='mailto:']):not([href^='tel:']):not(.print-hide-url)::after {
+    display: inline;
+    margin-left: 0.25rem;
+  }
+}

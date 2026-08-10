@@ -1,18 +1,8 @@
 @use '../../scss/variables' as *;
+@use '../../scss/print' as *;
 
 .resume-header {
-  @media (min-width: $breakpoint-desktop) {
-    text-align: right;
-  }
-
   h1 {
-    @media (min-width: $breakpoint-desktop) {
-      // Fixed, not clamp() — .paper-card caps at 960px wide, so the header
-      // column's available width stops growing past $breakpoint-desktop
-      // too. A vw-based clamp would keep tracking raw viewport width past
-      // that point even though the column itself doesn't get any wider.
-      font-size: 1.75rem;
-    }
     margin-bottom: 1.25rem;
   }
 
@@ -46,19 +36,62 @@
   &__links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1rem;
+    gap: 0.5rem;
     list-style: none;
-    margin: 0.75rem 0 0;
+    margin: 1.25rem 0 0;
     padding: 0;
 
+    // Application prints the same top-to-bottom, one-per-line layout as
+    // &__contact above, rather than the wrapped row used everywhere else —
+    // matching that tier's plain, linear ATS convention.
+    @include linear-print-tiers {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
     li {
+      // Own positioning context so each item's Tooltip bubble anchors to
+      // its own icon rather than all three sharing one ancestor.
+      position: relative;
+
       &::before {
         content: '';
       }
     }
 
-    @media (min-width: $breakpoint-desktop) {
-      justify-content: flex-end;
+    a {
+      display: flex;
+      align-items: center;
+
+      // Icons print against the same white page regardless of which theme
+      // was active on-screen — pin to the light-mode link color rather than
+      // letting currentColor fall through to dark mode's $wine-stained
+      // (tuned for contrast against a dark card, not white paper).
+      @media print {
+        color: $wine;
+      }
     }
+  }
+
+  &__link-icon {
+    width: 1.1em;
+    height: 1.1em;
+  }
+}
+
+// Placement is per-instance, not part of the shared .tooltip look (see
+// Tooltip/index.scss) — mirrors .theme-toggle-tooltip/.print-options-tooltip.
+// Sits above its icon, arrow pointing down.
+.resume-header-link-tooltip {
+  top: -2.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  --tooltip-bridge-reach: 0.5rem;
+
+  &::before {
+    top: 1.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
   }
 }
