@@ -71,3 +71,16 @@ html[data-print-mode='application'] .print-hide-application {
     @content;
   }
 }
+
+// Scopes a rule to the Application tier when printing (real print via
+// @media print, or on-screen ?printMode=application simulation) — used to
+// force strict black-and-white rendering for that tier specifically, since
+// it's meant for ATS/job-application submissions where color should never
+// appear. Other tiers keep the wine accent color when printed.
+@mixin application-print-tier {
+  @media print {
+    html[data-print-mode='application'] & {
+      @content;
+    }
+  }
+}
