@@ -59,17 +59,6 @@
     font-style: italic;
   }
 
-  &__stack-ellipsis {
-    display: none;
-
-    html[data-print-mode='minimal'] & {
-      display: inline;
-      color: $wine;
-      font-size: 1.125rem;
-      font-weight: 800;
-    }
-  }
-
   &__bullets-ellipsis {
     display: none;
 

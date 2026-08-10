@@ -11,12 +11,11 @@ const renderProject = (project: ProjectEntry): ReactElement => (
   <article className="resume-projects__entry" key={project.name}>
     <h3>{project.link ? <a href={project.link}>{project.name}</a> : project.name}</h3>
     <p className="resume-projects__company">{project.company}</p>
-    <p>{project.description}</p>
+    <p className="print-hide-summary print-hide-minimal print-hide-application">
+      {project.description}
+    </p>
     {project.summary && <p className="resume-projects__summary">{project.summary}</p>}
     <p className="resume-projects__stack print-hide-minimal">{project.stack.join(', ')}</p>
-    <span className="resume-projects__stack-ellipsis" aria-hidden="true">
-      &hellip;
-    </span>
     <ul className="print-hide-summary print-hide-minimal print-hide-application">
       {project.bullets.map((bullet) => (
         <li key={bullet}>{bullet}</li>
