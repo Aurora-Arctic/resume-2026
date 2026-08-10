@@ -54,7 +54,9 @@ test.describe('print options', () => {
     // before PrintOptions' own useEffect has attached its keydown listener
     // is simply missed (a one-shot DOM event, never queued for a later
     // listener). Waiting on the trigger button — inert markup until
-    // hydrated, same component — stands in for "hydration is done".
+    // hydrated, same component — stands in for "hydration is done". We also
+    // wait for networkidle to ensure all scripts have loaded and effects run.
+    await page.waitForLoadState('networkidle');
     await expect(trigger(page)).toBeVisible();
     await page.evaluate(() => {
       window.dispatchEvent(

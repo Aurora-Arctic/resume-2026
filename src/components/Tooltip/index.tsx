@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { classNames } from '../../utils/classNames';
 import './index.scss';
 
 // A single key holding a JSON array of dismissed tooltip ids, rather than
@@ -165,7 +166,7 @@ const Tooltip = ({ id, content, className, children, onDismiss }: TooltipProps):
   };
 
   const trigger = cloneElement(children, {
-    className: [children.props.className, 'tooltip-trigger'].filter(Boolean).join(' '),
+    className: classNames(children.props.className, 'tooltip-trigger'),
     'aria-describedby': id,
     onMouseEnter: composeHandlers(children.props.onMouseEnter, handleTriggerMouseEnter),
     onFocus: composeHandlers(children.props.onFocus, handleTriggerFocus),
@@ -177,7 +178,7 @@ const Tooltip = ({ id, content, className, children, onDismiss }: TooltipProps):
       <span
         role="tooltip"
         id={id}
-        className={['tooltip', className, cleared && 'tooltip--cleared'].filter(Boolean).join(' ')}
+        className={classNames('tooltip', className, cleared && 'tooltip--cleared')}
         style={forceHidden ? { opacity: 0, visibility: 'hidden', transition: 'none' } : undefined}
       >
         <button

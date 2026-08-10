@@ -1,4 +1,6 @@
 import React, { type ReactElement } from 'react';
+import { classNames } from '../../utils/classNames';
+import BulletsEllipsis from '../BulletsEllipsis';
 import type { ExperienceEntry } from '../../data/resume';
 import './index.scss';
 
@@ -15,7 +17,7 @@ const renderExperience = (
   className?: string,
 ): ReactElement => (
   <div
-    className={['resume-experience__row', className].filter(Boolean).join(' ')}
+    className={classNames('resume-experience__row', className)}
     key={`${entry.company}-${entry.title}`}
     style={{ gridRow: index + 2 }}
   >
@@ -31,9 +33,7 @@ const renderExperience = (
           <li key={bullet}>{bullet}</li>
         ))}
       </ul>
-      <span className="resume-experience__bullets-ellipsis" aria-hidden="true">
-        &hellip;
-      </span>
+      <BulletsEllipsis className="resume-experience__bullets-ellipsis" />
     </article>
   </div>
 );
@@ -42,13 +42,11 @@ const Experience = ({ experience, hasPersonalProjects }: ExperienceProps): React
   <section className="resume-experience" aria-labelledby="experience-heading">
     <h2 id="experience-heading">Experience</h2>
     {experience.map((entry, index) => {
-      const classNames = [
+      const entryClassNames = classNames(
         index >= MINIMAL_EXPERIENCE_LIMIT && 'print-hide-minimal',
         index >= MINIMAL_EXPERIENCE_LIMIT && 'print-hide-application',
-      ]
-        .filter(Boolean)
-        .join(' ');
-      return renderExperience(entry, index, classNames || undefined);
+      );
+      return renderExperience(entry, index, entryClassNames || undefined);
     })}
     {hasPersonalProjects && (
       <div
