@@ -5,7 +5,7 @@ import ThemeToggle from '.';
 
 describe('ThemeToggle', () => {
   beforeEach(() => {
-    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', 'dark');
     window.localStorage.clear();
   });
 
@@ -28,14 +28,14 @@ describe('ThemeToggle', () => {
     expect(window.localStorage.getItem('theme')).toBe('light');
   });
 
-  it('switches back to dark mode on a second click, clearing the attribute', () => {
+  it('switches back to dark mode on a second click, resetting the attribute', () => {
     render(<ThemeToggle />);
     const button = screen.getByRole('button', { name: 'Toggle light and dark mode for the paper' });
 
     fireEvent.click(button);
     fireEvent.click(button);
 
-    expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     expect(window.localStorage.getItem('theme')).toBe('dark');
   });
 

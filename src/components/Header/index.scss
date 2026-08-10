@@ -64,6 +64,10 @@
     margin: 0.75rem 0 0;
     padding: 0;
 
+    @include grid-print-tiers {
+      justify-content: flex-end;
+    }
+
     li {
       &::before {
         content: '';

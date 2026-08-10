@@ -12,15 +12,26 @@ interface ResumeProps {
   data: ResumeData;
 }
 
-const Resume = ({ data }: ResumeProps): ReactElement => (
-  <div className="resume">
-    <Header data={data.header} />
-    <Summary summary={data.summary} />
-    <Experience experience={data.experience} />
-    <Projects projects={data.projects} />
-    <Skills skills={data.skills} />
-    <Education education={data.education} />
-  </div>
-);
+const Resume = ({ data }: ResumeProps): ReactElement => {
+  const companyOrder = data.experience.map((entry) => entry.company);
+  const hasPersonalProjects = data.projects.some((project) => project.company === 'Personal');
+  const rowCount = 1 + data.experience.length + (hasPersonalProjects ? 1 : 0);
+
+  return (
+    <div className="resume">
+      <Header data={data.header} />
+      <Summary summary={data.summary} />
+      <div
+        className="resume-experience-projects"
+        style={{ gridTemplateRows: `repeat(${rowCount}, auto)` }}
+      >
+        <Experience experience={data.experience} hasPersonalProjects={hasPersonalProjects} />
+        <Projects projects={data.projects} companyOrder={companyOrder} />
+      </div>
+      <Skills skills={data.skills} />
+      <Education education={data.education} />
+    </div>
+  );
+};
 
 export default Resume;

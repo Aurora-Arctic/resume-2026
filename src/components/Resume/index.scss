@@ -51,8 +51,7 @@
   }
 
   .resume-skills,
-  .resume-experience,
-  .resume-projects,
+  .resume-experience-projects,
   .resume-education {
     grid-column: 1 / -1;
   }
@@ -76,10 +75,63 @@
 }
 
 .resume-skills,
-.resume-experience,
-.resume-projects,
+.resume-experience-projects,
 .resume-education {
   @include grid-print-tiers {
     grid-column: 1 / -1;
   }
+}
+
+// Experience and Projects sit side by side, sharing row tracks via subgrid
+// so a job and its project group line up exactly — see
+// claude-docs/components/RESUME.md for why. Application print tier is left
+// untouched here (falls back to block stacking, see the defensive reset
+// below) since it's the one ATS-style tier that must stay linear.
+.resume-experience-projects {
+  margin-top: 1rem;
+
+  @media (min-width: $breakpoint-desktop) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 4rem;
+  }
+
+  @include grid-print-tiers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 4rem;
+  }
+
+  @include linear-print-tiers {
+    display: block;
+    margin-top: 0;
+  }
+}
+
+.resume-experience,
+.resume-projects {
+  @media (min-width: $breakpoint-desktop) {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: 1 / -1;
+  }
+
+  @include grid-print-tiers {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: 1 / -1;
+  }
+
+  @include linear-print-tiers {
+    display: block;
+    grid-template-rows: none;
+  }
+}
+
+.resume-experience {
+  grid-column: 1;
+}
+
+.resume-projects {
+  grid-column: 2;
 }

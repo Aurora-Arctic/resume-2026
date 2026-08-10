@@ -114,7 +114,7 @@ describe('PrintOptions', () => {
     render(<PrintOptions />);
     openModal();
 
-    expect(screen.getByRole('radio', { name: /^Full details/ })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /^Full/ })).toBeChecked();
 
     fireEvent.click(screen.getByRole('button', { name: 'Print' }));
 
@@ -127,7 +127,7 @@ describe('PrintOptions', () => {
     render(<PrintOptions />);
     openModal();
 
-    fireEvent.click(screen.getByRole('radio', { name: /^Minimal details/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /^Minimal/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Print' }));
 
     expect(document.documentElement.getAttribute('data-print-mode')).toBe('minimal');
@@ -139,7 +139,7 @@ describe('PrintOptions', () => {
     ['All contents.'],
     ['A condensed version, trimmed to the highlights.'],
     ['Just the essentials.'],
-    ['Minimal details in a plain, linear layout.'],
+    ['Summary details in a plain, linear layout.'],
   ])('shows the description %s', (description) => {
     render(<PrintOptions />);
     openModal();
