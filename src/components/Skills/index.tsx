@@ -59,7 +59,11 @@ const SkillItem = ({ category, skill, allTooltipIds }: SkillItemProps): ReactEle
           {skill.label}
         </button>
       </Tooltip>
-      <ul className="resume-skills__sub-list" id={subListId} hidden={!expanded}>
+      <ul
+        className="resume-skills__sub-list print-hide-summary print-hide-minimal"
+        id={subListId}
+        hidden={!expanded}
+      >
         {skill.subItems.map((item) => (
           <li key={item}>{item}</li>
         ))}
