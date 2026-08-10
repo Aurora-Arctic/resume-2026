@@ -199,6 +199,6 @@ test.describe('print options', () => {
 
     await expect(page.locator('.resume')).toHaveCSS('display', 'flex');
     await expect(page.locator('.resume-experience-projects')).toHaveCSS('display', 'block');
-    await expect(page.locator('.resume-skills__groups')).toHaveCSS('display', 'block');
+    await expect(page.locator('.resume-skills__groups')).toHaveCSS('display', 'grid');
   });
 });

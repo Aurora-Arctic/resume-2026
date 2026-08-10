@@ -319,6 +319,23 @@ export const resumeData: ResumeData = {
       company: 'Uxiliary',
     },
     {
+      name: 'Resume Site',
+      description:
+        'Is it overkill to implement a full CI/CD pipeline and over 80% unit and e2e testing for a personal resume? Sure, but the point is to showcase my skills. ;)',
+      stack: ['Github Actions', 'Vitest', 'Playwright', 'Gatsby', 'TypeScript'],
+      link: 'https://resume.marwynn.net',
+      summary:
+        'Is it overkill to implement a full CI/CD pipeline and over 80% unit and e2e testing for a personal resume? Sure, but the point is to showcase my skills. ;) This site showcase some of my skills with CI/CD, testing, breadth of frontend knowledge and my experience with AI tooling like Claude code.',
+      bullets: [
+        'Designed and built a fully static site with Gatsby, React, and TypeScript.',
+        'Implemented client-side encryption for contact information with AES-256-GCM.',
+        'Built a light/dark theme toggle with synchronized SSR to prevent flash-of-unstyled-content.',
+        'Engineered responsive design with print layouts optimized for ATS (Applicant Tracking Systems).',
+        'Set up CI/CD with GitHub Actions, merge queues, and automated testing (Vitest and Playwright).',
+      ],
+      company: 'Personal',
+    },
+    {
       name: 'Design Bright',
       description:
         'An intuitive web application for creating funding campaigns for nonprofit marketing projects.',

@@ -9,6 +9,7 @@ interface ProjectsProps {
 
 const SUMMARY_PROJECT_LIMIT = 3;
 const MINIMAL_PROJECT_LIMIT = 2;
+const MINIMAL_PERSONAL_PROJECT_LIMIT = 1;
 
 const renderProject = (project: ProjectEntry, className?: string): ReactElement => (
   <article
@@ -49,7 +50,9 @@ const Projects = ({ projects, companyOrder }: ProjectsProps): ReactElement => {
             const classNames = [
               itemIndex >= MINIMAL_PROJECT_LIMIT && 'print-hide-minimal',
               itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-summary',
-              itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-application',
+              itemIndex >= MINIMAL_PROJECT_LIMIT && 'print-hide-application',
+              project.company === 'Uxiliary' && 'print-hide-minimal',
+              project.company === 'Uxiliary' && 'print-hide-application',
             ]
               .filter(Boolean)
               .join(' ');
@@ -59,24 +62,18 @@ const Projects = ({ projects, companyOrder }: ProjectsProps): ReactElement => {
         </div>
       ))}
       {personalItems.length > 0 && (
-        <div
-          className="resume-projects__personal print-hide-application"
-          style={{ gridRow: companyOrder.length + 2 }}
-        >
-          <h3 className="resume-projects__personal-heading">Personal Projects</h3>
-          <div className="resume-projects__group">
-            {personalItems.map((project, itemIndex) => {
-              const classNames = [
-                itemIndex >= MINIMAL_PROJECT_LIMIT && 'print-hide-minimal',
-                itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-summary',
-                itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-application',
-              ]
-                .filter(Boolean)
-                .join(' ');
+        <div className="resume-projects__group">
+          {personalItems.map((project, itemIndex) => {
+            const classNames = [
+              itemIndex >= MINIMAL_PERSONAL_PROJECT_LIMIT && 'print-hide-minimal',
+              itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-summary',
+              itemIndex >= MINIMAL_PERSONAL_PROJECT_LIMIT && 'print-hide-application',
+            ]
+              .filter(Boolean)
+              .join(' ');
 
-              return renderProject(project, classNames || undefined);
-            })}
-          </div>
+            return renderProject(project, classNames || undefined);
+          })}
         </div>
       )}
     </section>
