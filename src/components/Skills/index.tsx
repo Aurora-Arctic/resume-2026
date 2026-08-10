@@ -60,7 +60,7 @@ const SkillItem = ({ category, skill, allTooltipIds }: SkillItemProps): ReactEle
         </button>
       </Tooltip>
       <ul
-        className="resume-skills__sub-list print-hide-summary print-hide-minimal"
+        className="resume-skills__sub-list print-hide-summary print-hide-minimal print-hide-application"
         id={subListId}
         hidden={!expanded}
       >
@@ -68,6 +68,9 @@ const SkillItem = ({ category, skill, allTooltipIds }: SkillItemProps): ReactEle
           <li key={item}>{item}</li>
         ))}
       </ul>
+      <span className="resume-skills__sub-list-ellipsis" aria-hidden="true">
+        …
+      </span>
     </li>
   );
 };

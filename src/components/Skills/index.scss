@@ -231,3 +231,26 @@ html[data-theme='light'] .resume-skills__skill-toggle::before {
     display: block;
   }
 }
+
+// Stands in for the sub-list wherever print-hide-summary/-minimal/-application
+// (see index.tsx and src/scss/_print.scss) removes it, so condensed print
+// output shows a visible cue that more detail exists on screen rather than a
+// silent gap. Hidden by default (on-screen and in Full print, which still
+// shows the real sub-list) and only switched on for the same three tiers
+// that hide it.
+.resume-skills__sub-list-ellipsis {
+  display: none;
+}
+
+@media print {
+  html[data-print-mode='summary'] .resume-skills__sub-list-ellipsis,
+  html[data-print-mode='minimal'] .resume-skills__sub-list-ellipsis,
+  html[data-print-mode='application'] .resume-skills__sub-list-ellipsis {
+    display: inline;
+    // Pin to the base $wine rather than the theme-lightened
+    // $wine-stained/$wine-drenched variants — print always renders on a
+    // white page regardless of which on-screen theme was active, same
+    // reasoning as Header's printed link icons.
+    color: $wine;
+  }
+}

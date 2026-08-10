@@ -84,13 +84,25 @@ describe('Skills', () => {
     expect(screen.getByText('ES')).not.toBeVisible();
   });
 
-  it('opts sub-items out of the Summary and Minimal print tiers', () => {
+  it('opts sub-items out of the Summary, Minimal, and Application print tiers', () => {
     render(<Skills skills={expandableSkills} />);
 
     expect(screen.getByText('ES').closest('ul')).toHaveClass(
       'print-hide-summary',
       'print-hide-minimal',
+      'print-hide-application',
     );
+  });
+
+  it('renders a hidden wine ellipsis in place of each hidden sub-list', () => {
+    render(<Skills skills={expandableSkills} />);
+
+    const ellipses = screen.getAllByText('…');
+    expect(ellipses).toHaveLength(2);
+    ellipses.forEach((ellipsis) => {
+      expect(ellipsis).toHaveClass('resume-skills__sub-list-ellipsis');
+      expect(ellipsis).toHaveAttribute('aria-hidden', 'true');
+    });
   });
 
   it('shows a "Click for more info" tooltip hint for expandable skills', () => {
