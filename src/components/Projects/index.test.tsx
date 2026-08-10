@@ -67,4 +67,61 @@ describe('Projects', () => {
 
     expect(screen.getByText('Acme Corp')).toHaveClass('resume-projects__company');
   });
+
+  it('applies print-hide-summary/application to projects past the per-company summary limit (3)', () => {
+    const manyProjects: ProjectEntry[] = [
+      { ...projects[0], name: 'Project 1', company: 'Alma' },
+      { ...projects[0], name: 'Project 2', company: 'Alma' },
+      { ...projects[0], name: 'Project 3', company: 'Alma' },
+      { ...projects[0], name: 'Project 4', company: 'Alma' },
+    ];
+    render(<Projects projects={manyProjects} companyOrder={['Alma']} />);
+
+    const project1 = screen
+      .getByRole('heading', { level: 3, name: 'Project 1' })
+      .closest('article');
+    const project2 = screen
+      .getByRole('heading', { level: 3, name: 'Project 2' })
+      .closest('article');
+    const project3 = screen
+      .getByRole('heading', { level: 3, name: 'Project 3' })
+      .closest('article');
+    const project4 = screen
+      .getByRole('heading', { level: 3, name: 'Project 4' })
+      .closest('article');
+
+    expect(project1).not.toHaveClass('print-hide-summary');
+    expect(project2).not.toHaveClass('print-hide-summary');
+    expect(project3).not.toHaveClass('print-hide-summary');
+    expect(project4).toHaveClass('print-hide-summary');
+    expect(project4).toHaveClass('print-hide-application');
+  });
+
+  it('applies print-hide-minimal to projects past the per-company minimal limit (2)', () => {
+    const manyProjects: ProjectEntry[] = [
+      { ...projects[0], name: 'Project 1', company: 'Alma' },
+      { ...projects[0], name: 'Project 2', company: 'Alma' },
+      { ...projects[0], name: 'Project 3', company: 'Alma' },
+      { ...projects[0], name: 'Project 4', company: 'Alma' },
+    ];
+    render(<Projects projects={manyProjects} companyOrder={['Alma']} />);
+
+    const project1 = screen
+      .getByRole('heading', { level: 3, name: 'Project 1' })
+      .closest('article');
+    const project2 = screen
+      .getByRole('heading', { level: 3, name: 'Project 2' })
+      .closest('article');
+    const project3 = screen
+      .getByRole('heading', { level: 3, name: 'Project 3' })
+      .closest('article');
+    const project4 = screen
+      .getByRole('heading', { level: 3, name: 'Project 4' })
+      .closest('article');
+
+    expect(project1).not.toHaveClass('print-hide-minimal');
+    expect(project2).not.toHaveClass('print-hide-minimal');
+    expect(project3).toHaveClass('print-hide-minimal');
+    expect(project4).toHaveClass('print-hide-minimal');
+  });
 });

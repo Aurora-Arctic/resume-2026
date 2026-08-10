@@ -37,3 +37,13 @@ User request: bring the `Projects` section in line with the resume's existing pr
 - The summary `<p>` renders unconditionally when `project.summary` is truthy, but styled `display: none` by default and only shown on Summary/Minimal/Application tiers via `html[data-print-mode='summary'|'minimal'|'application'] &`.
 
 All three ellipsis/summary styles follow the existing pattern from `Experience` and `Skills` (see [EXPERIENCE.md](EXPERIENCE.md) and [SKILLS.md](SKILLS.md) transcripts).
+
+## Project count truncation per company per print tier (2026-08-10)
+
+User request: condense the `Projects` section by limiting the number of projects shown _per company_ in condensed print tiers. Summary and Application tiers show only the top 3 projects per company; Minimal shows top 2 per company. Full tier shows all projects (current behavior). This mirrors the existing approach used by `Skills` (top 5 per category in Summary/Application, top 2 in Minimal) and follows how `Experience` hides bullets in condensed tiers.
+
+**Per-company limits, not global.** The truncation is applied _within each company group independently_, using the project's position within that group's array as the rank. E.g., if Alma has 4 projects, Summary tier shows the first 3; Minimal shows the first 2. If another company has only 2 projects, all 2 show in every tier. This is simpler than a global ranking and aligns with the component's natural structure: each company already has its own `.resume-projects__group` div, so applying the limit per group is natural and scales predictably as the data changes.
+
+**Implementation: simple per-group index check.** The component tracks `itemIndex` (position within each group's array) as it maps. Each project gets `.print-hide-minimal` if `itemIndex >= MINIMAL_PROJECT_LIMIT` (2), and `.print-hide-summary`/`.print-hide-application` if `itemIndex >= SUMMARY_PROJECT_LIMIT` (3). The Personal group is handled separately with the same logic, so both company groups and the Personal group respect their own per-group limits.
+
+**Tests.** Unit tests: render a company with 4+ projects and verify the first 3 lack `.print-hide-summary`, the 4th+ have it; first 2 lack `.print-hide-minimal`, 3rd+ have it. E2E tests: after simulating tiers via PrintOptions modal, assert that hidden projects exist (`.print-hide-minimal/summary/application` count > 0).
