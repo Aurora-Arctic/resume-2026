@@ -87,7 +87,7 @@ export const resumeData: ResumeData = {
     ],
   },
   summary:
-    'Senior backend engineer and technical lead with a decade of design experience before moving into software, now focused on developer experience. Builds serverless infrastructure and robust backend APIs and services, and mentors engineers across the stack. A background spanning both visual design and infrastructure engineering informs a practical, detail-oriented approach to shipping product.',
+    'Senior full-stack engineer and technical lead with a decade of design experience before moving into engineering. Led partner integrations and compliance-sensitive systems, including healthcare data exchange and PHI/PII sanitization pipelines. Architected serverless and CI/CD infrastructure, cutting CI runtime and cost by ~30%. Mentored engineers across the stack. Increasingly works with AI-assisted engineering tooling to ship faster without sacrificing quality.',
   skills: [
     {
       category: 'Languages',
