@@ -80,8 +80,20 @@ describe('Header', () => {
       'href',
       'mailto:jane@example.com',
     );
-    expect(screen.getByText('555-0100')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '555-0100' })).toHaveAttribute('href', 'tel:5550100');
     expect(screen.getByRole('list', { name: 'Contact details' })).toBeInTheDocument();
+  });
+
+  it('strips all non-digit characters when building the tel: href', async () => {
+    window.history.pushState({}, '', `/?k=${KEY}`);
+    const data = await buildData();
+    data.phone = await encryptText('+1 (555) 010-0199', KEY);
+    render(<Header data={data} />);
+
+    expect(await screen.findByRole('link', { name: '+1 (555) 010-0199' })).toHaveAttribute(
+      'href',
+      'tel:15550100199',
+    );
   });
 
   it('keeps location/email/phone hidden when the ?k= key is wrong', async () => {

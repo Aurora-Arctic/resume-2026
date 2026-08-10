@@ -1,0 +1,16 @@
+@use 'variables' as *;
+
+// Ink can't be clicked — reveal where each link actually points, right below
+// its text, so the URL survives onto paper. mailto:/tel: links are excluded
+// since their target is already the visible text; print-hide-url is an
+// explicit per-link opt-out for anchors that shouldn't print at all.
+@media print {
+  a[href]:not([href^='mailto:']):not([href^='tel:']):not(.print-hide-url)::after {
+    content: attr(href);
+    display: block;
+    font-size: 0.75em;
+    color: $print-text;
+    opacity: 0.6;
+    overflow-wrap: anywhere;
+  }
+}
