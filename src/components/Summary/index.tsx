@@ -1,14 +1,10 @@
 import React, { type ReactElement } from 'react';
+import { getSiteUrl } from '../../utils/site';
 import './index.scss';
 
 interface SummaryProps {
   summary: string;
 }
-
-// Mirrors Header's own getSiteUrl fallback (see src/components/Header/index.tsx)
-// so this note points at the same domain the "this same site" contact link
-// resolves to, without depending on that component.
-const getSiteUrl = (): string => process.env.GATSBY_SITE_URL ?? 'http://localhost:8000';
 
 const Summary = ({ summary }: SummaryProps): ReactElement => {
   const siteUrl = new URL(getSiteUrl());
