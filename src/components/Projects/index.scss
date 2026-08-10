@@ -11,6 +11,7 @@
 
   &__entry {
     margin: 0 0 1.5rem;
+    position: relative;
 
     @include compact-print-tiers {
       margin: 0 0 0.75rem;
@@ -22,6 +23,10 @@
       @include compact-print-tiers {
         margin-top: 0.75rem;
       }
+    }
+
+    > div {
+      position: relative;
     }
   }
 
@@ -117,5 +122,22 @@
     width: 1.1em;
     height: 1.1em;
     color: inherit;
+  }
+}
+
+// Placement for the GitHub link tooltip — sits to the left of the icon,
+// arrow pointing right.
+.resume-projects-github-tooltip {
+  right: calc(100% + 0.25rem);
+  top: 3.5rem;
+  transform: translateY(-50%);
+  margin-right: 0.5rem;
+  --tooltip-bridge-reach: 0;
+
+  &::before {
+    right: -0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    @include tooltip-arrow(right);
   }
 }
