@@ -89,7 +89,7 @@ const Header = ({ data }: HeaderProps): ReactElement => {
           )}
           {contact.phone && (
             <li className="resume-header__contact__item resume-header__contact__item--phone">
-              {contact.phone}
+              <a href={`tel:${contact.phone.replace(/\D/g, '')}`}>{contact.phone}</a>
             </li>
           )}
           {contact.location && <li className="resume-header__contact__item">{contact.location}</li>}

@@ -17,3 +17,7 @@ The card background texture (originally `src/images/prism.png`) is a subtle, til
 ## Moved into its own folder, with colocated SCSS
 
 `src/components/BackgroundCredit.tsx` moved to `src/components/BackgroundCredit/index.tsx`, with `.background-credit` pulled out of the old shared `src/scss/layout.scss` into a colocated `src/components/BackgroundCredit/index.scss` — this component has no test file, so nothing to move there. See [../LAYOUT-SETUP.md](../LAYOUT-SETUP.md)'s "Splitting component SCSS out of `layout.scss`, per component" section for the full rationale behind the per-component-folder restructuring.
+
+## Opted out of the print link-URL reveal (2026-08-10)
+
+Full rationale lives in [LAYOUT-SETUP.md](../LAYOUT-SETUP.md)'s "A fifth shared partial: `_print.scss`" section; this is just the `BackgroundCredit`-side pointer. The attribution `<a>` gained `className="print-hide-url"`, opting it out of the new print link-URL-reveal rule — belt-and-suspenders, since this component's whole `<p>` was already `display: none` in print before this class existed. Gained its first test file, `index.test.tsx`, asserting the link carries that class.
