@@ -1,5 +1,6 @@
 import React, { type ReactElement } from 'react';
 import type { ProjectEntry } from '../../data/resume';
+import Tooltip from '../Tooltip';
 import './index.scss';
 
 const GithubIcon = (): ReactElement => (
@@ -20,7 +21,7 @@ const SUMMARY_PROJECT_LIMIT = 3;
 const MINIMAL_PROJECT_LIMIT = 2;
 const MINIMAL_PERSONAL_PROJECT_LIMIT = 1;
 
-const renderProject = (project: ProjectEntry, className?: string): ReactElement => (
+const renderProject = (project: ProjectEntry, className?: string, index?: number): ReactElement => (
   <article
     className={['resume-projects__entry', className].filter(Boolean).join(' ')}
     key={project.name}
@@ -28,13 +29,15 @@ const renderProject = (project: ProjectEntry, className?: string): ReactElement 
     <div>
       <h3>{project.link ? <a href={project.link}>{project.name}</a> : project.name}</h3>
       {project.github && (
-        <a
-          href={project.github}
-          className="resume-projects__github-link"
-          aria-label="GitHub repository"
+        <Tooltip
+          id={`project-github-tooltip-${index}`}
+          className="resume-projects-github-tooltip"
+          content="GitHub repository"
         >
-          <GithubIcon />
-        </a>
+          <a href={project.github} className="resume-projects__github-link">
+            <GithubIcon />
+          </a>
+        </Tooltip>
       )}
     </div>
     <p className="resume-projects__company">{project.company}</p>
@@ -77,7 +80,7 @@ const Projects = ({ projects, companyOrder }: ProjectsProps): ReactElement => {
               .filter(Boolean)
               .join(' ');
 
-            return renderProject(project, classNames || undefined);
+            return renderProject(project, classNames || undefined, itemIndex);
           })}
         </div>
       ))}
@@ -92,7 +95,7 @@ const Projects = ({ projects, companyOrder }: ProjectsProps): ReactElement => {
               .filter(Boolean)
               .join(' ');
 
-            return renderProject(project, classNames || undefined);
+            return renderProject(project, classNames || undefined, itemIndex);
           })}
         </div>
       )}
