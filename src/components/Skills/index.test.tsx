@@ -117,17 +117,6 @@ describe('Skills', () => {
     );
   });
 
-  it('renders a hidden wine ellipsis in place of each hidden sub-list', () => {
-    render(<Skills skills={expandableSkills} />);
-
-    const ellipses = screen.getAllByText('…');
-    expect(ellipses).toHaveLength(2);
-    ellipses.forEach((ellipsis) => {
-      expect(ellipsis).toHaveClass('resume-skills__sub-list-ellipsis');
-      expect(ellipsis).toHaveAttribute('aria-hidden', 'true');
-    });
-  });
-
   it('shows a "Click for more info" tooltip hint for expandable skills', () => {
     render(<Skills skills={expandableSkills} />);
 

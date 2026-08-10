@@ -17,6 +17,10 @@
   display: none;
   margin: 2rem 0 0;
 
+  @include compact-print-tiers {
+    margin: 1rem 0 0;
+  }
+
   strong {
     color: $wine-drenched;
   }

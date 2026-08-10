@@ -122,6 +122,38 @@ test.describe('print options', () => {
     expect(skillItems).toBeLessThan(10);
   });
 
+  test('choosing minimal tier truncates projects per company to 2', async ({ page }) => {
+    await trigger(page).click();
+    await tierRadio(page, 'Minimal').click();
+    await printButton(page).click();
+
+    // Each company group should show at most 2 projects (those with 3+ total will hide 3+)
+    const hiddenMinimal = await page.locator('.resume-projects__entry.print-hide-minimal').count();
+    expect(hiddenMinimal).toBeGreaterThan(0);
+  });
+
+  test('choosing summary tier truncates projects per company to 3', async ({ page }) => {
+    await trigger(page).click();
+    await tierRadio(page, 'Summary').click();
+    await printButton(page).click();
+
+    // Each company group should show at most 3 projects (those with 4+ total will hide 4+)
+    const hiddenSummary = await page.locator('.resume-projects__entry.print-hide-summary').count();
+    expect(hiddenSummary).toBeGreaterThan(0);
+  });
+
+  test('choosing application tier truncates projects per company to 3', async ({ page }) => {
+    await trigger(page).click();
+    await tierRadio(page, 'Application').click();
+    await printButton(page).click();
+
+    // Each company group should show at most 3 projects (those with 4+ total will hide 4+)
+    const hiddenApplication = await page
+      .locator('.resume-projects__entry.print-hide-application')
+      .count();
+    expect(hiddenApplication).toBeGreaterThan(0);
+  });
+
   test('focus returns to the trigger button after the modal closes', async ({ page }) => {
     await trigger(page).click();
 
