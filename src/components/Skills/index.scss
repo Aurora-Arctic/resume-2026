@@ -62,11 +62,12 @@
       content: none;
     }
 
-    @media print {
+    html[data-print-mode] & {
       // No interaction on paper — restore the plain diamond every other
       // skill uses (position/color still come from the base rule above,
       // only `content` was suppressed). The button's own arrow is hidden
-      // separately, see &__skill-toggle's print override.
+      // separately, see &__skill-toggle's print override. Applies to any
+      // print tier (full, summary, minimal, application).
       &::before {
         content: '◆';
       }
@@ -126,7 +127,7 @@
       }
     }
 
-    @media print {
+    html[data-print-mode] & {
       &::before {
         content: none;
       }
@@ -268,38 +269,35 @@ html[data-theme='light'] .resume-skills__skill-toggle::before {
   }
 }
 
-@media print {
-  .resume-skills__sub-list[hidden] {
-    display: block;
-  }
+html[data-print-mode] .resume-skills__sub-list[hidden] {
+  display: block;
 }
 
 // Stands in for the sub-list wherever print-hide-summary/-minimal/-application
-// (see index.tsx and src/scss/_print.scss) removes it, so condensed print
-// output shows a visible cue that more detail exists on screen rather than a
-// silent gap. Hidden by default (on-screen and in Full print, which still
-// shows the real sub-list) and only switched on for the same three tiers
-// that hide it.
+// (see index.tsx and src/scss/_print.scss) removes it, so condensed output
+// shows a visible cue that more detail exists rather than a silent gap.
+// Hidden by default (on-screen and in Full tier, which still shows the real
+// sub-list) and only shown for the three non-Full tiers.
 .resume-skills__sub-list-ellipsis {
   display: none;
 }
 
-@media print {
-  html[data-print-mode='summary'] .resume-skills__sub-list-ellipsis,
-  html[data-print-mode='minimal'] .resume-skills__sub-list-ellipsis,
-  html[data-print-mode='application'] .resume-skills__sub-list-ellipsis {
-    display: inline;
-    // Pin to the base $wine rather than the theme-lightened
-    // $wine-stained/$wine-drenched variants — print always renders on a
-    // white page regardless of which on-screen theme was active, same
-    // reasoning as Header's printed link icons.
-    color: $wine;
-  }
+html[data-print-mode='summary'] .resume-skills__sub-list-ellipsis,
+html[data-print-mode='minimal'] .resume-skills__sub-list-ellipsis,
+html[data-print-mode='application'] .resume-skills__sub-list-ellipsis {
+  display: inline;
+  // Pin to the base $wine rather than the theme-lightened
+  // $wine-stained/$wine-drenched variants — print always renders on a
+  // white page regardless of which on-screen theme was active, same
+  // reasoning as Header's printed link icons.
+  color: $wine;
+  font-size: 1.125rem;
+  font-weight: 800;
 }
 
 // Stands in for the skills a category truncates on the Summary (first 5)
-// and Minimal (first 2) print tiers — index.tsx renders one span per tier,
-// each only when that tier's limit actually hides something, and applies
+// and Minimal (first 2) tiers — index.tsx renders one span per tier, each
+// only when that tier's limit actually hides something, and applies
 // print-hide-summary/print-hide-minimal to the skills past each cutoff (see
 // src/scss/_print.scss). Placed after the <ul> rather than inline at the
 // cutoff: the hidden trailing <li>s collapse via display: none, so this
@@ -308,10 +306,11 @@ html[data-theme='light'] .resume-skills__skill-toggle::before {
   display: none;
 }
 
-@media print {
-  html[data-print-mode='summary'] .resume-skills__truncate-ellipsis--summary,
-  html[data-print-mode='minimal'] .resume-skills__truncate-ellipsis--minimal {
-    display: inline;
-    color: $wine;
-  }
+html[data-print-mode='summary'] .resume-skills__truncate-ellipsis--summary,
+html[data-print-mode='minimal'] .resume-skills__truncate-ellipsis--minimal,
+html[data-print-mode='application'] .resume-skills__truncate-ellipsis--application {
+  display: inline;
+  color: $wine;
+  font-size: 1.125rem;
+  font-weight: 800;
 }

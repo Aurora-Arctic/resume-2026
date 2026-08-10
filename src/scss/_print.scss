@@ -16,30 +16,30 @@
 }
 
 // PrintOptions (src/components/PrintOptions) sets data-print-mode on <html>
-// right before window.print() — entirely scoped inside @media print below,
-// so the attribute has zero effect on-screen regardless of its value.
-// Content components opt an element OUT of a tier by adding the matching
-// class; an element with no print-hide-* class shows in every tier,
-// including the default (no data-print-mode set == full detail) print. The
-// three classes are independent, not a hierarchy — an element can carry more
-// than one (e.g. print-hide-minimal print-hide-application) if it should
-// disappear in both tiers.
-@media print {
-  html[data-print-mode='summary'] .print-hide-summary,
-  html[data-print-mode='minimal'] .print-hide-minimal,
-  html[data-print-mode='application'] .print-hide-application {
-    display: none;
-  }
+// right before window.print(), or a query param (?printMode=...) sets it on
+// page load to simulate a tier on-screen. Content components opt an element
+// OUT of a tier by adding the matching class; an element with no
+// print-hide-* class shows in every tier, including the default (no
+// data-print-mode set == full detail) state. The three classes are
+// independent, not a hierarchy — an element can carry more than one
+// (e.g. print-hide-minimal print-hide-application) if it should disappear in
+// both tiers.
+html[data-print-mode='summary'] .print-hide-summary,
+html[data-print-mode='minimal'] .print-hide-minimal,
+html[data-print-mode='application'] .print-hide-application {
+  display: none;
 }
 
-// Wraps content in @media print, scoped to every tier except Application —
-// Full, Summary, and Minimal should print using the same multi-column grid
-// as the desktop web layout. That grid normally only turns on via
-// `@media (min-width: $breakpoint-desktop)`, but browsers evaluate print
-// media features against the physical page's width (Letter/A4, well under
-// $breakpoint-desktop), not the screen viewport — so that breakpoint never
-// matches during a real print, for any tier. The grid has to be reasserted
-// here, unconditional of width, for every non-Application tier.
+// Wraps content scoped to every tier except Application — Full, Summary, and
+// Minimal should display using the same multi-column grid as the desktop web
+// layout. That grid normally only turns on via `@media (min-width:
+// $breakpoint-desktop)`, but browsers evaluate print media features against
+// the physical page's width (Letter/A4, well under $breakpoint-desktop), not
+// the screen viewport — so that breakpoint never matches during a real print,
+// for any tier. The grid has to be reasserted here, unconditional of width,
+// for every non-Application tier. Scoped to @media print so it doesn't affect
+// normal screen layout (only real printing or a simulated tier via
+// ?printMode=... applies data-print-mode).
 @mixin grid-print-tiers {
   @media print {
     html:not([data-print-mode='application']) & {
@@ -48,10 +48,12 @@
   }
 }
 
-// Wraps content in @media print, scoped to the one tier whose spec calls for
-// a collapsed/linear layout — Application. Full, Summary, and Minimal use
+// Wraps content scoped to the one tier whose spec calls for a
+// collapsed/linear layout — Application. Full, Summary, and Minimal use
 // grid-print-tiers above instead, to match their on-screen multi-column
-// layout.
+// layout. Scoped to @media print so it doesn't affect normal screen layout
+// (only real printing or a simulated tier via ?printMode=... applies
+// data-print-mode).
 @mixin linear-print-tiers {
   @media print {
     html[data-print-mode='application'] & {

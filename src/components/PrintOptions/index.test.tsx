@@ -15,8 +15,10 @@ describe('PrintOptions', () => {
   // window.print is shared across every test in this file (jsdom's window
   // isn't recreated per test) — without restoring it, a later test's
   // vi.spyOn wraps the *previous* test's still-active mock instead of a
-  // clean window.print, inheriting its call count.
+  // clean window.print, inheriting its call count. Also restore the URL
+  // after tests that modify window.location.
   afterEach(() => {
+    window.history.pushState({}, '', '/');
     vi.restoreAllMocks();
   });
 
@@ -226,5 +228,64 @@ describe('PrintOptions', () => {
 
     expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
     expect(removeEventListenerSpy).toHaveBeenCalledWith('afterprint', expect.any(Function));
+  });
+
+  it.each([
+    ['summary', 'Summary'],
+    ['minimal', 'Minimal'],
+    ['application', 'Application'],
+  ])(
+    'simulates the %s tier via ?printMode=%s query param without printing',
+    (tierValue, tierLabel) => {
+      const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
+      window.history.pushState({}, '', `/?printMode=${tierValue}`);
+
+      render(<PrintOptions />);
+
+      expect(document.documentElement.getAttribute('data-print-mode')).toBe(tierValue);
+      expect(printSpy).not.toHaveBeenCalled();
+
+      openModal();
+      expect(screen.getByRole('radio', { name: new RegExp(`^${tierLabel}`) })).toBeChecked();
+    },
+  );
+
+  it('does not set data-print-mode for an absent ?printMode param', () => {
+    render(<PrintOptions />);
+
+    expect(document.documentElement.getAttribute('data-print-mode')).toBeNull();
+  });
+
+  it.each(['bogus', 'invalid'])(
+    'does not set data-print-mode for invalid ?printMode=%s',
+    (invalidValue) => {
+      window.history.pushState({}, '', `/?printMode=${invalidValue}`);
+
+      render(<PrintOptions />);
+
+      expect(document.documentElement.getAttribute('data-print-mode')).toBeNull();
+    },
+  );
+
+  it('simulates the full tier via ?printMode=full query param without printing', () => {
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
+    window.history.pushState({}, '', '/?printMode=full');
+
+    render(<PrintOptions />);
+
+    expect(document.documentElement.getAttribute('data-print-mode')).toBe('full');
+    expect(printSpy).not.toHaveBeenCalled();
+
+    openModal();
+    expect(screen.getByRole('radio', { name: /^Full/ })).toBeChecked();
+  });
+
+  it('shows a simulated tier in the modal radio selection when opened', () => {
+    window.history.pushState({}, '', '/?printMode=minimal');
+    render(<PrintOptions />);
+
+    openModal();
+
+    expect(screen.getByRole('radio', { name: /^Minimal/ })).toBeChecked();
   });
 });

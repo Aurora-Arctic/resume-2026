@@ -170,3 +170,142 @@ as the Minimal tier's own label, so an unanchored match still hits both.
   95.52%/87.87%/100%/100% (statements/branches/functions/lines).
 - `npm run test:e2e:coverage` — 33/33 tests pass, including the
   sub-breakpoint-viewport grid assertions.
+
+## Follow-up: Query-param simulation mode (`?printMode=`)
+
+After the grid and descriptions work was complete, the user requested a way
+to simulate print tiers directly in the browser without using the print
+dialog — useful for rapid iteration on tier-specific CSS or taking
+screenshots. The approach was to drop the `@media print` wrapper from
+tier-content visibility rules, making the `data-print-mode` attribute alone
+sufficient to drive show/hide on-screen, and add a mount-only `useEffect`
+that reads a `?printMode=` query param.
+
+### Why `@media print` can be dropped from tier-content rules
+
+The key insight: `data-print-mode` is _only_ ever set in two contexts, both
+intentional — calling `window.print()` in the modal, or a deliberate query
+param. There's no code path where the attribute is set outside of
+print-or-simulate. Therefore, for any rule already keyed to
+`html[data-print-mode='summary']` (etc.), that condition alone is a
+sufficient gate: the surrounding `@media print` is redundant and is exactly
+what was blocking on-screen simulation.
+
+By contrast, rules that don't key off `data-print-mode` — hiding the print
+button/theme-toggle/tooltips, reasserting print backgrounds/colors, and the
+URL-reveal rule for links — must **stay** wrapped in `@media print`: they
+need to fire for a raw browser Ctrl+P that never runs any of this JS, and
+must never apply outside an actual print (they're unconditional, so nothing
+else gates them). Leaving these untouched also means the print button and
+other chrome stay visible while simulating, which reads better than having to
+reload just to restore them.
+
+### Implementation
+
+1. **SCSS changes**: Dropped `@media print` from all tier-content visibility
+   rules across `src/scss/_print.scss`, `src/components/Skills/index.scss`,
+   `src/components/Experience/index.scss`, and
+   `src/components/Summary/index.scss`, keeping the `data-print-mode`
+   attribute-based selector intact. The arrow-to-diamond and sub-list-hiding
+   rules in Skills were also unwrapped (e.g. `@media print { &::before {
+content: '◆'; } }` became `html[data-print-mode='summary'] & { &::before {
+content: '◆'; } }`). For the sub-list `[hidden]` attribute override
+   specifically, narrowed it from `html[data-print-mode]` (any tier) to only
+   `html[data-print-mode='application']` so summary/minimal tiers correctly
+   hide sub-lists via their own `print-hide-*` classes.
+
+2. **PrintOptions effect**: Added a new `useEffect` (after the `afterprint`
+   listener, keeping concerns grouped) that reads `?printMode=` from
+   URLSearchParams and validates it against `SIMULATABLE_PRINT_MODES`
+   (`['summary', 'minimal', 'application']`). If valid, sets
+   `data-print-mode` and updates the modal's `selectedMode` state so the
+   radio matches if the modal is opened. Unrecognized values are silent
+   no-ops, matching the existing `?k=` contact-decryption pattern.
+
+3. **Test coverage**: Added tests for valid params (`summary`, `minimal`,
+   `application` set the attribute without printing), invalid params and
+   absent param (no attribute set), and modal radio state matching the
+   simulated tier.
+
+### Files changed (this follow-up)
+
+- `src/scss/_print.scss` — removed `@media print` from `print-hide-*` rules
+  and mixin definitions.
+- `src/components/Skills/index.scss` — removed `@media print` from the arrow
+  and diamond restoration rules; narrowed the sub-list `[hidden]` override to
+  application tier only.
+- `src/components/Experience/index.scss` — removed `@media print` from
+  summary paragraph and bullets-ellipsis rules.
+- `src/components/Summary/index.scss` — removed `@media print` from the
+  print-note display rule.
+- `src/components/PrintOptions/index.tsx` — added `SIMULATABLE_PRINT_MODES`
+  constant and a new mount-only `useEffect` reading the `?printMode=` param.
+- `src/components/PrintOptions/index.test.tsx` — added tests for query-param
+  simulation, including correct radio state after opening the modal.
+- `claude-docs/components/PRINT-OPTIONS.md` — updated to reflect that
+  tier-content rules are no longer print-media-scoped, and documented the
+  `?printMode=` param and its accepted values.
+
+### Verification status (this follow-up)
+
+- `npm run lint`, `npm run format:check`, `npm run typecheck` — pass.
+- `npm run test:coverage` — 116/116 tests pass; `PrintOptions` at 96.05%
+  coverage, full codebase at 98.46%.
+- Manual verification: `?printMode=summary`, `?printMode=minimal`, and
+  `?printMode=application` each set the attribute and show the correct
+  tier-gated content on screen (sub-lists hidden in summary/minimal, arrows
+  converted to diamonds, etc.) without opening a print dialog.
+
+## Follow-up: Full mode simulation, application mode truncation, and arrow fixes
+
+After query-param simulation was implemented, user testing revealed three issues:
+
+1. `?printMode=full` wasn't supported (only summary/minimal/application were simulatable)
+2. Application mode wasn't truncating skills (should show only top 5, like summary)
+3. Arrows weren't converting to diamonds in full mode print/simulate
+
+### Full mode support
+
+Added 'full' to `SIMULATABLE_PRINT_MODES` so `?printMode=full` now works, allowing users
+to test full-mode print styling on screen without opening a print dialog.
+
+### Application mode skill truncation
+
+Application mode is now a layout variant (single column) but with the same skill
+truncation as summary mode (top 5 items per category). Updated `src/components/Skills/index.tsx` to:
+
+- Add `print-hide-application` class to skills at index >= 5 (matching summary's limit)
+- Render a `.truncate-ellipsis--application` span when the category has > 5 skills
+
+Updated `src/components/Skills/index.scss` to show the application ellipsis indicator.
+
+### Arrow-to-diamond conversion for all print modes
+
+Fixed the diamond restoration rules to apply to ALL print modes (including full),
+not just summary/minimal/application:
+
+- Changed selector from `html[data-print-mode='summary'] &, html[data-print-mode='minimal'] &, html[data-print-mode='application'] &` to `html[data-print-mode] &` for both the diamond restoration (`.skill--expandable::before { content: '◆' }`) and arrow hiding (`.skill-toggle::before { content: none }`) rules.
+
+This ensures arrows become diamonds in full mode print output and in full mode simulation.
+
+### Sub-list [hidden] handling across all modes
+
+The sub-list `[hidden]` override rule (`html[data-print-mode] .resume-skills__sub-list[hidden] { display: block }`) applies in all print/simulate modes but is appropriately overridden by more-specific tier-content rules:
+
+- In full/application modes: no `print-hide-*` class, so subitems show
+- In summary/minimal modes: `print-hide-summary`/`print-hide-minimal` classes override with higher specificity, keeping subitems hidden
+
+### Files changed (this follow-up)
+
+- `src/components/PrintOptions/index.tsx` — added 'full' to `SIMULATABLE_PRINT_MODES`.
+- `src/components/PrintOptions/index.test.tsx` — updated to expect 'full' as valid; changed invalid-value test to exclude 'full'; added dedicated test for `?printMode=full`.
+- `src/components/Skills/index.tsx` — added `print-hide-application` class to skills at index >= 5; added `.truncate-ellipsis--application` span rendering.
+- `src/components/Skills/index.scss` — simplified arrow/diamond rules to `html[data-print-mode] &` (applies to all modes); added application ellipsis to display rule.
+- `e2e/print-options.spec.ts` — updated test expectation (tier selection now DOES affect on-screen content visibility).
+- `claude-docs/components/PRINT-OPTIONS.md` — updated query param bullet to reflect full mode support.
+
+### Verification status (this follow-up)
+
+- `npm run lint`, `npm run format:check`, `npm run typecheck` — pass.
+- `npm run test:coverage` — 116/116 tests pass; full coverage 98.46%.
+- Manual verification (user-completed): `?printMode=full` shows all skills with expanded subitems and diamond bullets; `?printMode=application` shows top 5 skills per category in single-column layout with application ellipsis; arrows convert to diamonds in all print modes.

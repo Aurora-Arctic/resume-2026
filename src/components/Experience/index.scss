@@ -110,10 +110,8 @@
   &__summary {
     display: none;
 
-    @media print {
-      html[data-print-mode='summary'] & {
-        display: block;
-      }
+    html[data-print-mode='summary'] & {
+      display: block;
     }
   }
 
@@ -126,12 +124,12 @@
   &__bullets-ellipsis {
     display: none;
 
-    @media print {
-      html[data-print-mode='summary'] &,
-      html[data-print-mode='minimal'] & {
-        display: block;
-        color: $wine;
-      }
+    html[data-print-mode='summary'] &,
+    html[data-print-mode='minimal'] & {
+      display: block;
+      color: $wine;
+      font-size: 1.125rem;
+      font-weight: 800;
     }
   }
 
