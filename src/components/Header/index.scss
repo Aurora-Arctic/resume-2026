@@ -61,21 +61,68 @@
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
     list-style: none;
-    margin: 0.75rem 0 0;
+    margin: 1.25rem 0 0;
     padding: 0;
 
     @include grid-print-tiers {
       justify-content: flex-end;
     }
 
+    // Application prints the same top-to-bottom, one-per-line layout as
+    // &__contact above, rather than the wrapped/right-aligned row used
+    // everywhere else — matching that tier's plain, linear ATS convention.
+    @include linear-print-tiers {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
     li {
+      // Own positioning context so each item's Tooltip bubble anchors to
+      // its own icon rather than all three sharing one ancestor.
+      position: relative;
+
       &::before {
         content: '';
+      }
+    }
+
+    a {
+      display: flex;
+      align-items: center;
+
+      // Icons print against the same white page regardless of which theme
+      // was active on-screen — pin to the light-mode link color rather than
+      // letting currentColor fall through to dark mode's $wine-stained
+      // (tuned for contrast against a dark card, not white paper).
+      @media print {
+        color: $wine;
       }
     }
 
     @media (min-width: $breakpoint-desktop) {
       justify-content: flex-end;
     }
+  }
+
+  &__link-icon {
+    width: 1.1em;
+    height: 1.1em;
+  }
+}
+
+// Placement is per-instance, not part of the shared .tooltip look (see
+// Tooltip/index.scss) — mirrors .theme-toggle-tooltip/.print-options-tooltip.
+// Sits above its icon, arrow pointing down.
+.resume-header-link-tooltip {
+  top: -2.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  --tooltip-bridge-reach: 0.5rem;
+
+  &::before {
+    top: 1.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
   }
 }
