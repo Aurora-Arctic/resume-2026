@@ -10,6 +10,7 @@ const projects: ProjectEntry[] = [
     description: 'Internal tool for tracking deploy health.',
     stack: ['TypeScript', 'AWS Lambda'],
     link: 'https://github.com/janedoe/deploy-dashboard',
+    github: 'https://github.com/janedoe/deploy-dashboard',
     bullets: ['Cut mean-time-to-detect for failed deploys in half.'],
     company: 'Acme Corp',
   },
@@ -29,6 +30,15 @@ describe('Projects', () => {
     expect(
       screen.getByText('Cut mean-time-to-detect for failed deploys in half.'),
     ).toBeInTheDocument();
+  });
+
+  it('GitHub link has an accessible name', () => {
+    render(<Projects projects={projects} companyOrder={['Acme Corp']} />);
+
+    expect(screen.getByRole('link', { name: /View Deploy Dashboard on GitHub/ })).toHaveAttribute(
+      'href',
+      'https://github.com/janedoe/deploy-dashboard',
+    );
   });
 
   it('renders the project name as plain text when there is no link', () => {

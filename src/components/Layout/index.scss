@@ -85,6 +85,7 @@ body {
 
   &__live-resume {
     display: none;
+    @include print-note-heading-style;
 
     html[data-print-mode] & {
       display: block;

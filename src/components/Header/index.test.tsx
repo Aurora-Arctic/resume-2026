@@ -39,7 +39,10 @@ describe('Header', () => {
       'noreferrer',
     );
     expect(screen.getByRole('list', { name: 'Links' })).toBeInTheDocument();
-    expect(screen.queryByRole('list', { name: 'Contact details' })).not.toBeInTheDocument();
+    // Contact list is always mounted, but empty (contact data encrypted)
+    const contactList = screen.getByRole('list', { name: 'Contact details' });
+    expect(contactList).toBeInTheDocument();
+    expect(contactList).toHaveAttribute('aria-live', 'polite');
   });
 
   it('keeps location/email/phone hidden when no ?k= key is present', async () => {
