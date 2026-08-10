@@ -59,7 +59,7 @@ const SkillItem = ({ category, skill, allTooltipIds }: SkillItemProps): ReactEle
           {skill.label}
         </button>
       </Tooltip>
-      <ul className="bullet-list resume-skills__sub-list" id={subListId} hidden={!expanded}>
+      <ul className="resume-skills__sub-list" id={subListId} hidden={!expanded}>
         {skill.subItems.map((item) => (
           <li key={item}>{item}</li>
         ))}
@@ -83,7 +83,7 @@ const Skills = ({ skills }: SkillsProps): ReactElement => {
           <div className="resume-skills__group" key={group.category}>
             <dt>{group.category}</dt>
             <dd>
-              <ul className="bullet-list">
+              <ul>
                 {group.skills.map((skill) => (
                   <SkillItem
                     key={skill.label}
