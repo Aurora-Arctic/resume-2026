@@ -115,4 +115,25 @@
       margin-bottom: 0.5rem;
     }
   }
+
+  &__github-link {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.25rem;
+    transition: opacity $theme-transition-duration $theme-transition-easing;
+
+    &:hover {
+      opacity: 0.7;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  &__github-icon {
+    width: 1.1em;
+    height: 1.1em;
+    color: inherit;
+  }
 }
