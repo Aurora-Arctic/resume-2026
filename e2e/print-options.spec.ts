@@ -19,14 +19,11 @@ test.describe('print options', () => {
   const dialog = (page: import('@playwright/test').Page) => page.getByRole('dialog');
   // Role-name matching is a case-insensitive substring by default — "Print"
   // alone also matches "Choose what to print" and "Close print options", so
-  // the confirm button needs an exact match. Each tier's radio now also
-  // carries a description in the same <label> (e.g. "Full details" + "All
-  // contents."), which becomes part of its accessible name — and the
-  // application tier's own description text ("Minimal details in a plain,
-  // linear layout.") happens to start with the same words as the minimal
-  // tier's label, so an exact/substring match on the label alone could still
-  // hit both. Anchoring the regex to the start of the name is exact enough
-  // to disambiguate without hardcoding each tier's full label+description text.
+  // the confirm button needs an exact match. Each tier's radio also carries
+  // a description in the same <label> (e.g. "Full" + "All contents."), which
+  // becomes part of its accessible name. Anchoring the regex to the start of
+  // the name is exact enough to disambiguate without hardcoding each tier's
+  // full label+description text.
   const printButton = (page: import('@playwright/test').Page) =>
     page.getByRole('button', { name: 'Print', exact: true });
   const tierRadio = (page: import('@playwright/test').Page, label: string) =>
@@ -88,7 +85,7 @@ test.describe('print options', () => {
 
   test('selecting a tier and confirming prints and stamps data-print-mode', async ({ page }) => {
     await trigger(page).click();
-    await tierRadio(page, 'Minimal details').click();
+    await tierRadio(page, 'Minimal').click();
     await printButton(page).click();
 
     await expect(dialog(page)).toBeHidden();
@@ -101,7 +98,7 @@ test.describe('print options', () => {
   }) => {
     await trigger(page).click();
 
-    await expect(tierRadio(page, 'Full details')).toBeChecked();
+    await expect(tierRadio(page, 'Full')).toBeChecked();
 
     await printButton(page).click();
 
@@ -112,7 +109,7 @@ test.describe('print options', () => {
     const before = await page.locator('.resume').boundingBox();
 
     await trigger(page).click();
-    await tierRadio(page, 'Minimal details').click();
+    await tierRadio(page, 'Minimal').click();
     await printButton(page).click();
 
     const after = await page.locator('.resume').boundingBox();
