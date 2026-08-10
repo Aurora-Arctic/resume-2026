@@ -89,6 +89,15 @@ body {
     padding: 0;
     page-break-inside: avoid;
   }
+
+  &__live-resume {
+    display: none;
+
+    html[data-print-mode] & {
+      display: block;
+      margin-top: 2rem;
+    }
+  }
 }
 
 // A stronger dim than the baseline above, for users who've explicitly asked
