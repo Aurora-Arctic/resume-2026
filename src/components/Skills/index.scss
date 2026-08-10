@@ -11,26 +11,12 @@
       gap: 1.5rem 2rem;
     }
 
-    // Only the Application tier collapses this back to a single column —
-    // Full/Summary/Minimal reassert the desktop 3-column grid instead,
-    // matching the web version. It has to be reasserted explicitly, not
-    // left to the @media (min-width: $breakpoint-desktop) block above,
-    // because browsers evaluate that min-width against the physical page's
-    // width during a real print (Letter/A4, well under $breakpoint-desktop),
-    // not the screen viewport — see src/scss/_print.scss's
-    // grid-print-tiers/linear-print-tiers mixins.
-    @include grid-print-tiers {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem 2rem;
-    }
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem 2rem;
 
     @include compact-print-tiers {
       gap: 0.875rem 1.25rem;
-    }
-
-    @include linear-print-tiers {
-      display: block;
     }
   }
 
