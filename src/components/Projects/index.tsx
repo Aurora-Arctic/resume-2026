@@ -12,12 +12,19 @@ const renderProject = (project: ProjectEntry): ReactElement => (
     <h3>{project.link ? <a href={project.link}>{project.name}</a> : project.name}</h3>
     <p className="resume-projects__company">{project.company}</p>
     <p>{project.description}</p>
-    <p className="resume-projects__stack">{project.stack.join(', ')}</p>
-    <ul>
+    {project.summary && <p className="resume-projects__summary">{project.summary}</p>}
+    <p className="resume-projects__stack print-hide-minimal">{project.stack.join(', ')}</p>
+    <span className="resume-projects__stack-ellipsis" aria-hidden="true">
+      &hellip;
+    </span>
+    <ul className="print-hide-summary print-hide-minimal print-hide-application">
       {project.bullets.map((bullet) => (
         <li key={bullet}>{bullet}</li>
       ))}
     </ul>
+    <span className="resume-projects__bullets-ellipsis" aria-hidden="true">
+      &hellip;
+    </span>
   </article>
 );
 
@@ -37,8 +44,12 @@ const Projects = ({ projects, companyOrder }: ProjectsProps): ReactElement => {
         </div>
       ))}
       {personalItems.length > 0 && (
-        <div className="resume-projects__group" style={{ gridRow: companyOrder.length + 2 }}>
-          {personalItems.map(renderProject)}
+        <div
+          className="resume-projects__personal print-hide-application"
+          style={{ gridRow: companyOrder.length + 2 }}
+        >
+          <h3 className="resume-projects__personal-heading">Personal Projects</h3>
+          <div className="resume-projects__group">{personalItems.map(renderProject)}</div>
         </div>
       )}
     </section>

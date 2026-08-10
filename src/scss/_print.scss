@@ -51,13 +51,10 @@ html[data-print-mode='application'] .print-hide-application {
 // Wraps content scoped to the one tier whose spec calls for a
 // collapsed/linear layout — Application. Full, Summary, and Minimal use
 // grid-print-tiers above instead, to match their on-screen multi-column
-// layout. Scoped to @media print so it doesn't affect normal screen layout
-// (only real printing or a simulated tier via ?printMode=... applies
-// data-print-mode).
+// layout. Applies whenever data-print-mode='application' is set, whether via
+// actual printing or on-screen simulation (?printMode=...).
 @mixin linear-print-tiers {
-  @media print {
-    html[data-print-mode='application'] & {
-      @content;
-    }
+  html[data-print-mode='application'] & {
+    @content;
   }
 }

@@ -44,8 +44,57 @@
     }
   }
 
+  &__summary {
+    display: none;
+
+    html[data-print-mode='summary'] &,
+    html[data-print-mode='minimal'] &,
+    html[data-print-mode='application'] & {
+      display: block;
+    }
+  }
+
   &__stack {
     margin: 0.25rem 0 0.5rem;
     font-style: italic;
+  }
+
+  &__stack-ellipsis {
+    display: none;
+
+    html[data-print-mode='minimal'] & {
+      display: inline;
+      color: $wine;
+      font-size: 1.125rem;
+      font-weight: 800;
+    }
+  }
+
+  &__bullets-ellipsis {
+    display: none;
+
+    html[data-print-mode='summary'] &,
+    html[data-print-mode='minimal'] &,
+    html[data-print-mode='application'] & {
+      display: block;
+      color: $wine;
+      font-size: 1.125rem;
+      font-weight: 800;
+    }
+  }
+
+  &__personal {
+    @media (min-width: $breakpoint-desktop) {
+      grid-column: 1 / -1;
+    }
+
+    @include grid-print-tiers {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__personal-heading {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
   }
 }

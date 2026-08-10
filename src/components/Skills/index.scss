@@ -269,7 +269,7 @@ html[data-theme='light'] .resume-skills__skill-toggle::before {
   }
 }
 
-html[data-print-mode] .resume-skills__sub-list[hidden] {
+html[data-print-mode='full'] .resume-skills__sub-list[hidden] {
   display: block;
 }
 
