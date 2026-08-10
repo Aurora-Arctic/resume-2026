@@ -2,30 +2,7 @@
 @use '../../scss/print' as *;
 
 .resume-header {
-  @media (min-width: $breakpoint-desktop) {
-    text-align: right;
-  }
-
-  @include grid-print-tiers {
-    text-align: right;
-  }
-
   h1 {
-    @media (min-width: $breakpoint-desktop) {
-      // Fixed, not clamp() — .paper-card caps at 960px wide, so the header
-      // column's available width stops growing past $breakpoint-desktop
-      // too. A vw-based clamp would keep tracking raw viewport width past
-      // that point even though the column itself doesn't get any wider.
-      font-size: 1.75rem;
-    }
-
-    // Print media never matches $breakpoint-desktop (see grid-print-tiers),
-    // so Full/Summary/Minimal need the desktop size reasserted explicitly to
-    // match their on-screen desktop-grid print layout; Application prints
-    // linearly and keeps the base (mobile) size.
-    @include grid-print-tiers {
-      font-size: 1.75rem;
-    }
     margin-bottom: 1.25rem;
   }
 
@@ -64,13 +41,9 @@
     margin: 1.25rem 0 0;
     padding: 0;
 
-    @include grid-print-tiers {
-      justify-content: flex-end;
-    }
-
     // Application prints the same top-to-bottom, one-per-line layout as
-    // &__contact above, rather than the wrapped/right-aligned row used
-    // everywhere else — matching that tier's plain, linear ATS convention.
+    // &__contact above, rather than the wrapped row used everywhere else —
+    // matching that tier's plain, linear ATS convention.
     @include linear-print-tiers {
       flex-direction: column;
       align-items: flex-start;
@@ -97,10 +70,6 @@
       @media print {
         color: $wine;
       }
-    }
-
-    @media (min-width: $breakpoint-desktop) {
-      justify-content: flex-end;
     }
   }
 
