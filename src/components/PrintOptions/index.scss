@@ -1,4 +1,6 @@
 @use '../../scss/variables' as *;
+@use '../../scss/mixins' as *;
+@use '../../scss/print' as *;
 
 .print-options-trigger {
   position: fixed;
@@ -6,9 +8,7 @@
   right: 1rem;
   z-index: 10;
 
-  @media print {
-    display: none;
-  }
+  @include print-hidden;
 }
 
 .print-options-trigger__button {
@@ -19,7 +19,7 @@
   height: 2.75rem;
   padding: 0.6rem;
   color: $text;
-  box-shadow: 0 2px 8px $shadow;
+  box-shadow: $shadow-floating;
 }
 
 .print-options-trigger__icon {
@@ -42,9 +42,7 @@
   &::before {
     top: -0.5rem;
     right: 1rem;
-    width: 0.75rem;
-    height: 0.5rem;
-    clip-path: polygon(0 100%, 100% 100%, 50% 0);
+    @include tooltip-arrow(up);
   }
 
   &::after {
@@ -74,18 +72,14 @@
   // vanishing instantly). visibility:hidden also removes the backdrop from
   // hit-testing while closed, same as Tooltip — no separate pointer-events
   // override needed.
-  transition:
-    opacity $theme-transition-duration $theme-transition-easing,
-    visibility $theme-transition-duration $theme-transition-easing;
+  @include theme-transition(opacity, visibility);
 
   &--open {
     opacity: 1;
     visibility: visible;
   }
 
-  @media print {
-    display: none;
-  }
+  @include print-hidden;
 }
 
 .print-options__panel {
@@ -94,19 +88,11 @@
   max-height: calc(100vh - 3rem);
   overflow-y: auto;
   padding: 2rem;
-  background-color: $silver-oxide;
-  color: $text;
-  box-shadow: 0 20px 45px $shadow;
+  @include card-surface;
 
   &:focus-visible {
-    outline: 2px solid $text;
-    outline-offset: 2px;
+    @include focus-ring;
   }
-}
-
-html[data-theme='light'] .print-options__panel {
-  background-color: $lavender-oxide;
-  color: $silver-oxide;
 }
 
 .print-options__title {
@@ -165,32 +151,16 @@ html[data-theme='light'] .print-options__legend {
   opacity: 0.75;
 }
 
+// Shared shape (flex-centered, transparent, hover/focus opacity dip, focus
+// ring) comes from .dismiss-button, added alongside this class in index.tsx
+// — only position/size/font-size are specific to sitting in this panel.
 .print-options__dismiss {
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
   width: 1.5rem;
   height: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
   font-size: 1.1rem;
-  line-height: 1;
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    opacity: 0.75;
-  }
-
-  &:focus-visible {
-    outline: 2px solid $text;
-    outline-offset: 2px;
-  }
 }
 
 .print-options__confirm {
@@ -212,7 +182,7 @@ html[data-theme='light'] .print-options__legend {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .print-options__backdrop {
     transition-duration: 0s;
   }

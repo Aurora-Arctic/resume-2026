@@ -31,6 +31,14 @@ $wine-glow: color.adjust(color.adjust($wine, $saturation: 15%), $lightness: 30%)
 $wine-deep: color.adjust($wine, $lightness: -6%);
 $text: #e6ddf4;
 $shadow: rgba(8, 7, 9, 0.8);
+// Three shadow depths built off $shadow, reused across every drop-shadowed
+// surface rather than each spelling out its own offset/blur: elevated (the
+// card-like surfaces — .paper-card, .print-options__panel), floating (small
+// fixed-position UI chrome — .restore-tooltips, .print-options-trigger__button),
+// and tooltip (the smaller bubble shadow used only by .tooltip).
+$shadow-elevated: 0 20px 45px $shadow;
+$shadow-floating: 0 2px 8px $shadow;
+$shadow-tooltip: 0 4px 10px $shadow;
 // Baseline dimming applied to .paper-card's texture layers (see
 // Layout/index.scss) so on-screen contrast doesn't have to come from color
 // changes alone — a calmer background eases how far link/text colors need

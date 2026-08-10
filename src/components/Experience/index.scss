@@ -1,4 +1,5 @@
 @use '../../scss/variables' as *;
+@use '../../scss/mixins' as *;
 @use '../../scss/print' as *;
 
 // As a sticky entry gets pushed out by its own (taller) paired Projects
@@ -37,7 +38,7 @@
     animation-timeline: --resume-experience-row;
     animation-range: cover calc(100% - 8rem) cover 100%;
 
-    @media (prefers-reduced-motion: reduce) {
+    @include reduced-motion {
       animation: none;
     }
   }
@@ -55,11 +56,7 @@
 
 .resume-experience {
   > h2 {
-    @media (min-width: $breakpoint-desktop) {
-      grid-row: 1;
-    }
-
-    @include grid-print-tiers {
+    @include desktop-and-grid-print {
       grid-row: 1;
     }
   }
@@ -89,9 +86,7 @@
     }
 
     > h3 {
-      margin-top: 1.5rem;
-
-      @include compact-print-tiers {
+      @include application-print-tier {
         margin-top: 0.75rem;
       }
     }
@@ -141,13 +136,14 @@
   // this ellipsis, no replacement text.
   &__bullets-ellipsis {
     display: none;
+    // ellipsis-ink covers Application's required $print-text override —
+    // unlike Skills/Projects' equivalent ellipses, this one previously
+    // stayed $wine in Application too, which broke that tier's
+    // strictly-black-and-white rule (see commit bb50fc4).
+    @include ellipsis-ink;
 
-    html[data-print-mode='summary'] &,
-    html[data-print-mode='minimal'] &,
-    html[data-print-mode='application'] & {
+    @include condensed-print-tiers {
       display: block;
-      color: $wine;
-      font-weight: 800;
     }
 
     html[data-print-mode='summary'] & {

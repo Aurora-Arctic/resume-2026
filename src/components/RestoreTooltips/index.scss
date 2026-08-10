@@ -1,4 +1,5 @@
 @use '../../scss/variables' as *;
+@use '../../scss/print' as *;
 
 .restore-tooltips {
   position: fixed;
@@ -9,9 +10,7 @@
   color: $text;
   font-family: $font-body;
   font-size: 0.85rem;
-  box-shadow: 0 2px 8px $shadow;
+  box-shadow: $shadow-floating;
 
-  @media print {
-    display: none;
-  }
+  @include print-hidden;
 }
