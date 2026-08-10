@@ -1,13 +1,10 @@
 @use '../../scss/variables' as *;
+@use '../../scss/mixins' as *;
 @use '../../scss/print' as *;
 
 .resume-projects {
   > h2 {
-    @media (min-width: $breakpoint-desktop) {
-      grid-row: 1;
-    }
-
-    @include grid-print-tiers {
+    @include desktop-and-grid-print {
       grid-row: 1;
     }
   }
@@ -43,11 +40,7 @@
     // once the side-by-side grid is active, so this label is only needed
     // in the layouts that fall back to a single linear column: below the
     // desktop breakpoint, and the Application print tier.
-    @media (min-width: $breakpoint-desktop) {
-      display: none;
-    }
-
-    @include grid-print-tiers {
+    @include desktop-and-grid-print {
       display: none;
     }
 
@@ -59,9 +52,7 @@
   &__summary {
     display: none;
 
-    html[data-print-mode='summary'] &,
-    html[data-print-mode='minimal'] &,
-    html[data-print-mode='application'] & {
+    @include condensed-print-tiers {
       display: block;
     }
   }
@@ -77,31 +68,22 @@
 
   &__bullets-ellipsis {
     display: none;
+    @include ellipsis-ink;
 
     html[data-print-mode='summary'] &,
     html[data-print-mode='minimal'] & {
       display: block;
-      color: $wine;
       font-size: 1.125rem;
-      font-weight: 800;
     }
 
-    @media print {
-      html[data-print-mode='application'] & {
-        display: block;
-        color: $print-text;
-        font-size: 1.125rem;
-        font-weight: 800;
-      }
+    @include application-print-tier {
+      display: block;
+      font-size: 1.125rem;
     }
   }
 
   &__personal {
-    @media (min-width: $breakpoint-desktop) {
-      grid-column: 1 / -1;
-    }
-
-    @include grid-print-tiers {
+    @include desktop-and-grid-print {
       grid-column: 1 / -1;
     }
   }
@@ -120,13 +102,13 @@
     display: inline-flex;
     align-items: center;
     margin-top: 0.25rem;
-    transition: opacity $theme-transition-duration $theme-transition-easing;
+    @include theme-transition(opacity);
 
     &:hover {
       opacity: 0.7;
     }
 
-    @media (prefers-reduced-motion: reduce) {
+    @include reduced-motion {
       transition: none;
     }
   }

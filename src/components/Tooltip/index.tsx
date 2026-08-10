@@ -182,7 +182,7 @@ const Tooltip = ({ id, content, className, children, onDismiss }: TooltipProps):
       >
         <button
           type="button"
-          className="tooltip__dismiss"
+          className="dismiss-button tooltip__dismiss"
           aria-label="Dismiss tooltip"
           onClick={handleDismiss}
         >

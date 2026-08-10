@@ -166,7 +166,7 @@ export const resumeData: ResumeData = {
       title: 'Senior Backend Engineer & Technical Lead',
       location: 'United States (Remote)',
       startDate: 'July 2022',
-      endDate: 'Present',
+      endDate: 'July 2026',
       bullets: [
         'Drove improvements to CI/CD workflows and performance, reducing costs.',
         'Reduced friction and risk through a new process for protecting private client information.',

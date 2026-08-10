@@ -183,7 +183,7 @@ const PrintOptions = (): ReactElement => {
         >
           <button
             type="button"
-            className="print-options__dismiss"
+            className="dismiss-button print-options__dismiss"
             aria-label="Close print options"
             onClick={() => setIsOpen(false)}
           >

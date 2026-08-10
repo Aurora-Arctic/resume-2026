@@ -1,4 +1,5 @@
 @use '../../scss/variables' as *;
+@use '../../scss/mixins' as *;
 @use '../../scss/print' as *;
 
 // Mobile-first single column, section components in DOM order, unchanged at
@@ -20,13 +21,7 @@
 .resume-experience-projects {
   margin-top: 1rem;
 
-  @media (min-width: $breakpoint-desktop) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 4rem;
-  }
-
-  @include grid-print-tiers {
+  @include desktop-and-grid-print {
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 4rem;
@@ -45,13 +40,7 @@
 
 .resume-experience,
 .resume-projects {
-  @media (min-width: $breakpoint-desktop) {
-    display: grid;
-    grid-template-rows: subgrid;
-    grid-row: 1 / -1;
-  }
-
-  @include grid-print-tiers {
+  @include desktop-and-grid-print {
     display: grid;
     grid-template-rows: subgrid;
     grid-row: 1 / -1;
