@@ -138,14 +138,18 @@ test.describe('print options', () => {
   const NARROW_PRINT_VIEWPORT = { width: 800, height: 900 };
 
   for (const mode of ['full', 'summary', 'minimal']) {
-    test(`${mode} detail prints using the desktop grid layout even at a narrow (sub-desktop-breakpoint) viewport, same as the web version`, async ({
+    test(`${mode} detail prints Experience/Projects and Skills using the desktop grid layout even at a narrow (sub-desktop-breakpoint) viewport, same as the web version`, async ({
       page,
     }) => {
       await page.setViewportSize(NARROW_PRINT_VIEWPORT);
       await page.evaluate((m) => document.documentElement.setAttribute('data-print-mode', m), mode);
       await page.emulateMedia({ media: 'print' });
 
-      await expect(page.locator('.resume')).toHaveCSS('display', 'grid');
+      // .resume itself is a plain top-to-bottom stack at every breakpoint
+      // (including print) — only the Experience/Projects pairing and the
+      // Skills groups still switch to a grid for these tiers.
+      await expect(page.locator('.resume')).toHaveCSS('display', 'flex');
+      await expect(page.locator('.resume-experience-projects')).toHaveCSS('display', 'grid');
       await expect(page.locator('.resume-skills__groups')).toHaveCSS('display', 'grid');
     });
   }
@@ -160,6 +164,7 @@ test.describe('print options', () => {
     await page.emulateMedia({ media: 'print' });
 
     await expect(page.locator('.resume')).toHaveCSS('display', 'flex');
+    await expect(page.locator('.resume-experience-projects')).toHaveCSS('display', 'block');
     await expect(page.locator('.resume-skills__groups')).toHaveCSS('display', 'block');
   });
 });
