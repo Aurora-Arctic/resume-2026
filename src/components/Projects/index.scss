@@ -14,6 +14,25 @@
 
   &__entry {
     margin: 0 0 1.5rem;
+
+    @include compact-print-tiers {
+      margin: 0 0 0.75rem;
+    }
+
+    > h3 {
+      margin-top: 1.5rem;
+
+      @include compact-print-tiers {
+        margin-top: 0.75rem;
+      }
+    }
+  }
+
+  // The very first entry sits right below the section's h2 — its h3
+  // shouldn't stack an extra top margin on top of the h2's own bottom
+  // margin, only later entries need the added breathing room.
+  & > h2 + &__group &__entry:first-child > h3 {
+    margin-top: 0;
   }
 
   &__company {
@@ -31,10 +50,61 @@
     @include grid-print-tiers {
       display: none;
     }
+
+    @include compact-print-tiers {
+      margin: 0.125rem 0;
+    }
+  }
+
+  &__summary {
+    display: none;
+
+    html[data-print-mode='summary'] &,
+    html[data-print-mode='minimal'] &,
+    html[data-print-mode='application'] & {
+      display: block;
+    }
   }
 
   &__stack {
     margin: 0.25rem 0 0.5rem;
     font-style: italic;
+
+    @include compact-print-tiers {
+      margin: 0.125rem 0 0.25rem;
+    }
+  }
+
+  &__bullets-ellipsis {
+    display: none;
+
+    html[data-print-mode='summary'] &,
+    html[data-print-mode='minimal'] &,
+    html[data-print-mode='application'] & {
+      display: block;
+      color: $wine;
+      font-size: 1.125rem;
+      font-weight: 800;
+    }
+  }
+
+  &__personal {
+    @media (min-width: $breakpoint-desktop) {
+      grid-column: 1 / -1;
+    }
+
+    @include grid-print-tiers {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__personal-heading {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+
+    @include compact-print-tiers {
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+    }
   }
 }

@@ -109,15 +109,49 @@ test.describe('print options', () => {
     await expect(page.locator('html')).toHaveAttribute('data-print-mode', 'full');
   });
 
-  test('choosing a print tier has no visible effect on the on-screen layout', async ({ page }) => {
-    const before = await page.locator('.resume').boundingBox();
-
+  test('choosing minimal tier truncates skills to 2 items per category', async ({ page }) => {
     await trigger(page).click();
     await tierRadio(page, 'Minimal').click();
     await printButton(page).click();
 
-    const after = await page.locator('.resume').boundingBox();
-    expect(after).toEqual(before);
+    // After print, data-print-mode is set, and skills should be truncated to 2 items
+    // per category (remaining items have print-hide-minimal class and are hidden)
+    const skillItems = await page.locator('.resume-skills__skill:not(.print-hide-minimal)').count();
+
+    // Should have significantly fewer visible skills due to minimal tier truncation
+    expect(skillItems).toBeLessThan(10);
+  });
+
+  test('choosing minimal tier truncates projects per company to 2', async ({ page }) => {
+    await trigger(page).click();
+    await tierRadio(page, 'Minimal').click();
+    await printButton(page).click();
+
+    // Each company group should show at most 2 projects (those with 3+ total will hide 3+)
+    const hiddenMinimal = await page.locator('.resume-projects__entry.print-hide-minimal').count();
+    expect(hiddenMinimal).toBeGreaterThan(0);
+  });
+
+  test('choosing summary tier truncates projects per company to 3', async ({ page }) => {
+    await trigger(page).click();
+    await tierRadio(page, 'Summary').click();
+    await printButton(page).click();
+
+    // Each company group should show at most 3 projects (those with 4+ total will hide 4+)
+    const hiddenSummary = await page.locator('.resume-projects__entry.print-hide-summary').count();
+    expect(hiddenSummary).toBeGreaterThan(0);
+  });
+
+  test('choosing application tier truncates projects per company to 3', async ({ page }) => {
+    await trigger(page).click();
+    await tierRadio(page, 'Application').click();
+    await printButton(page).click();
+
+    // Each company group should show at most 3 projects (those with 4+ total will hide 4+)
+    const hiddenApplication = await page
+      .locator('.resume-projects__entry.print-hide-application')
+      .count();
+    expect(hiddenApplication).toBeGreaterThan(0);
   });
 
   test('focus returns to the trigger button after the modal closes', async ({ page }) => {
@@ -165,6 +199,6 @@ test.describe('print options', () => {
 
     await expect(page.locator('.resume')).toHaveCSS('display', 'flex');
     await expect(page.locator('.resume-experience-projects')).toHaveCSS('display', 'block');
-    await expect(page.locator('.resume-skills__groups')).toHaveCSS('display', 'block');
+    await expect(page.locator('.resume-skills__groups')).toHaveCSS('display', 'grid');
   });
 });

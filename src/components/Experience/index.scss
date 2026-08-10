@@ -83,18 +83,93 @@
       top: 1.5rem;
       @include sticky-exit-fade;
     }
+
+    @include compact-print-tiers {
+      margin: 0 0 0.75rem;
+    }
+
+    > h3 {
+      margin-top: 1.5rem;
+
+      @include compact-print-tiers {
+        margin-top: 0.75rem;
+      }
+    }
+  }
+
+  // The very first entry sits right below the section's h2 — its h3
+  // shouldn't stack an extra top margin on top of the h2's own bottom
+  // margin, only later entries need the added breathing room.
+  & > h2 + &__row &__entry > h3 {
+    margin-top: 0;
+  }
+
+  &__company {
+    margin: 0 0 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 300;
+
+    @include compact-print-tiers {
+      margin: 0 0 0.375rem;
+      font-size: 1rem;
+    }
   }
 
   &__meta {
     margin: 0.25rem 0 0.5rem;
     font-style: italic;
+
+    @include compact-print-tiers {
+      margin: 0.125rem 0 0.25rem;
+    }
+  }
+
+  &__summary {
+    display: none;
+
+    html[data-print-mode='summary'] &,
+    html[data-print-mode='application'] & {
+      display: block;
+    }
+  }
+
+  // Stands in for the bullets list wherever print-hide-summary/-minimal
+  // (see index.tsx and src/scss/_print.scss) removes it, mirroring
+  // Skills' resume-skills__sub-list-ellipsis pattern — a visible cue that
+  // more detail exists on screen rather than a silent gap. Summary also
+  // gets the &__summary paragraph above in its place; Minimal gets only
+  // this ellipsis, no replacement text.
+  &__bullets-ellipsis {
+    display: none;
+
+    html[data-print-mode='summary'] &,
+    html[data-print-mode='minimal'] &,
+    html[data-print-mode='application'] & {
+      display: block;
+      color: $wine;
+      font-weight: 800;
+    }
+
+    html[data-print-mode='summary'] & {
+      font-size: 1.125rem;
+    }
+
+    html[data-print-mode='minimal'] & {
+      font-size: 1rem;
+    }
   }
 
   &__personal-label {
+    margin-top: 1.5rem;
+
     @media (min-width: $breakpoint-desktop) {
       position: sticky;
       top: 1.5rem;
       @include sticky-exit-fade;
+    }
+
+    @include compact-print-tiers {
+      margin-top: 0.75rem;
     }
   }
 }

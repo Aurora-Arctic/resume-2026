@@ -19,10 +19,10 @@ test('a project without a link renders its name as plain text', async ({ page })
   await page.goto('/');
 
   await expect(
-    page.getByRole('heading', { level: 3, name: 'FHIR-Based Insurance Partner API' }),
+    page.getByRole('heading', { level: 3, name: 'Insurance Partner Data Exchange API' }),
   ).toBeVisible();
   await expect(
-    page.getByRole('link', { name: 'FHIR-Based Insurance Partner API' }),
+    page.getByRole('link', { name: 'Insurance Partner Data Exchange API' }),
   ).not.toBeVisible();
 });
 

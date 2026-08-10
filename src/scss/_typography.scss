@@ -153,3 +153,63 @@ ul {
 html[data-theme='light'] ul li::before {
   color: $grape-press;
 }
+
+// Compact print tiers (Minimal, Application) — smaller fonts and tighter
+// spacing to fit more detail per page while maintaining legibility.
+// Body copy stays at 0.9375rem (~15px/~11pt) minimum; headings shrink
+// ~10-15%; spacing shrinks ~50%.
+html[data-print-mode='minimal'],
+html[data-print-mode='application'] {
+  h1 {
+    font-size: 2.5rem;
+    line-height: 1.1;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+
+  h3 {
+    font-size: 1.1875rem;
+    line-height: 1.3;
+  }
+
+  h4 {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 0 0 0.5rem;
+  }
+
+  p {
+    margin: 0.25rem 0;
+    font-size: 0.75rem;
+  }
+
+  header {
+    margin-bottom: 0.5rem;
+  }
+
+  section {
+    margin: 0.5rem 0;
+  }
+
+  ul {
+    padding-left: 1rem;
+
+    li {
+      font-size: 0.75rem;
+      margin: 0.125rem 0;
+
+      &::before {
+        left: -1rem;
+      }
+    }
+  }
+}

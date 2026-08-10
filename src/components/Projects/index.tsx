@@ -7,17 +7,30 @@ interface ProjectsProps {
   companyOrder: string[];
 }
 
-const renderProject = (project: ProjectEntry): ReactElement => (
-  <article className="resume-projects__entry" key={project.name}>
+const SUMMARY_PROJECT_LIMIT = 3;
+const MINIMAL_PROJECT_LIMIT = 2;
+const MINIMAL_PERSONAL_PROJECT_LIMIT = 1;
+
+const renderProject = (project: ProjectEntry, className?: string): ReactElement => (
+  <article
+    className={['resume-projects__entry', className].filter(Boolean).join(' ')}
+    key={project.name}
+  >
     <h3>{project.link ? <a href={project.link}>{project.name}</a> : project.name}</h3>
     <p className="resume-projects__company">{project.company}</p>
-    <p>{project.description}</p>
-    <p className="resume-projects__stack">{project.stack.join(', ')}</p>
-    <ul>
+    <p className="print-hide-summary print-hide-minimal print-hide-application">
+      {project.description}
+    </p>
+    {project.summary && <p className="resume-projects__summary">{project.summary}</p>}
+    <p className="resume-projects__stack print-hide-minimal">{project.stack.join(', ')}</p>
+    <ul className="print-hide-summary print-hide-minimal print-hide-application">
       {project.bullets.map((bullet) => (
         <li key={bullet}>{bullet}</li>
       ))}
     </ul>
+    <span className="resume-projects__bullets-ellipsis" aria-hidden="true">
+      &hellip;
+    </span>
   </article>
 );
 
@@ -33,12 +46,34 @@ const Projects = ({ projects, companyOrder }: ProjectsProps): ReactElement => {
       <h2 id="projects-heading">Projects</h2>
       {groups.map((group, index) => (
         <div className="resume-projects__group" key={group.company} style={{ gridRow: index + 2 }}>
-          {group.items.map(renderProject)}
+          {group.items.map((project, itemIndex) => {
+            const classNames = [
+              itemIndex >= MINIMAL_PROJECT_LIMIT && 'print-hide-minimal',
+              itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-summary',
+              itemIndex >= MINIMAL_PROJECT_LIMIT && 'print-hide-application',
+              project.company === 'Uxiliary' && 'print-hide-minimal',
+              project.company === 'Uxiliary' && 'print-hide-application',
+            ]
+              .filter(Boolean)
+              .join(' ');
+
+            return renderProject(project, classNames || undefined);
+          })}
         </div>
       ))}
       {personalItems.length > 0 && (
-        <div className="resume-projects__group" style={{ gridRow: companyOrder.length + 2 }}>
-          {personalItems.map(renderProject)}
+        <div className="resume-projects__group">
+          {personalItems.map((project, itemIndex) => {
+            const classNames = [
+              itemIndex >= MINIMAL_PERSONAL_PROJECT_LIMIT && 'print-hide-minimal',
+              itemIndex >= SUMMARY_PROJECT_LIMIT && 'print-hide-summary',
+              itemIndex >= MINIMAL_PERSONAL_PROJECT_LIMIT && 'print-hide-application',
+            ]
+              .filter(Boolean)
+              .join(' ');
+
+            return renderProject(project, classNames || undefined);
+          })}
         </div>
       )}
     </section>

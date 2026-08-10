@@ -70,7 +70,7 @@ body {
     z-index: -1;
     background-image: url('../../images/prism-light.png');
     background-repeat: repeat;
-    filter: brightness($texture-dim);
+    filter: brightness(110%);
     opacity: 0;
     pointer-events: none;
     transition: opacity $theme-transition-duration $theme-transition-easing;
@@ -88,6 +88,15 @@ body {
     box-shadow: none;
     padding: 0;
     page-break-inside: avoid;
+  }
+
+  &__live-resume {
+    display: none;
+
+    html[data-print-mode] & {
+      display: block;
+      margin-top: 2rem;
+    }
   }
 }
 
