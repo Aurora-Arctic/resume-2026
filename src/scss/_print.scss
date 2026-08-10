@@ -84,3 +84,58 @@ html[data-print-mode='application'] .print-hide-application {
     }
   }
 }
+
+// Note on the four tier mixins above: grid-print-tiers and
+// application-print-tier both gate on @media print (real printing only,
+// since the grid layout and the black-and-white rule only matter for actual
+// paper output), while linear-print-tiers and compact-print-tiers apply
+// unconditionally so they also cover the on-screen ?printMode=... tier
+// simulation. This asymmetry is deliberate, not an oversight.
+
+// The identical-body pairing that shows up wherever the desktop multi-column
+// grid must also be reasserted for the non-Application print tiers — see
+// grid-print-tiers above for why print needs its own copy of a rule that
+// already exists behind the $breakpoint-desktop media query.
+@mixin desktop-and-grid-print {
+  @media (min-width: $breakpoint-desktop) {
+    @content;
+  }
+
+  @include grid-print-tiers {
+    @content;
+  }
+}
+
+// The three tiers that trim content relative to Full (Summary/Minimal/
+// Application) — the trio of selectors content components reach for
+// whenever something should only render in a condensed tier, e.g. a
+// shortened summary paragraph or a "..." truncation marker.
+@mixin condensed-print-tiers {
+  html[data-print-mode='summary'] &,
+  html[data-print-mode='minimal'] &,
+  html[data-print-mode='application'] & {
+    @content;
+  }
+}
+
+// Hides an element from print output entirely (on-screen UI chrome like the
+// theme toggle or print-options trigger, none of which make sense on paper).
+@mixin print-hidden {
+  @media print {
+    display: none;
+  }
+}
+
+// Shared ink for the "..." truncation markers (Skills' sub-list/truncate
+// ellipses, Experience/Projects' bullets-ellipsis) that stand in for content
+// a condensed tier hides — wine everywhere it's allowed to show color, black
+// in Application, which must render strictly black-and-white (see
+// application-print-tier above).
+@mixin ellipsis-ink {
+  color: $wine;
+  font-weight: 800;
+
+  @include application-print-tier {
+    color: $print-text;
+  }
+}

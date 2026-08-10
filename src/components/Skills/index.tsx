@@ -1,4 +1,5 @@
 import React, { type ReactElement, useState } from 'react';
+import { classNames } from '../../utils/classNames';
 import Tooltip, { dismissTooltips } from '../Tooltip';
 import type { SkillCategory, SkillEntry } from '../../data/resume';
 import './index.scss';
@@ -36,14 +37,12 @@ const SkillItem = ({ category, skill, allTooltipIds, className }: SkillItemProps
 
   return (
     <li
-      className={[
+      className={classNames(
         'resume-skills__skill',
         'resume-skills__skill--expandable',
         expanded && 'resume-skills__skill--expanded',
         className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      )}
     >
       <Tooltip
         id={tooltipId}
@@ -103,13 +102,11 @@ const Skills = ({ skills }: SkillsProps): ReactElement => {
                     category={group.category}
                     skill={skill}
                     allTooltipIds={tooltipIds}
-                    className={[
+                    className={classNames(
                       index >= MINIMAL_SKILL_LIMIT && 'print-hide-minimal',
                       index >= SUMMARY_SKILL_LIMIT && 'print-hide-summary',
                       index >= SUMMARY_SKILL_LIMIT && 'print-hide-application',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
+                    )}
                   />
                 ))}
               </ul>

@@ -11,3 +11,7 @@ Current resume-writing advice (both the user-supplied bridgeviewit.com guide and
 - `index.tsx`: takes `summary: string`, renders it inside a `<section aria-labelledby="summary-heading">` with an `<h2 id="summary-heading">Summary</h2>` heading.
 - `index.scss`: vertical margin only, no other styling.
 - `index.test.tsx`: renders with a sample sentence, asserts the heading and the paragraph text both appear.
+
+## Application tier strong text now grayscale (2026-08-10)
+
+In the Application print tier, `<strong>` text inside the summary is forced to `$print-text` (dark gray) instead of wine/magenta — suitable for ATS submissions without color. See commit `bb50fc4` and `claude-docs/components/PRINT-OPTIONS.md`'s grayscale entry.

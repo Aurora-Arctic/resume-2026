@@ -1,4 +1,6 @@
 @use '../../scss/variables' as *;
+@use '../../scss/mixins' as *;
+@use '../../scss/print' as *;
 
 .theme-toggle {
   // Clipped to the same triangle ::before paints, so both the hit area and
@@ -28,15 +30,10 @@
     // of fading for this button specifically. This is the one place
     // border-color's own transition is declared, though — the base system
     // has no border to animate.
-    transition:
-      background-color $theme-transition-duration $theme-transition-easing,
-      border-color $theme-transition-duration $theme-transition-easing,
-      transform $theme-transition-duration $theme-transition-easing;
+    @include theme-transition(background-color, border-color, transform);
   }
 
-  @media print {
-    display: none;
-  }
+  @include print-hidden;
 }
 
 html[data-theme='light'] .theme-toggle::before {
@@ -63,7 +60,7 @@ html[data-theme='light'] .theme-toggle::before {
   // that corner, so the origin is icon-width + 1.0625rem right, 1rem up) so
   // rotate() alone swings the icon through an arc centered on the fold.
   transform-origin: 2.3125rem -1rem;
-  transition: transform $theme-transition-duration $theme-transition-easing;
+  @include theme-transition(transform);
   transform: rotate(0deg);
 
   &--out {
@@ -98,7 +95,7 @@ html[data-theme='light'] .theme-toggle::before {
   &::before {
     top: 1.75rem;
     right: 0.5rem;
-    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    @include tooltip-arrow(down);
   }
 }
 
@@ -114,7 +111,7 @@ html[data-theme='light'] .theme-toggle-tooltip__label--to-dark {
   display: inline;
 }
 
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .theme-toggle::before,
   .theme-toggle__facet {
     transition: none;

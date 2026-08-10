@@ -166,17 +166,17 @@ export const resumeData: ResumeData = {
       title: 'Senior Backend Engineer & Technical Lead',
       location: 'United States (Remote)',
       startDate: 'July 2022',
-      endDate: 'Present',
+      endDate: 'July 2026',
       bullets: [
-        'Drove improvements to CI/CD workflows and performance, reducing costs.',
-        'Reduced friction and risk through a new process for protecting private client information.',
-        'Technical lead and architect on partner integration initiatives that enabled growth.',
+        'Cut costs by improving CI/CD workflows and performance.',
+        'Introduced a client-data protection process that reduced friction and risk.',
+        'Tech lead/architect for partner integrations that enabled company growth.',
         'Led developer experience improvements that improved developer confidence and reduced friction.',
-        'Helped developers with career growth and navigating challenges through mentorship.',
+        'Mentored engineers on career growth and problem-solving.',
         'Promoted from Backend Engineer III (2022) to Senior Backend Engineer and Technical Lead (2023).',
       ],
       summary:
-        'Technical lead and architect driving CI/CD workflow and performance improvements, a client data protection process, and partner integration initiatives that enabled company growth. Led developer experience improvements that boosted developer confidence and mentored developers through career growth and challenges.',
+        'Technical lead and architect driving CI/CD improvements, a client-data protection process, and growth-enabling partner integrations. Improved developer experience and mentored engineers through career growth and challenges.',
     },
     {
       company: '14Four',
@@ -185,8 +185,8 @@ export const resumeData: ResumeData = {
       startDate: 'December 2020',
       endDate: 'July 2022',
       bullets: [
-        'Created infrastructure and a backend framework that reduced new site creation from 2 days to 2 hours, enabling self-service site creation.',
-        'Development of high-traffic marketing campaign sites on AWS infrastructure.',
+        'Build a self-service full stack framework that cut new-site initialization from 2 days to 2 hours.',
+        'Built high-traffic marketing campaign sites on AWS.',
         'Technical mentor and advisor for both frontend and backend developers.',
       ],
       summary:
@@ -199,8 +199,8 @@ export const resumeData: ResumeData = {
       startDate: 'October 2018',
       endDate: 'December 2020',
       bullets: [
-        'Adapted to new technologies with inherited projects on the fly, using a range of technologies like Drupal, Ruby on Rails, WordPress, custom PHP sites, and more.',
-        'Integrated with various customer systems, including custom inventory APIs and internal APIs.',
+        'Picked up new stacks fast on inherited projects (Drupal, Rails, WordPress, custom PHP).',
+        'Integrated with customer systems, including custom inventory and internal APIs.',
         'Assisted with community building through meetups and competitions.',
       ],
       summary:
@@ -216,9 +216,9 @@ export const resumeData: ResumeData = {
       summary:
         'Built healthcare-standard REST APIs for secure data exchange with an insurance partner. Led discovery, validation rules, and testing in direct partnership with their team.',
       bullets: [
-        'Created a secure API using partner specified Healthcare Data Standards API rules.',
+        'Built a secure API per partner-specified Healthcare Data Standards rules.',
         'Implemented clear validation and error rules.',
-        'Worked with insurance partner on discovery, planning, implementation and testing.',
+        'Partnered with the insurer on discovery, planning, implementation, and testing.',
       ],
       company: 'Alma',
     },
@@ -239,7 +239,7 @@ export const resumeData: ResumeData = {
     {
       name: 'Panda Express Chinese New Year Sweepstakes',
       description:
-        "Promotional sweepstakes site for Panda Express's Chinese New Year campaign, backed by serverless infrastructure built to absorb large, unpredictable traffic spikes.",
+        "Sweepstakes site for Panda Express's Chinese New Year campaign, built on serverless infra to absorb large traffic spikes.",
       stack: ['AWS Lambda', 'Serverless Aurora', 'GraphQL', 'Vue.js'],
       summary:
         'Built a serverless sweepstakes site on AWS Lambda and Aurora to absorb unpredictable traffic spikes. Delivered the GraphQL backend and co-built the Vue.js frontend.',
@@ -285,22 +285,21 @@ export const resumeData: ResumeData = {
       bullets: [
         'Migrated GitHub Actions workflows from GitHub-hosted runners to third-party CI runners.',
         'Tuned CI runner resource allocation for the most time- and cost-efficient runs.',
-        'Cut CI runtime costs by 30-40%.',
-        'Reduced CI runtime by 30%.',
+        'Cut CI runtime and cost by ~30%.',
       ],
       company: 'Alma',
     },
     {
       name: 'EDMO.com',
       description:
-        'E-commerce site built with AWS Amplify, using AWS AppSync GraphQL and Craft CMS for marketing content; integrates with customer inventory management.',
+        'E-commerce site on AWS Amplify with AppSync GraphQL and Craft CMS, integrated with customer inventory management.',
       stack: ['AWS Amplify', 'AWS AppSync', 'GraphQL', 'Craft CMS'],
       link: 'https://edmo.com',
       summary:
         "Built an e-commerce site on AWS Amplify with AppSync GraphQL and Craft CMS, syncing data with the client's inventory API. Hardened authentication and migrated legacy users to better practices.",
       bullets: [
         "Integrated with client's custom internal inventory management API.",
-        'Established authentication security protocols and migrated out of spec users to better practices.',
+        'Hardened authentication and migrated legacy users to better practices.',
         "Implemented data syncing to and from client's system.",
       ],
       company: 'Uxiliary',
@@ -322,12 +321,12 @@ export const resumeData: ResumeData = {
     {
       name: 'Resume Site',
       description:
-        'Is it overkill to implement a full CI/CD pipeline and over 80% unit and e2e testing for a personal resume? Sure, but the point is to showcase my skills. ;)',
+        'Full CI/CD and 80%+ test coverage for a personal resume? Overkill, sure — but it showcases my skills. ;)',
       stack: ['Github Actions', 'Vitest', 'Playwright', 'Gatsby', 'TypeScript'],
       link: 'https://resume.marwynn.net',
       github: 'https://github.com/Aurora-Arctic/resume-2026',
       summary:
-        'Is it overkill to implement a full CI/CD pipeline and over 80% unit and e2e testing for a personal resume? Sure, but the point is to showcase my skills. ;) This site showcase some of my skills with CI/CD, testing, breadth of frontend knowledge and my experience with AI tooling like Claude code.',
+        'Is it overkill to implement full CI/CD and 80%+ test coverage for a personal resume? Sure — it showcases my skills. Demonstrates CI/CD, testing depth, frontend breadth, and AI-assisted engineering (Claude Code).',
       bullets: [
         'Designed and built a fully static site with Gatsby, React, and TypeScript.',
         'Implemented client-side encryption for contact information with AES-256-GCM.',
@@ -346,9 +345,8 @@ export const resumeData: ResumeData = {
       summary:
         'Independently designed and built a full-stack React/Express/MySQL app for nonprofit fundraising campaigns. Delivered as a final school project with a perfect score.',
       bullets: [
-        'Fully planned and designed project.',
+        'Independently planned, designed, and built the full-stack app.',
         'Learned new technologies on the fly while still meeting deadlines.',
-        'Fully coded backend and frontend.',
         'Received 100% as my final project for school.',
       ],
       company: 'Personal',

@@ -142,3 +142,7 @@ Companion change to [RESUME.md](RESUME.md)'s transcript entry reverting `.resume
 ## `h1` fixed font-size override removed too (2026-08-10)
 
 Follow-up, same session, made directly by the user editing `Header/index.scss` by hand: the `@media (min-width: $breakpoint-desktop)`/`grid-print-tiers` fixed `font-size: 1.75rem` override on `.resume-header h1` (added in the "Contact list split into three, right-aligned at the new desktop breakpoint" entry above) came out as well, on top of the right-alignment removal directly above. Its original rationale no longer applies once the alignment revert landed — it existed specifically to keep the name from wrapping inside the narrow ~267px right-hand header column, and that column doesn't exist anymore now `Header` is full-width again. `h1` now uses the global `clamp(2rem, 4vw, 3rem)` rule from `src/scss/_typography.scss` unconditionally, same as every other `h1` on the page.
+
+## Application tier link icons now grayscale (2026-08-10)
+
+In the Application print tier, header link icons are forced to `$print-text` (dark gray) instead of wine/magenta — suitable for ATS submissions without color. See commit `bb50fc4` and `claude-docs/components/PRINT-OPTIONS.md`'s grayscale entry.

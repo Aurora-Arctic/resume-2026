@@ -1,5 +1,6 @@
 @use '../../scss/print' as *;
 @use '../../scss/variables' as *;
+@use '../../scss/mixins' as *;
 
 // Bounds line length to roughly 69 characters for readability — the section
 // (heading + paragraph) is otherwise free to stretch to the full card width
@@ -24,16 +25,12 @@
   strong {
     color: $wine-drenched;
 
-    @media print {
-      html[data-print-mode='application'] & {
-        color: $print-text;
-      }
+    @include application-print-tier {
+      color: $print-text;
     }
   }
 
-  html[data-print-mode='summary'] &,
-  html[data-print-mode='minimal'] &,
-  html[data-print-mode='application'] & {
+  @include condensed-print-tiers {
     display: block;
   }
 

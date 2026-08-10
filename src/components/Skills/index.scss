@@ -1,16 +1,10 @@
 @use '../../scss/variables' as *;
+@use '../../scss/mixins' as *;
 @use '../../scss/print' as *;
 
 .resume-skills {
   &__groups {
     margin: 0;
-
-    @media (min-width: $breakpoint-desktop) {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem 2rem;
-    }
-
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem 2rem;
@@ -23,6 +17,9 @@
   &__group {
     margin: 0 0 0.75rem;
 
+    // Unlike &__groups above, this desktop override isn't dead weight — the
+    // grid's own `gap` already spaces rows out from $breakpoint-desktop on,
+    // so this removes the redundant bottom margin stacking on top of it.
     @media (min-width: $breakpoint-desktop) {
       margin-bottom: 0;
     }
@@ -102,7 +99,7 @@
     border: none;
     cursor: pointer;
     text-align: left;
-    transition: color $theme-transition-duration $theme-transition-easing;
+    @include theme-transition(color);
 
     &::before {
       content: '▶';
@@ -112,9 +109,7 @@
       font-size: 0.625em;
       color: $wine-stained;
       transform: rotate(var(--skill-arrow-rotate, 0deg)) scale(var(--skill-arrow-scale, 1));
-      transition:
-        transform $theme-transition-duration $theme-transition-easing,
-        color $theme-transition-duration $theme-transition-easing;
+      @include theme-transition(transform, color);
     }
 
     &:hover,
@@ -151,7 +146,7 @@ ul.resume-skills__sub-list {
   // top-level diamonds above it, not scaled down with the text.
   li::before {
     font-size: 1rem;
-    transition: color $theme-transition-duration $theme-transition-easing;
+    @include theme-transition(color);
   }
 }
 
@@ -228,9 +223,7 @@ html[data-theme='light'] .resume-skills__skill-toggle::before {
   &::before {
     bottom: -0.5rem;
     left: 1.25rem;
-    width: 0.75rem;
-    height: 0.5rem;
-    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    @include tooltip-arrow(down);
   }
 
   @media (min-width: $breakpoint-desktop) {
@@ -248,10 +241,8 @@ html[data-theme='light'] .resume-skills__skill-toggle::before {
       bottom: auto;
       left: auto;
       right: -0.5rem;
-      width: 0.5rem;
-      height: 0.75rem;
       transform: translateY(-50%);
-      clip-path: polygon(0 0, 100% 50%, 0 100%);
+      @include tooltip-arrow(right);
     }
 
     // Now beside (not above) the trigger — bridge extends rightward from
@@ -279,26 +270,22 @@ html[data-print-mode='full'] .resume-skills__sub-list[hidden] {
 // sub-list) and only shown for the three non-Full tiers.
 .resume-skills__sub-list-ellipsis {
   display: none;
-}
-
-html[data-print-mode='summary'] .resume-skills__sub-list-ellipsis,
-html[data-print-mode='minimal'] .resume-skills__sub-list-ellipsis {
-  display: inline;
   // Pin to the base $wine rather than the theme-lightened
   // $wine-stained/$wine-drenched variants — print always renders on a
   // white page regardless of which on-screen theme was active, same
-  // reasoning as Header's printed link icons.
-  color: $wine;
-  font-size: 1.125rem;
-  font-weight: 800;
-}
+  // reasoning as Header's printed link icons. ellipsis-ink also covers the
+  // Application tier's $print-text override.
+  @include ellipsis-ink;
 
-@media print {
-  html[data-print-mode='application'] .resume-skills__sub-list-ellipsis {
+  html[data-print-mode='summary'] &,
+  html[data-print-mode='minimal'] & {
     display: inline;
-    color: $print-text;
     font-size: 1.125rem;
-    font-weight: 800;
+  }
+
+  @include application-print-tier {
+    display: inline;
+    font-size: 1.125rem;
   }
 }
 
@@ -320,8 +307,8 @@ html[data-print-mode='minimal'] .resume-skills__truncate-ellipsis--minimal {
   font-weight: 800;
 }
 
-@media print {
-  html[data-print-mode='application'] .resume-skills__truncate-ellipsis--application {
+.resume-skills__truncate-ellipsis--application {
+  @include application-print-tier {
     display: inline;
     color: $print-text;
     font-weight: 800;

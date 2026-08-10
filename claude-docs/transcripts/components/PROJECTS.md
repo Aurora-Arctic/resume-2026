@@ -47,3 +47,7 @@ User request: condense the `Projects` section by limiting the number of projects
 **Implementation: simple per-group index check.** The component tracks `itemIndex` (position within each group's array) as it maps. Each project gets `.print-hide-minimal` if `itemIndex >= MINIMAL_PROJECT_LIMIT` (2), and `.print-hide-summary`/`.print-hide-application` if `itemIndex >= SUMMARY_PROJECT_LIMIT` (3). The Personal group is handled separately with the same logic, so both company groups and the Personal group respect their own per-group limits.
 
 **Tests.** Unit tests: render a company with 4+ projects and verify the first 3 lack `.print-hide-summary`, the 4th+ have it; first 2 lack `.print-hide-minimal`, 3rd+ have it. E2E tests: after simulating tiers via PrintOptions modal, assert that hidden projects exist (`.print-hide-minimal/summary/application` count > 0).
+
+## Application tier bullets-ellipsis now grayscale (2026-08-10)
+
+Correction: the `.resume-projects__bullets-ellipsis` (shown on Summary/Minimal/Application tiers when the full bullets list is hidden) now uses `$print-text` (dark gray) in the Application tier instead of `$wine`. Summary and Minimal tiers still use `$wine`. See commit `bb50fc4` and `claude-docs/components/PRINT-OPTIONS.md`'s grayscale entry for the broader Application-tier color shift.
