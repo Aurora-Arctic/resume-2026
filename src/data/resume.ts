@@ -175,7 +175,7 @@ export const resumeData: ResumeData = {
         'Promoted from Backend Engineer III (2022) to Senior Backend Engineer and Technical Lead (2023).',
       ],
       summary:
-        'Technical lead and architect driving CI/CD workflow and performance improvements that reduced costs, and a client data protection process that reduced friction and risk. Served as technical lead on partner integration initiatives that enabled company growth, while leading developer experience improvements that boosted developer confidence. Mentored developers through career growth and challenges along the way.',
+        'Technical lead and architect driving CI/CD workflow and performance improvements, a client data protection process, and partner integration initiatives that enabled company growth. Led developer experience improvements that boosted developer confidence and mentored developers through career growth and challenges.',
     },
     {
       company: '14Four',
@@ -189,7 +189,7 @@ export const resumeData: ResumeData = {
         'Technical mentor and advisor for both frontend and backend developers.',
       ],
       summary:
-        'Built a self-service backend and infra site-creation framework that cut new site turnaround from two days to two hours. Developed high-traffic marketing campaign sites on AWS infrastructure. Served as a technical mentor and advisor for both frontend and backend developers.',
+        'Built a self-service backend and infra site-creation framework that cut new site turnaround from two days to two hours, and developed high-traffic marketing campaign sites on AWS infrastructure. Served as a technical mentor and advisor for both frontend and backend developers.',
     },
     {
       company: 'Uxiliary',
@@ -203,7 +203,7 @@ export const resumeData: ResumeData = {
         'Assisted with community building through meetups and competitions.',
       ],
       summary:
-        'Full-stack developer adapting on the fly to inherited projects across a variety of different tech stacks. Integrated with various customer systems, including custom inventory and internal APIs. Assisted with community building through meetups and competitions.',
+        'Full-stack developer adapting on the fly to inherited projects across a variety of tech stacks, and integrating with various customer systems including custom inventory and internal APIs. Assisted with community building through meetups and competitions.',
     },
   ],
   projects: [
