@@ -309,3 +309,7 @@ The sub-list `[hidden]` override rule (`html[data-print-mode] .resume-skills__su
 - `npm run lint`, `npm run format:check`, `npm run typecheck` — pass.
 - `npm run test:coverage` — 116/116 tests pass; full coverage 98.46%.
 - Manual verification (user-completed): `?printMode=full` shows all skills with expanded subitems and diamond bullets; `?printMode=application` shows top 5 skills per category in single-column layout with application ellipsis; arrows convert to diamonds in all print modes.
+
+## Application tier print color override to grayscale (2026-08-10)
+
+The Application print tier (ATS-style minimal layout with single-column rendering) now forces all wine/magenta accent color to `$print-text` (dark gray) — links, list bullets, ellipsis cues, header link icons. Full/Summary/Minimal tiers keep wine accents. The `application-print-tier` mixin was added to `_print.scss` wrapping `@media print { html[data-print-mode='application'] & { @content; } }`. Touched `Header/index.scss` (icon color), `Projects/index.scss` (.bullets-ellipsis), `Skills/index.scss` (sub-list ellipsis, per-category truncation ellipsis), `Summary/index.scss` (strong text color), and `src/scss/_typography.scss` (link and list-bullet colors) — see commit `bb50fc4`.
