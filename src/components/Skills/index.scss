@@ -1,4 +1,5 @@
 @use '../../scss/variables' as *;
+@use '../../scss/print' as *;
 
 .resume-skills {
   &__groups {
@@ -10,7 +11,21 @@
       gap: 1.5rem 2rem;
     }
 
-    @media print {
+    // Only the Application tier collapses this back to a single column —
+    // Full/Summary/Minimal reassert the desktop 3-column grid instead,
+    // matching the web version. It has to be reasserted explicitly, not
+    // left to the @media (min-width: $breakpoint-desktop) block above,
+    // because browsers evaluate that min-width against the physical page's
+    // width during a real print (Letter/A4, well under $breakpoint-desktop),
+    // not the screen viewport — see src/scss/_print.scss's
+    // grid-print-tiers/linear-print-tiers mixins.
+    @include grid-print-tiers {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem 2rem;
+    }
+
+    @include linear-print-tiers {
       display: block;
     }
   }
@@ -34,7 +49,7 @@
   }
 
   // Compound class (not just `&__skill--expandable` alone) so this beats
-  // `.bullet-list li::before` (see src/scss/_lists.scss) on specificity —
+  // `ul li::before` (see src/scss/_typography.scss) on specificity —
   // that base rule's `li::before` chain (1 class + 2 elements) otherwise
   // outranks a single-class override, silently losing the `content: none`
   // suppression below.
@@ -109,12 +124,12 @@
   }
 }
 
-// Compound with `.bullet-list` (both classes live on the same <ul>, see
+// See
 // index.tsx) rather than `.resume-skills__sub-list` alone — matches this
 // file's existing specificity-safety convention (see the compound-class
 // comment above) even though nothing currently fights over these specific
 // properties, so a future addition here doesn't have to relearn the lesson.
-.bullet-list.resume-skills__sub-list {
+ul.resume-skills__sub-list {
   margin: 0.25rem 0 0;
 
   li {
@@ -146,8 +161,8 @@ html[data-theme='light'] .resume-skills__skill-toggle::before {
 // Tooltip/index.scss). Mobile-first, like every other breakpoint in this
 // file: base styles sit the tooltip above the item, left-aligned with the
 // li's own left edge (the trigger's own li is the positioned ancestor,
-// already position: relative via `.bullet-list li`, see
-// src/scss/_lists.scss) with a downward arrow —
+// already position: relative via `ul li`, see
+// src/scss/_typography.scss) with a downward arrow —
 // there isn't reliably enough room beside a skill item on a narrow
 // viewport for a side placement. At desktop width it moves beside the
 // item instead: to its left, vertically centered on its text line, arrow

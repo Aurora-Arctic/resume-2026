@@ -105,3 +105,26 @@ section {
     transition: none;
   }
 }
+
+ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style: none;
+
+  li {
+    position: relative;
+    margin: 0.25rem 0;
+
+    &::before {
+      content: '◆';
+      position: absolute;
+      left: -1.25rem;
+      top: -0.125rem;
+      color: $wine;
+    }
+  }
+}
+
+html[data-theme='light'] ul li::before {
+  color: $grape-press;
+}
