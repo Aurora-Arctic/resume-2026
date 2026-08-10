@@ -70,9 +70,6 @@ const SkillItem = ({ category, skill, allTooltipIds, className }: SkillItemProps
           <li key={item}>{item}</li>
         ))}
       </ul>
-      <span className="resume-skills__sub-list-ellipsis" aria-hidden="true">
-        …
-      </span>
     </li>
   );
 };

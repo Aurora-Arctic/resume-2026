@@ -25,6 +25,10 @@
       gap: 1.5rem 2rem;
     }
 
+    @include compact-print-tiers {
+      gap: 0.875rem 1.25rem;
+    }
+
     @include linear-print-tiers {
       display: block;
     }
@@ -36,12 +40,21 @@
     @media (min-width: $breakpoint-desktop) {
       margin-bottom: 0;
     }
+
+    @include compact-print-tiers {
+      margin: 0 0 0.375rem;
+    }
   }
 
   dt {
     font-weight: 500;
     font-size: 1.125rem;
     margin: 0 0 0.5rem;
+
+    @include compact-print-tiers {
+      font-size: 1rem;
+      margin: 0 0 0.25rem;
+    }
   }
 
   dd {
@@ -311,6 +324,14 @@ html[data-print-mode='minimal'] .resume-skills__truncate-ellipsis--minimal,
 html[data-print-mode='application'] .resume-skills__truncate-ellipsis--application {
   display: inline;
   color: $wine;
-  font-size: 1.125rem;
   font-weight: 800;
+}
+
+html[data-print-mode='summary'] .resume-skills__truncate-ellipsis--summary {
+  font-size: 1.125rem;
+}
+
+html[data-print-mode='minimal'] .resume-skills__truncate-ellipsis--minimal,
+html[data-print-mode='application'] .resume-skills__truncate-ellipsis--application {
+  font-size: 1rem;
 }

@@ -58,3 +58,16 @@ html[data-print-mode='application'] .print-hide-application {
     @content;
   }
 }
+
+// Wraps content scoped to the two tiers whose spec calls for a
+// more compact visual style — Minimal and Application. Both should
+// render denser (smaller fonts, tighter spacing) to fit more detail
+// per page. Applies whenever data-print-mode='minimal'|'application'
+// is set, whether via actual printing or on-screen simulation
+// (?printMode=...).
+@mixin compact-print-tiers {
+  html[data-print-mode='minimal'] &,
+  html[data-print-mode='application'] & {
+    @content;
+  }
+}

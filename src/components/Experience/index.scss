@@ -84,8 +84,16 @@
       @include sticky-exit-fade;
     }
 
+    @include compact-print-tiers {
+      margin: 0 0 0.75rem;
+    }
+
     > h3 {
       margin-top: 1.5rem;
+
+      @include compact-print-tiers {
+        margin-top: 0.75rem;
+      }
     }
   }
 
@@ -100,11 +108,20 @@
     margin: 0 0 0.75rem;
     font-size: 1.125rem;
     font-weight: 300;
+
+    @include compact-print-tiers {
+      margin: 0 0 0.375rem;
+      font-size: 1rem;
+    }
   }
 
   &__meta {
     margin: 0.25rem 0 0.5rem;
     font-style: italic;
+
+    @include compact-print-tiers {
+      margin: 0.125rem 0 0.25rem;
+    }
   }
 
   &__summary {
@@ -128,8 +145,15 @@
     html[data-print-mode='minimal'] & {
       display: block;
       color: $wine;
-      font-size: 1.125rem;
       font-weight: 800;
+    }
+
+    html[data-print-mode='summary'] & {
+      font-size: 1.125rem;
+    }
+
+    html[data-print-mode='minimal'] & {
+      font-size: 1rem;
     }
   }
 
@@ -140,6 +164,10 @@
       position: sticky;
       top: 1.5rem;
       @include sticky-exit-fade;
+    }
+
+    @include compact-print-tiers {
+      margin-top: 0.75rem;
     }
   }
 }
