@@ -282,8 +282,7 @@ html[data-print-mode='full'] .resume-skills__sub-list[hidden] {
 }
 
 html[data-print-mode='summary'] .resume-skills__sub-list-ellipsis,
-html[data-print-mode='minimal'] .resume-skills__sub-list-ellipsis,
-html[data-print-mode='application'] .resume-skills__sub-list-ellipsis {
+html[data-print-mode='minimal'] .resume-skills__sub-list-ellipsis {
   display: inline;
   // Pin to the base $wine rather than the theme-lightened
   // $wine-stained/$wine-drenched variants — print always renders on a
@@ -292,6 +291,15 @@ html[data-print-mode='application'] .resume-skills__sub-list-ellipsis {
   color: $wine;
   font-size: 1.125rem;
   font-weight: 800;
+}
+
+@media print {
+  html[data-print-mode='application'] .resume-skills__sub-list-ellipsis {
+    display: inline;
+    color: $print-text;
+    font-size: 1.125rem;
+    font-weight: 800;
+  }
 }
 
 // Stands in for the skills a category truncates on the Summary (first 5)
@@ -306,11 +314,18 @@ html[data-print-mode='application'] .resume-skills__sub-list-ellipsis {
 }
 
 html[data-print-mode='summary'] .resume-skills__truncate-ellipsis--summary,
-html[data-print-mode='minimal'] .resume-skills__truncate-ellipsis--minimal,
-html[data-print-mode='application'] .resume-skills__truncate-ellipsis--application {
+html[data-print-mode='minimal'] .resume-skills__truncate-ellipsis--minimal {
   display: inline;
   color: $wine;
   font-weight: 800;
+}
+
+@media print {
+  html[data-print-mode='application'] .resume-skills__truncate-ellipsis--application {
+    display: inline;
+    color: $print-text;
+    font-weight: 800;
+  }
 }
 
 html[data-print-mode='summary'] .resume-skills__truncate-ellipsis--summary {

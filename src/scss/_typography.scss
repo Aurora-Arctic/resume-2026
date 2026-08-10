@@ -131,6 +131,22 @@ section {
   }
 }
 
+@media print {
+  html[data-print-mode='application'] a,
+  html[data-print-mode='application'] a:visited,
+  html[data-print-mode='application'] a:hover,
+  html[data-print-mode='application'][data-theme='light'] a,
+  html[data-print-mode='application'][data-theme='light'] a:visited,
+  html[data-print-mode='application'][data-theme='light'] a:hover {
+    color: $print-text;
+  }
+
+  html[data-print-mode='application'] ul li::before,
+  html[data-print-mode='application'][data-theme='light'] ul li::before {
+    color: $print-text;
+  }
+}
+
 ul {
   margin: 0;
   padding-left: 1.25rem;

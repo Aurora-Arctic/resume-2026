@@ -86,9 +86,14 @@
       // Icons print against the same white page regardless of which theme
       // was active on-screen — pin to the light-mode link color rather than
       // letting currentColor fall through to dark mode's $wine-stained
-      // (tuned for contrast against a dark card, not white paper).
+      // (tuned for contrast against a dark card, not white paper). The
+      // Application tier (ATS-style, for job submissions) uses black instead.
       @media print {
         color: $wine;
+
+        html[data-print-mode='application'] & {
+          color: $print-text;
+        }
       }
     }
   }

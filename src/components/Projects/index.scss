@@ -79,12 +79,20 @@
     display: none;
 
     html[data-print-mode='summary'] &,
-    html[data-print-mode='minimal'] &,
-    html[data-print-mode='application'] & {
+    html[data-print-mode='minimal'] & {
       display: block;
       color: $wine;
       font-size: 1.125rem;
       font-weight: 800;
+    }
+
+    @media print {
+      html[data-print-mode='application'] & {
+        display: block;
+        color: $print-text;
+        font-size: 1.125rem;
+        font-weight: 800;
+      }
     }
   }
 
@@ -106,5 +114,26 @@
       margin-top: 1rem;
       margin-bottom: 0.5rem;
     }
+  }
+
+  &__github-link {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.25rem;
+    transition: opacity $theme-transition-duration $theme-transition-easing;
+
+    &:hover {
+      opacity: 0.7;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  &__github-icon {
+    width: 1.1em;
+    height: 1.1em;
+    color: inherit;
   }
 }
