@@ -25,7 +25,11 @@ const renderProject = (project: ProjectEntry, className?: string, index?: number
           className="resume-projects-github-tooltip"
           content="GitHub repository"
         >
-          <a href={project.github} className="resume-projects__github-link">
+          <a
+            href={project.github}
+            className="resume-projects__github-link"
+            aria-label={`View ${project.name} on GitHub`}
+          >
             <GithubIcon className="resume-projects__github-icon" />
           </a>
         </Tooltip>

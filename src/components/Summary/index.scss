@@ -17,6 +17,7 @@
 .resume-summary__print-note {
   display: none;
   margin: 2rem 0 0;
+  @include print-note-heading-style;
 
   @include compact-print-tiers {
     margin: 1rem 0 0;

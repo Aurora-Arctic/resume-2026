@@ -45,6 +45,7 @@
     "typescript": "^7.0.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@fortawesome/fontawesome-free": "^7.3.1",
     "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^7.0.0",

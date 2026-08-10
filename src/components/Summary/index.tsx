@@ -13,10 +13,10 @@ const Summary = ({ summary }: SummaryProps): ReactElement => {
     <section className="resume-summary" aria-labelledby="summary-heading">
       <h2 id="summary-heading">Summary</h2>
       <p>{summary}</p>
-      <h4 className="resume-summary__print-note">
+      <p className="resume-summary__print-note">
         When a section has <strong>&hellip;</strong> at the end of it, that indicates there is more
         information available at <a href={siteUrl.toString()}>{siteUrl.host}</a>
-      </h4>
+      </p>
     </section>
   );
 };

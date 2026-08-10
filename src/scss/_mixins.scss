@@ -80,3 +80,23 @@
     clip-path: polygon(0 0, 100% 50%, 0 100%);
   }
 }
+
+// Applies h4-level typography styling for print-note text (Layout/index.tsx,
+// Summary/index.tsx) while using a semantically-correct <p> tag instead of
+// an <h4> — matches the h4 base font/size/weight/line-height and includes the
+// compact-print-tier overrides (minimal/application modes).
+@mixin print-note-heading-style {
+  font-family: $font-heading;
+  font-weight: 500;
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  line-height: 1.4;
+
+  @media print {
+    html[data-print-mode='minimal'] &,
+    html[data-print-mode='application'] & {
+      font-size: 1rem;
+      margin: 0 0 0.5rem;
+    }
+  }
+}

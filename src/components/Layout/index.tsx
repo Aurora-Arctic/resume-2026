@@ -14,19 +14,21 @@ const Layout = ({ children }: LayoutProps): ReactElement => {
   const siteUrl = new URL(getSiteUrl());
 
   return (
-    <main className="paper-chrome">
-      <div className="paper-card">
-        <ThemeToggle />
-        {children}
-        <h4 className="paper-card__live-resume">
-          You can find an always updated version of this resume at{' '}
-          <a href={siteUrl.toString()}>{siteUrl.host}</a>
-        </h4>
-        <BackgroundCredit />
-      </div>
+    <>
+      <main className="paper-chrome">
+        <div className="paper-card">
+          <ThemeToggle />
+          {children}
+          <p className="paper-card__live-resume">
+            You can find an always updated version of this resume at{' '}
+            <a href={siteUrl.toString()}>{siteUrl.host}</a>
+          </p>
+          <BackgroundCredit />
+        </div>
+      </main>
       <PrintOptions />
       <RestoreTooltips />
-    </main>
+    </>
   );
 };
 

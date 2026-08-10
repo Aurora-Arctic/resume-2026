@@ -21,9 +21,10 @@ describe('Summary', () => {
 
     const link = screen.getByRole('link', { name: 'resume.marwynn.net' });
     expect(link).toHaveAttribute('href', 'https://resume.marwynn.net/');
-    expect(link.closest('h4')).toHaveTextContent(
+    expect(link.closest('p')).toHaveTextContent(
       'When a section has … at the end of it, that indicates there is more information available at resume.marwynn.net',
     );
+    expect(screen.queryByRole('heading', { level: 4 })).not.toBeInTheDocument();
   });
 
   it('falls back to localhost:8000 for the print-only note when GATSBY_SITE_URL is unset, as in local development', () => {

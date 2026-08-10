@@ -178,3 +178,13 @@ A new optional `onDismiss?: () => void` prop fires at the end of the existing `h
 ## Exempted from the shared button base (`_buttons.scss`)
 
 When a shared base look was added for every `<button>` in the app (see [../LAYOUT-SETUP.md](../LAYOUT-SETUP.md)'s "A third shared partial: `_buttons.scss`"), `.tooltip__dismiss` was deliberately left out — it stays transparent/icon-only, with no background box and no paper/off-paper fill, since it already sits on top of `.tooltip`'s own `$wine` background and a colored keycap behind the `×` would read as an odd two-tone patch. It's excluded via `:not(:where(.tooltip__dismiss))` in `_buttons.scss` rather than a plain `:not(.tooltip__dismiss)` specifically because this button has its own unconditional `transform: translateY(-50%);` for vertical centering — a plain `:not()` exclusion adds its own specificity point and would have let the shared file's `:active` pushed-effect transform (a `scaleY` shrink) outrank and overwrite that centering transform on every click; `:where()` keeps the exclusion at zero added specificity so that can't happen. No code in this file changed.
+
+## Escape-to-dismiss keyboard handler (August 2026)
+
+Added `useEffect` (lines 119-145 in `index.tsx`) to listen for `keydown` events while the tooltip is shown (not previously dismissed). Pressing Escape:
+
+1. Sets `cleared` and `forceHidden` to true (same as clicking the `×` button)
+2. Persists the dismissal to `localStorage`
+3. Fires the optional `onDismiss` callback
+
+Mirrors `PrintOptions`' own Escape-to-close pattern and aligns with WAI-ARIA dialog expectations. The listener is wired only while shown (early return if `cleared`), keeping it efficient and avoiding stale event handlers on reshow. Tested in `e2e/tooltip.spec.ts:163`.
