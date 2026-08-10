@@ -17,6 +17,8 @@ test.describe('print options', () => {
   const trigger = (page: import('@playwright/test').Page) =>
     page.getByRole('button', { name: 'Choose what to print' });
   const dialog = (page: import('@playwright/test').Page) => page.getByRole('dialog');
+  const backdrop = (page: import('@playwright/test').Page) =>
+    page.locator('.print-options__backdrop');
   // Role-name matching is a case-insensitive substring by default — "Print"
   // alone also matches "Choose what to print" and "Close print options", so
   // the confirm button needs an exact match. Each tier's radio also carries
@@ -75,9 +77,11 @@ test.describe('print options', () => {
 
   test('clicking the backdrop closes the modal without printing', async ({ page }) => {
     await trigger(page).click();
-    // The panel occupies the center of the backdrop — click near a corner so
-    // the click actually lands on the backdrop itself, not the panel.
-    await page.mouse.click(5, 5);
+    // The panel occupies the center of the backdrop — click near a corner
+    // (via a locator, not raw page coordinates, so Playwright waits for the
+    // backdrop to actually be visible/stable first) so the click lands on
+    // the backdrop itself, not the panel.
+    await backdrop(page).click({ position: { x: 5, y: 5 } });
 
     await expect(dialog(page)).toBeHidden();
     expect(await printCalls(page)).toBe(0);
