@@ -88,7 +88,7 @@ export const resumeData: ResumeData = {
     ],
   },
   summary:
-    'Senior full-stack engineer and technical lead with a decade of design experience before moving into engineering. Led partner integrations and compliance-sensitive systems, including healthcare data exchange and PHI/PII sanitization pipelines. Architected serverless and CI/CD infrastructure, cutting CI runtime and cost by ~30%. Mentored engineers across the stack. Increasingly works with AI-assisted engineering tooling to ship faster without sacrificing quality.',
+    'Senior full-stack engineer and technical lead with a decade of design experience before moving into engineering. Led partner integrations and compliance-sensitive systems, including healthcare data exchange and PHI/PII sanitization pipelines. Architected a fully automated CI/CD pipeline in GitHub Actions that cut CI runtime and cost by more than 30% by migrating from GitHub-hosted runners to third-party runners. Mentored engineers across the stack. Increasingly works with AI-assisted engineering tooling to ship faster without sacrificing quality.',
   skills: [
     {
       category: 'Languages',
@@ -168,10 +168,10 @@ export const resumeData: ResumeData = {
       startDate: 'July 2022',
       endDate: 'July 2026',
       bullets: [
-        'Cut costs by improving CI/CD workflows and performance.',
-        'Introduced a client-data protection process that reduced friction and risk.',
+        'Cut costs by improving CI/CD workflows and performance by over 30%.',
+        'Built a sanitized-data pipeline that virtually eliminated HIPAA/PII exposure in lower environments.',
         'Tech lead/architect for partner integrations that enabled company growth.',
-        'Led developer experience improvements that improved developer confidence and reduced friction.',
+        'Improved developer experience, boosting confidence and cutting support requests.',
         'Mentored engineers on career growth and problem-solving.',
         'Promoted from Backend Engineer III (2022) to Senior Backend Engineer and Technical Lead (2023).',
       ],
@@ -185,7 +185,7 @@ export const resumeData: ResumeData = {
       startDate: 'December 2020',
       endDate: 'July 2022',
       bullets: [
-        'Build a self-service full stack framework that cut new-site initialization from 2 days to 2 hours.',
+        'Built a self-service full stack framework that cut new-site initialization from 2 days to 2 hours.',
         'Built high-traffic marketing campaign sites on AWS.',
         'Technical mentor and advisor for both frontend and backend developers.',
       ],
@@ -214,7 +214,7 @@ export const resumeData: ResumeData = {
         'Designed and built healthcare-standard APIs enabling secure data exchange with third-party insurance partners.',
       stack: ['REST APIs', 'Healthcare Data Standards'],
       summary:
-        'Built healthcare-standard REST APIs for secure data exchange with an insurance partner. Led discovery, validation rules, and testing in direct partnership with their team.',
+        'Built healthcare-standard REST APIs for secure data exchange with 3 insurance partners and enabling many more. Led discovery, validation rules, and testing in direct partnership with their team.',
       bullets: [
         'Built a secure API per partner-specified Healthcare Data Standards rules.',
         'Implemented clear validation and error rules.',
@@ -256,9 +256,11 @@ export const resumeData: ResumeData = {
         'Data sanitization pipeline ensuring PHI/PII never leaked into lower environments or local development.',
       stack: ['Data Sanitization Tooling', 'ECS', 'EFS', 'S3 Transfer Acceleration'],
       summary:
-        'Automated a data sanitization pipeline keeping PHI/PII out of lower environments and local development. Built a compressed local backup system on ECS, EFS, and S3 Transfer Acceleration.',
+        'Built a sanitized-data pipeline that virtually eliminated HIPAA/PII exposure in lower environments. Gave engineers a production-like database with referential integrity. Reduced local dev data load times from 8 hours to 30 minutes.',
       bullets: [
         'Used automated data sanitization tooling to generate sanitized data for lower environments and local development.',
+        'Eliminated PHI/PII exposure risks by ensuring sensitive data never left production.',
+        'Reduced local-development data load times from 8 hours to 30 minutes.',
         'Built a compressed local-development backup system using ECS, EFS, and S3 Transfer Acceleration to work around size/performance limitations.',
       ],
       company: 'Alma',
@@ -272,6 +274,7 @@ export const resumeData: ResumeData = {
       bullets: [
         'Implemented GitHub merge queues and required deploy checks to keep main always releasable.',
         'Built integration and end-to-end test suites gating every merge.',
+        'Research and discovery assisted by AI to speed planning.',
       ],
       company: 'Alma',
     },
@@ -281,11 +284,12 @@ export const resumeData: ResumeData = {
         'Migrated CI workloads from GitHub-hosted runners to third-party CI runners for better reliability, faster run times, easier resource allocation, and lower cost.',
       stack: ['GitHub Actions', 'GitHub API', 'CI/CD'],
       summary:
-        'Migrated CI from GitHub-hosted to third-party runners for better reliability and easier scaling. Cut CI runtime and costs by roughly 30%.',
+        'Migrated CI from GitHub-hosted to third-party runners for better reliability and easier scaling. Cut CI runtime and costs by over 30%.',
       bullets: [
         'Migrated GitHub Actions workflows from GitHub-hosted runners to third-party CI runners.',
         'Tuned CI runner resource allocation for the most time- and cost-efficient runs.',
-        'Cut CI runtime and cost by ~30%.',
+        'AI assistance to audit CI/CD workflows for change needs.',
+        'Cut CI runtime and cost by over 30%.',
       ],
       company: 'Alma',
     },
@@ -329,6 +333,7 @@ export const resumeData: ResumeData = {
         'Is it overkill to implement full CI/CD and 80%+ test coverage for a personal resume? Sure — it showcases my skills. Demonstrates CI/CD, testing depth, frontend breadth, and AI-assisted engineering (Claude Code).',
       bullets: [
         'Designed and built a fully static site with Gatsby, React, and TypeScript.',
+        'Used AI to audit accessibility, write tests, generate boilerplate, and maintain documentation of historical context.',
         'Implemented client-side encryption for contact information with AES-256-GCM.',
         'Built a light/dark theme toggle with synchronized SSR to prevent flash-of-unstyled-content.',
         'Engineered responsive design with print layouts optimized for ATS (Applicant Tracking Systems).',
@@ -336,21 +341,21 @@ export const resumeData: ResumeData = {
       ],
       company: 'Personal',
     },
-    {
-      name: 'Design Bright',
-      description:
-        'An intuitive web application for creating funding campaigns for nonprofit marketing projects.',
-      stack: ['React', 'Express', 'Node.js', 'MySQL'],
-      link: 'https://github.com/mjoynes-wombat-web/design-bright-client',
-      summary:
-        'Independently designed and built a full-stack React/Express/MySQL app for nonprofit fundraising campaigns. Delivered as a final school project with a perfect score.',
-      bullets: [
-        'Independently planned, designed, and built the full-stack app.',
-        'Learned new technologies on the fly while still meeting deadlines.',
-        'Received 100% as my final project for school.',
-      ],
-      company: 'Personal',
-    },
+    // {
+    //   name: 'Design Bright',
+    //   description:
+    //     'An intuitive web application for creating funding campaigns for nonprofit marketing projects.',
+    //   stack: ['React', 'Express', 'Node.js', 'MySQL'],
+    //   link: 'https://github.com/mjoynes-wombat-web/design-bright-client',
+    //   summary:
+    //     'Independently designed and built a full-stack React/Express/MySQL app for nonprofit fundraising campaigns. Delivered as a final school project with a perfect score.',
+    //   bullets: [
+    //     'Independently planned, designed, and built the full-stack app.',
+    //     'Learned new technologies on the fly while still meeting deadlines.',
+    //     'Received 100% as my final project for school.',
+    //   ],
+    //   company: 'Personal',
+    // },
   ],
   education: [
     {
