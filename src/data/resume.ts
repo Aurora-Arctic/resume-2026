@@ -274,7 +274,7 @@ export const resumeData: ResumeData = {
       company: 'Alma',
     },
     {
-      name: 'third-party CI Runner Migration',
+      name: 'Third-Party CI Runner Migration',
       description:
         'Migrated CI workloads from GitHub-hosted runners to third-party CI runners for better reliability, faster run times, easier resource allocation, and lower costs.',
       stack: ['GitHub Actions', 'GitHub API', 'CI/CD'],
