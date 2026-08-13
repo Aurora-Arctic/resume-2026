@@ -55,7 +55,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^30.0.1",
     "monocart-coverage-reports": "^2.12.12",
-    "oxlint": "^1.77.0",
+    "oxlint": "^1.78.0",
     "pre-commit": "^2.0.0",
     "prettier": "^3.9.6",
     "vitest": "^4.1.10",
