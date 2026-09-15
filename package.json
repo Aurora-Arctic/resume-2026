@@ -54,7 +54,7 @@
     "@vitejs/plugin-react": "^6.0.5",
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^30.0.1",
-    "monocart-coverage-reports": "^2.12.12",
+    "monocart-coverage-reports": "^2.13.0",
     "oxlint": "^1.79.0",
     "pre-commit": "^2.0.0",
     "prettier": "^3.9.6",
