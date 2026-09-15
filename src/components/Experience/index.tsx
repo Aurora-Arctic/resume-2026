@@ -50,7 +50,7 @@ const Experience = ({ experience, hasPersonalProjects }: ExperienceProps): React
     })}
     {hasPersonalProjects && (
       <div
-        className="resume-experience__row print-hide-application"
+        className="resume-experience__row resume-experience__row--personal print-hide-application"
         style={{ gridRow: experience.length + 2 }}
       >
         <h3>Personal Projects</h3>

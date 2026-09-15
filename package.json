@@ -34,7 +34,7 @@
   "dependencies": {
     "@fontsource/lexend": "^5.3.0",
     "@fontsource/syne": "^5.3.0",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "gatsby": "^5.16.1",
@@ -45,21 +45,21 @@
     "typescript": "^7.0.2"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.12.1",
+    "@axe-core/playwright": "^4.13.0",
     "@fortawesome/fontawesome-free": "^7.3.1",
     "@playwright/test": "^1.62.1",
-    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@types/webpack-bundle-analyzer": "^4.7.0",
     "@vitejs/plugin-react": "^6.0.5",
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^30.0.1",
     "monocart-coverage-reports": "^2.12.12",
-    "oxlint": "^1.77.0",
+    "oxlint": "^1.79.0",
     "pre-commit": "^2.0.0",
     "prettier": "^3.9.6",
     "vitest": "^4.1.10",
-    "webpack-bundle-analyzer": "^5.3.1"
+    "webpack-bundle-analyzer": "^5.3.2"
   },
   "allowScripts": {
     "pre-commit@1.2.2": true
