@@ -61,7 +61,14 @@ const Projects = ({ projects, companyOrder }: ProjectsProps): ReactElement => {
     <section className="resume-projects" aria-labelledby="projects-heading">
       <h2 id="projects-heading">Projects</h2>
       {groups.map((group, index) => (
-        <div className="resume-projects__group" key={group.company} style={{ gridRow: index + 2 }}>
+        <div
+          className={classNames(
+            'resume-projects__group',
+            index == 0 && 'resume-projects__group--alma',
+          )}
+          key={group.company}
+          style={{ gridRow: index + 2 }}
+        >
           {group.items.map((project, itemIndex) => {
             const entryClassNames = classNames(
               itemIndex >= MINIMAL_PROJECT_LIMIT && 'print-hide-minimal',
@@ -76,7 +83,7 @@ const Projects = ({ projects, companyOrder }: ProjectsProps): ReactElement => {
         </div>
       ))}
       {personalItems.length > 0 && (
-        <div className="resume-projects__group">
+        <div className="resume-projects__group resume-projects__group--personal">
           {personalItems.map((project, itemIndex) => {
             const entryClassNames = classNames(
               itemIndex >= MINIMAL_PERSONAL_PROJECT_LIMIT && 'print-hide-minimal',
