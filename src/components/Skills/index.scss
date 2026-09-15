@@ -2,30 +2,65 @@
 @use '../../scss/mixins' as *;
 @use '../../scss/print' as *;
 
-.resume-skills {
-  &__groups {
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem 2rem;
-
-    @include compact-print-tiers {
-      gap: 0.875rem 1.25rem;
-    }
-  }
-
+// Shared with .resume-projects__group (see below) — both are per-category/
+// per-company wrappers that should carry identical spacing regardless of
+// which section they group.
+.resume-skills,
+.resume-projects {
   &__group {
     margin: 0 0 0.75rem;
 
-    // Unlike &__groups above, this desktop override isn't dead weight — the
-    // grid's own `gap` already spaces rows out from $breakpoint-desktop on,
-    // so this removes the redundant bottom margin stacking on top of it.
+    // Skills' &__groups grid (below) already spaces rows out via its own
+    // `gap` from $breakpoint-desktop on, so this removes the redundant
+    // bottom margin stacking on top of it there. Projects groups aren't in
+    // a gapped grid of their own — they're positioned via the outer
+    // Experience/Projects subgrid — but the same zeroing still applies once
+    // that side-by-side desktop layout takes over.
     @media (min-width: $breakpoint-desktop) {
       margin-bottom: 0;
     }
 
     @include compact-print-tiers {
       margin: 0 0 0.375rem;
+    }
+  }
+}
+
+.resume-skills {
+  &__groups {
+    margin: 0;
+    // Harmless below $breakpoint-tablet, where &__groups isn't display: grid
+    // yet — an unused `gap` on a non-grid element is simply ignored.
+    gap: 1.5rem 2rem;
+
+    // Mobile-first: a single stacked column by default, stepping up to two
+    // once there's a bit more room, then three at $breakpoint-desktop —
+    // going straight from one to three skipped a real mid-size range
+    // (tablets, small laptop windows) where three columns are too narrow to
+    // stay legible but a single column wastes the extra width. `screen`
+    // keeps this tablet step out of print: $breakpoint-tablet is narrow
+    // enough that a real printed page's physical width can satisfy a plain
+    // min-width query (see _print.scss's note on print media-feature
+    // evaluation), which would otherwise fight the 3-column print
+    // reassertion below.
+    @media screen and (min-width: $breakpoint-tablet) {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    // The 3-column grid only turns on once there's room for a 1/3-width
+    // column to stay legible — below that, forcing 3 columns is what was
+    // overflowing the card on narrow screens. Also reasserted for print
+    // (Full/Summary/Minimal tiers) regardless of physical page width, same
+    // as every other multi-column layout in the project — see
+    // desktop-and-grid-print.
+    @include desktop-and-grid-print {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @include compact-print-tiers {
+      gap: 0.875rem 1.25rem;
     }
   }
 
