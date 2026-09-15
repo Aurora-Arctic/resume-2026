@@ -74,3 +74,12 @@ $font-heading: 'Syne', Arial, Helvetica, sans-serif;
 // two-column layout only kicks in once there's actually enough room for a
 // narrow 1/3-width column to be legible.
 $breakpoint-desktop: 1024px;
+
+// Second, narrower width-based breakpoint — currently only used by Skills'
+// `&__groups` grid (see Skills/index.scss) to step through 1 -> 2 -> 3
+// columns as room increases, rather than jumping straight from a single
+// column to three at $breakpoint-desktop. Chosen well below
+// $breakpoint-desktop so there's a real mid-size range (tablets, small
+// laptop windows) where two columns fit without the card's content feeling
+// cramped or forcing a column narrower than its longest skill label.
+$breakpoint-tablet: 640px;

@@ -53,7 +53,7 @@ const Experience = ({ experience, hasPersonalProjects }: ExperienceProps): React
         className="resume-experience__row print-hide-application"
         style={{ gridRow: experience.length + 2 }}
       >
-        <h3 className="resume-experience__personal-label">Personal Projects</h3>
+        <h3>Personal Projects</h3>
       </div>
     )}
   </section>
