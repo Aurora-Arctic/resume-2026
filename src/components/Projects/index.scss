@@ -9,6 +9,19 @@
     }
   }
 
+  &__group {
+    &--alma {
+      @include desktop-and-grid-print {
+        margin-bottom: 4rem;
+      }
+    }
+    &--personal {
+      @include desktop-and-grid-print {
+        margin-top: 1rem;
+      }
+    }
+  }
+
   &__entry {
     margin: 0 0 1.5rem;
     position: relative;

@@ -17,3 +17,9 @@ updates:
     target-branch: staging
     schedule:
       interval: weekly
+
+  - package-ecosystem: npm_and_yarn
+    directory: /
+    target-branch: staging
+    schedule:
+      interval: weekly
