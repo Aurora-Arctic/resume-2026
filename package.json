@@ -41,7 +41,7 @@
     "gatsby-plugin-sass": "^6.16.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "sass": "^1.102.0",
+    "sass": "^1.104.1",
     "typescript": "^7.0.2"
   },
   "devDependencies": {
