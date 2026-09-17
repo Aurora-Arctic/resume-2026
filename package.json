@@ -58,7 +58,7 @@
     "oxlint": "^1.79.0",
     "pre-commit": "^2.0.0",
     "prettier": "^3.9.6",
-    "vitest": "^4.1.10",
+    "vitest": "^5.0.0",
     "webpack-bundle-analyzer": "^5.3.3"
   },
   "allowScripts": {
