@@ -267,7 +267,7 @@ export const resumeData: ResumeData = {
       summary:
         'Architected a fully automated CI/CD pipeline in GitHub Actions with merge queues and required deploy checks. Planned the integration and E2E suites gating every merge.',
       bullets: [
-        'Implemented GitHub merge queues and required deploy checks to keep main always releasable.',
+        'Planned GitHub merge queues and required deploy checks to keep main always releasable.',
         'Planned  integration and end-to-end test suites gating every merge.',
         'Research and discovery assisted by AI to speed planning.',
       ],
